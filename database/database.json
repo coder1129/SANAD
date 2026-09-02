@@ -1,0 +1,9 @@
+{
+  "name": "sanad_db",
+  "status": "managed-by-prisma",
+  "canonicalSchema": "../backend/prisma/schema.prisma",
+  "migrations": "../backend/prisma/migrations",
+  "installCommand": "cd ../backend && npm run db:migrate",
+  "seedPolicy": "No default users or passwords are created",
+  "adminBootstrap": "Set ADMIN_EMAIL and ADMIN_PASSWORD, then run npm run db:seed-admin"
+}

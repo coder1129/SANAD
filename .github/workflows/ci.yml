@@ -1,0 +1,103 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend-test:
+    name: Backend Tests & Security
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: test_password_12345
+          POSTGRES_DB: sanad_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://postgres:test_password_12345@localhost:5432/sanad_test_db
+      JWT_ACCESS_SECRET: test-access-secret-that-is-at-least-32-chars-long
+      JWT_REFRESH_SECRET: test-refresh-secret-that-is-at-least-32-chars-different
+      PAYMENT_WEBHOOK_SECRET: test-webhook-secret-at-least-32-characters-long-unique
+      FRONTEND_URL: http://localhost:3001
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Generate Prisma Client
+        working-directory: backend
+        run: npx prisma generate
+
+      - name: Run database migrations
+        working-directory: backend
+        run: npx prisma migrate deploy
+
+      - name: Lint code
+        working-directory: backend
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: backend
+        run: npx tsc --noEmit
+
+      - name: Run unit tests with coverage
+        working-directory: backend
+        run: npm run test:cov
+
+      - name: Run e2e tests
+        working-directory: backend
+        run: npm run test:e2e
+
+      # Verifies the migrated schema itself: applied migrations, security
+      # columns, unique token indexes, and the shared rate-limit table.
+      - name: Run integration tests
+        working-directory: backend
+        run: npm run test:integration
+
+      - name: Build
+        working-directory: backend
+        run: npm run build
+
+      # Blocking on purpose: a high or critical advisory in a dependency of a
+      # service that handles credentials and payments is a release blocker, not
+      # a note to read later.
+      - name: Security audit
+        working-directory: backend
+        run: npm audit --audit-level=high
+
+      # Runs the application's own env validation against the built output, so a
+      # broken configuration contract fails here rather than at container start.
+      - name: Preflight environment validation
+        working-directory: backend
+        run: npm run preflight
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/coverage-final.json
+          flags: backend
+          fail_ci_if_error: false

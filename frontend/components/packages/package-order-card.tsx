@@ -1,0 +1,184 @@
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  MessageCircle,
+  RefreshCcw,
+  ShieldCheck,
+  Tag,
+} from 'lucide-react';
+import Link from 'next/link';
+
+import { PackagePrice } from '@/components/packages/package-price';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  formatPackagePrice,
+  getBestPackageOffer,
+  getPackageCurrentPrice,
+} from '@/lib/packages/presentation';
+import type { CareerPackage, CheckoutPricing } from '@/types/domain';
+
+interface PackageOrderCardProps {
+  askHref: string;
+  orderHref: string;
+  packageItem: CareerPackage;
+  pricing: CheckoutPricing | null;
+}
+
+function formatMoney(value: number, currency: string): string {
+  return new Intl.NumberFormat('en-AE', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+export function PackageOrderCard({
+  askHref,
+  orderHref,
+  packageItem,
+  pricing,
+}: PackageOrderCardProps) {
+  const bestOffer = getBestPackageOffer(packageItem);
+  const revisions = `${packageItem.maxRevisions} ${
+    packageItem.maxRevisions === 1 ? 'revision' : 'revisions'
+  }`;
+
+  return (
+    <aside
+      aria-label="Order summary"
+      className="overflow-hidden rounded-xl border border-border bg-surface shadow-md"
+    >
+      <div className="border-b border-border bg-surface-muted px-6 py-5">
+        <div className="flex items-center justify-between gap-4">
+          <p className="text-xs font-semibold tracking-[0.14em] text-secondary uppercase">
+            Order summary
+          </p>
+          <ShieldCheck aria-hidden="true" className="size-5 text-accent" />
+        </div>
+        <h2 className="mt-3 text-lg font-semibold text-primary">
+          {packageItem.name}
+        </h2>
+      </div>
+
+      <div className="p-6">
+        {pricing ? (
+          <>
+            {pricing.offerDiscountPercentage > 0 ? (
+              <Badge className="mb-4" variant="warning">
+                <Tag aria-hidden="true" className="size-3.5" />
+                {bestOffer?.name ?? 'Active offer'} ·{' '}
+                {pricing.offerDiscountPercentage}% off
+              </Badge>
+            ) : null}
+            <p className="text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
+              Total including VAT
+            </p>
+            <p className="mt-2 font-display text-4xl leading-none text-primary">
+              {formatMoney(pricing.finalAmount, pricing.currency)}
+            </p>
+
+            <dl className="mt-6 grid gap-3 border-y border-border py-5 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">Original price</dt>
+                <dd className="font-semibold text-foreground">
+                  {formatMoney(pricing.originalPrice, pricing.currency)}
+                </dd>
+              </div>
+              {pricing.offerDiscountAmount > 0 ? (
+                <div className="flex items-center justify-between gap-4 text-success">
+                  <dt>Offer saving</dt>
+                  <dd className="font-semibold">
+                    −
+                    {formatMoney(pricing.offerDiscountAmount, pricing.currency)}
+                  </dd>
+                </div>
+              ) : null}
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">Subtotal</dt>
+                <dd className="font-semibold text-foreground">
+                  {formatMoney(
+                    pricing.subtotalAfterDiscounts,
+                    pricing.currency,
+                  )}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  VAT ({pricing.vatPercentage}%)
+                </dt>
+                <dd className="font-semibold text-foreground">
+                  {formatMoney(pricing.vatAmount, pricing.currency)}
+                </dd>
+              </div>
+            </dl>
+          </>
+        ) : (
+          <>
+            <PackagePrice packageItem={packageItem} size="hero" />
+            <p className="mt-3 text-xs leading-5 text-muted-foreground">
+              The final tax and total are confirmed when your order is started.
+            </p>
+          </>
+        )}
+
+        <dl className="mt-5 grid grid-cols-2 gap-4">
+          <div>
+            <dt className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+              <Clock3 aria-hidden="true" className="size-4 text-accent" />
+              Delivery
+            </dt>
+            <dd className="mt-2 text-sm font-semibold text-primary">
+              {packageItem.deliveryDays} days
+            </dd>
+          </div>
+          <div>
+            <dt className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
+              <RefreshCcw aria-hidden="true" className="size-4 text-accent" />
+              Included
+            </dt>
+            <dd className="mt-2 text-sm font-semibold text-primary">
+              {revisions}
+            </dd>
+          </div>
+        </dl>
+
+        <Button asChild className="group mt-6 w-full" size="lg">
+          <Link href={orderHref} rel="noreferrer noopener" target="_blank">
+            Start Your Order
+            <ArrowRight
+              aria-hidden="true"
+              className="size-4 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5 motion-reduce:transition-none"
+            />
+          </Link>
+        </Button>
+        <Button asChild className="mt-3 w-full" size="lg" variant="outline">
+          <Link href={askHref} rel="noreferrer noopener" target="_blank">
+            <MessageCircle aria-hidden="true" className="size-4" />
+            Ask a Question First
+          </Link>
+        </Button>
+
+        <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
+          <CheckCircle2
+            aria-hidden="true"
+            className="mt-0.5 size-4 shrink-0 text-success"
+          />
+          Order details and payment steps are confirmed with SANAD before work
+          begins.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
+export function getOrderDisplayPrice(
+  packageItem: CareerPackage,
+  pricing: CheckoutPricing | null,
+): string {
+  return pricing
+    ? formatMoney(pricing.finalAmount, pricing.currency)
+    : formatPackagePrice(getPackageCurrentPrice(packageItem));
+}

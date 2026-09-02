@@ -1,0 +1,576 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+
+  --sanad-navy: #0b2744;
+  --sanad-navy-secondary: #173f64;
+  --sanad-gold: #b8955a;
+  --sanad-champagne: #e4ceaa;
+  --sanad-cream: #fff8ed;
+  --sanad-white: #ffffff;
+  --sanad-text: #17202a;
+  --sanad-muted-text: #757575;
+  --sanad-border: #e9ddc8;
+
+  --background: var(--sanad-white);
+  --foreground: var(--sanad-text);
+  --surface: var(--sanad-white);
+  --surface-muted: var(--sanad-cream);
+  --primary: var(--sanad-navy);
+  --primary-foreground: var(--sanad-white);
+  --secondary: var(--sanad-navy-secondary);
+  --secondary-foreground: var(--sanad-white);
+  --accent: var(--sanad-gold);
+  --accent-foreground: var(--sanad-navy);
+  --muted: var(--sanad-cream);
+  --muted-foreground: var(--sanad-muted-text);
+  --border: var(--sanad-border);
+  --input: var(--sanad-border);
+  --control-border: color-mix(in srgb, var(--primary) 55%, var(--surface));
+  --ring: var(--sanad-navy);
+
+  --success: #1f6b4f;
+  --success-foreground: var(--sanad-white);
+  --warning: #9a6700;
+  --warning-foreground: var(--sanad-white);
+  --destructive: #b42318;
+  --destructive-foreground: var(--sanad-white);
+  --error: var(--destructive);
+  --error-foreground: var(--destructive-foreground);
+  --info: #1d4e89;
+  --info-foreground: var(--sanad-white);
+
+  --font-sans: var(--font-inter), Arial, sans-serif;
+  --font-heading: var(--font-dm-serif-display), Georgia, serif;
+
+  --sanad-space-xs: 0.5rem;
+  --sanad-space-sm: 0.75rem;
+  --sanad-space-md: 1rem;
+  --sanad-space-lg: 1.5rem;
+  --sanad-space-xl: 2rem;
+  --sanad-space-2xl: 3rem;
+  --sanad-page-gutter: clamp(1rem, 2.5vw, 2rem);
+  --sanad-section-space: clamp(4rem, 8vw, 7.5rem);
+  --sanad-content-max: 78rem;
+  --sanad-content-max-wide: 90rem;
+
+  --sanad-radius-sm: 0.375rem;
+  --sanad-radius-md: 0.5rem;
+  --sanad-radius-lg: 0.75rem;
+  --sanad-radius-xl: 1rem;
+
+  --sanad-shadow-xs: 0 1px 2px rgb(11 39 68 / 0.05);
+  --sanad-shadow-sm: 0 2px 6px rgb(11 39 68 / 0.06);
+  --sanad-shadow-md: 0 8px 20px rgb(11 39 68 / 0.08);
+  --sanad-shadow-lg: 0 16px 36px rgb(11 39 68 / 0.1);
+
+  --motion-fast: 150ms;
+  --motion-normal: 200ms;
+  --motion-slow: 300ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --interaction-hover: var(--sanad-navy-secondary);
+  --interaction-active: var(--sanad-navy);
+  --disabled-opacity: 0.55;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-error: var(--error);
+  --color-error-foreground: var(--error-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
+  --font-body: var(--font-sans);
+  --font-display: var(--font-heading);
+
+  --spacing-page: var(--sanad-page-gutter);
+  --spacing-section: var(--sanad-section-space);
+  --spacing-content-xs: var(--sanad-space-xs);
+  --spacing-content-sm: var(--sanad-space-sm);
+  --spacing-content-md: var(--sanad-space-md);
+  --spacing-content-lg: var(--sanad-space-lg);
+  --spacing-content-xl: var(--sanad-space-xl);
+  --spacing-content-2xl: var(--sanad-space-2xl);
+
+  --radius-sm: var(--sanad-radius-sm);
+  --radius-md: var(--sanad-radius-md);
+  --radius-lg: var(--sanad-radius-lg);
+  --radius-xl: var(--sanad-radius-xl);
+
+  --shadow-xs: var(--sanad-shadow-xs);
+  --shadow-sm: var(--sanad-shadow-sm);
+  --shadow-md: var(--sanad-shadow-md);
+  --shadow-lg: var(--sanad-shadow-lg);
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    min-width: 20rem;
+    background: var(--background);
+  }
+
+  body {
+    min-height: 100svh;
+    margin: 0;
+    overflow-x: clip;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  p {
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.18em;
+  }
+
+  ::selection {
+    background: var(--sanad-champagne);
+    color: var(--sanad-navy);
+  }
+
+  :where(
+    a,
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex='-1'])
+  ):focus-visible {
+    outline: 2px solid var(--sanad-white);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--ring);
+  }
+
+  :where(button, input, select, textarea):disabled,
+  [aria-disabled='true'] {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity);
+  }
+}
+
+.layout-container,
+.layout-container-wide {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--sanad-page-gutter);
+}
+
+.layout-container {
+  max-width: var(--sanad-content-max);
+}
+
+.layout-container-wide {
+  max-width: var(--sanad-content-max-wide);
+}
+
+.layout-section {
+  padding-block: var(--sanad-section-space);
+}
+
+.type-display,
+.type-h1,
+.type-h2,
+.type-h3 {
+  font-family: var(--font-heading);
+  font-weight: 400;
+}
+
+.type-display {
+  font-size: clamp(2.75rem, 7vw, 5.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+
+.type-h1 {
+  font-size: clamp(2.25rem, 5vw, 4.25rem);
+  line-height: 1.03;
+  letter-spacing: -0.035em;
+}
+
+.type-h2 {
+  font-size: clamp(1.875rem, 3.7vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+.type-h3 {
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.type-h4 {
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+.type-h5 {
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.type-body-large {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.type-body {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.type-body-small {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.type-caption {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.type-label {
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+}
+
+.prose-measure {
+  max-width: 65ch;
+}
+
+.sanad-accordion-content[data-state='open'] {
+  animation: sanad-accordion-open var(--motion-normal) var(--ease-standard);
+}
+
+.sanad-accordion-content[data-state='closed'] {
+  animation: sanad-accordion-close var(--motion-normal) var(--ease-standard);
+}
+
+.sanad-sheet-overlay[data-state='open'] {
+  animation: sanad-fade-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.sanad-sheet-overlay[data-state='closed'] {
+  animation: sanad-fade-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='right'][data-state='open'] {
+  animation: sanad-sheet-right-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='right'][data-state='closed'] {
+  animation: sanad-sheet-right-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='left'][data-state='open'] {
+  animation: sanad-sheet-left-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='left'][data-state='closed'] {
+  animation: sanad-sheet-left-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='top'][data-state='open'] {
+  animation: sanad-sheet-top-in var(--motion-normal) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='top'][data-state='closed'] {
+  animation: sanad-sheet-top-out var(--motion-fast) var(--ease-standard) both;
+}
+
+.sanad-sheet-panel[data-side='bottom'][data-state='open'] {
+  animation: sanad-sheet-bottom-in var(--motion-normal) var(--ease-standard)
+    both;
+}
+
+.sanad-sheet-panel[data-side='bottom'][data-state='closed'] {
+  animation: sanad-sheet-bottom-out var(--motion-fast) var(--ease-standard) both;
+}
+
+@keyframes sanad-accordion-open {
+  from {
+    height: 0;
+    opacity: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+}
+
+@keyframes sanad-accordion-close {
+  from {
+    height: var(--radix-accordion-content-height);
+    opacity: 1;
+  }
+
+  to {
+    height: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes sanad-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sanad-fade-out {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sanad-sheet-right-in {
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sanad-sheet-right-out {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes sanad-sheet-left-in {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sanad-sheet-left-out {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes sanad-sheet-top-in {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sanad-sheet-top-out {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes sanad-sheet-bottom-in {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes sanad-sheet-bottom-out {
+  from {
+    transform: translateY(0);
+  }
+
+  to {
+    transform: translateY(100%);
+  }
+}
+
+.sanad-hero-orbit {
+  animation: sanad-orbit 18s linear infinite;
+  will-change: transform;
+}
+
+.sanad-hero-orbit::after {
+  position: absolute;
+  top: 50%;
+  left: -0.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 0.35rem color-mix(in srgb, var(--accent) 14%, transparent);
+  content: '';
+}
+
+.sanad-hero-frame-line {
+  animation: sanad-line-draw 900ms var(--ease-standard) 520ms both;
+}
+
+.sanad-hero-frame-accent {
+  animation: sanad-line-draw 680ms var(--ease-standard) 980ms both;
+}
+
+.sanad-cta-glow {
+  animation: sanad-glow-drift 12s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+.sanad-detail-enter {
+  animation: sanad-detail-enter 620ms var(--ease-standard) both;
+}
+
+.sanad-detail-enter-delay-1 {
+  animation-delay: 100ms;
+}
+
+.sanad-detail-enter-delay-2 {
+  animation-delay: 200ms;
+}
+
+@keyframes sanad-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sanad-line-draw {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes sanad-glow-drift {
+  from {
+    transform: translate3d(-8%, -6%, 0) scale(0.94);
+  }
+
+  to {
+    transform: translate3d(8%, 5%, 0) scale(1.08);
+  }
+}
+
+@keyframes sanad-detail-enter {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 63.999rem) {
+  body:has(.package-detail-page) [data-whatsapp-floating] {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .sanad-accordion-content,
+  .sanad-cta-glow,
+  .sanad-detail-enter,
+  .sanad-hero-frame-accent,
+  .sanad-hero-frame-line,
+  .sanad-hero-orbit,
+  .sanad-sheet-overlay,
+  .sanad-sheet-panel {
+    animation: none !important;
+  }
+}

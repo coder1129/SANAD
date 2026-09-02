@@ -1,0 +1,10 @@
+services:
+  api:
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      SWAGGER_ENABLED: 'false'
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
