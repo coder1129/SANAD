@@ -41,6 +41,51 @@ SENTRY_DSN=
 SENTRY_ENVIRONMENT=production
 ```
 
+### إذا لم تنشر Vercel بعد
+
+يمكن تشغيل Railway أولًا. استخدم مؤقتًا رابط HTTPS صحيحًا كقيمة للمتغيرين:
+
+```bash
+FRONTEND_URL=https://placeholder.vercel.app
+CORS_ORIGINS=https://placeholder.vercel.app
+```
+
+بعد نشر Vercel واستلام الرابط الحقيقي، استبدل القيمتين به، ثم أعد نشر خدمة
+Railway. لا تستخدم `http://localhost` مع `NODE_ENV=production`.
+
+لتوليد الأسرار الثلاثة محليًا بدون حفظها في Git:
+
+```bash
+node -e "const crypto=require('node:crypto'); for(let i=0;i<3;i++) console.log(crypto.randomBytes(32).toString('hex'))"
+```
+
+ضع كل سطر في متغير مختلف: `JWT_ACCESS_SECRET` و`JWT_REFRESH_SECRET`
+و`PAYMENT_WEBHOOK_SECRET`.
+
+### إعداد Demo مؤقت للعميل
+
+إذا كان الهدف تجربة العميل فقط قبل تجهيز R2 والبريد والنشر النهائي، استخدم
+`NODE_ENV=development` مؤقتًا. أضف هذه المتغيرات في Railway:
+
+```bash
+NODE_ENV=development
+DATABASE_URL=postgresql://...
+JWT_ACCESS_SECRET=...
+JWT_REFRESH_SECRET=...
+PAYMENT_WEBHOOK_SECRET=...
+JWT_ACCESS_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+FRONTEND_URL=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000
+PAYMENT_PROVIDER=mock
+SWAGGER_ENABLED=false
+```
+
+هذا الوضع لا يحتاج R2 أو Resend، لكن ملفات الرفع المحلية قد تختفي عند إعادة
+تشغيل خدمة Railway. كما أن `PAYMENT_PROVIDER=mock` للتجربة فقط ولا ينفذ دفعًا
+حقيقيًا. بعد نشر الواجهة وتجهيز الخدمات، غيّر `NODE_ENV` إلى `production` وأكمل
+متغيرات الإنتاج الموجودة أعلاه.
+
 مهم:
 
 - لا تضبط `PORT` يدويًا على Railway، لأنه يمرره تلقائيًا.
@@ -60,6 +105,11 @@ SENTRY_ENVIRONMENT=production
 
 - أنشئ مشروع Vercel من مجلد `frontend`.
 - اترك الإطار كـ `Next.js`.
+
+إذا ظهر `404: NOT_FOUND` بعد النشر، راجع إعدادات المشروع في Vercel وتأكد أن
+`Root Directory` هو `frontend`، وأن `Framework Preset` هو `Next.js`. اترك
+`Output Directory` فارغًا، ولا تضف Build Command مخصصًا؛ Vercel سيستخدم
+`next build` تلقائيًا. الصفحة الرئيسية `/` موجودة داخل `frontend/app`.
 
 ### متغيرات البيئة
 
