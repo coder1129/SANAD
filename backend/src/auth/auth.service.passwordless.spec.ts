@@ -105,6 +105,33 @@ describe('AuthService - Passwordless Authentication', () => {
       );
     });
 
+    it('uses the configured development demo OTP without sending an email', async () => {
+      config.get.mockImplementation((key: string) => {
+        switch (key) {
+          case 'nodeEnv':
+            return 'development';
+          case 'demo.otpEmail':
+            return 'demo@sanad.test';
+          case 'demo.otpCode':
+            return '123456';
+          default:
+            return undefined;
+        }
+      });
+      prisma.email_otp_challenges.findFirst.mockResolvedValue(null);
+
+      await service.requestPasswordlessOtp({ email: 'demo@sanad.test' });
+
+      const createCall = prisma.email_otp_challenges.create.mock.calls[0][0];
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update('123456')
+        .digest('hex');
+      expect(createCall.data.otp_hash).toBe(expectedHash);
+      expect(emailService.sendOtpEmail).not.toHaveBeenCalled();
+      expect(prisma.email_queue.create).not.toHaveBeenCalled();
+    });
+
     it('enforces 60-second cooldown per email', async () => {
       const recentDate = new Date(Date.now() - 30 * 1000); // 30s ago
       prisma.email_otp_challenges.findFirst.mockResolvedValue({

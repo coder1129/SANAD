@@ -45,6 +45,10 @@ export default () => ({
         'noreply@sanad.ae',
     },
   },
+  demo: {
+    otpEmail: process.env.DEMO_OTP_EMAIL?.trim().toLowerCase(),
+    otpCode: process.env.DEMO_OTP_CODE?.trim(),
+  },
   payment: {
     provider: process.env.PAYMENT_PROVIDER || 'mock',
     secretKey: process.env.PAYMENT_SECRET_KEY,

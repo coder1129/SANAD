@@ -794,7 +794,8 @@ export class AuthService {
     });
 
     // 3. Generate cryptographically secure 6-digit OTP
-    const otp = crypto.randomInt(100000, 1000000).toString();
+    const demoOtp = this.getDemoOtp(email);
+    const otp = demoOtp ?? crypto.randomInt(100000, 1000000).toString();
     const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
@@ -811,7 +812,11 @@ export class AuthService {
 
     // 5. Send email (never log plaintext OTP in production)
     try {
-      if (this.emailService) {
+      if (demoOtp) {
+        this.logger.warn(
+          `Demo OTP mode is active for ${email}; email delivery skipped`,
+        );
+      } else if (this.emailService) {
         await this.emailService.sendOtpEmail(email, otp);
       } else {
         await this.prisma.email_queue.create({
@@ -835,6 +840,29 @@ export class AuthService {
       message: 'If the email is valid, a verification code has been sent',
       email: this.maskEmail(email),
     };
+  }
+
+  private getDemoOtp(email: string): string | null {
+    const nodeEnv =
+      this.configService.get<string>('nodeEnv') || process.env.NODE_ENV;
+    const demoEmail =
+      this.configService.get<string>('demo.otpEmail') ||
+      process.env.DEMO_OTP_EMAIL;
+    const demoCode =
+      this.configService.get<string>('demo.otpCode') ||
+      process.env.DEMO_OTP_CODE;
+
+    if (
+      nodeEnv !== 'development' ||
+      !demoEmail ||
+      !demoCode ||
+      email !== demoEmail.trim().toLowerCase() ||
+      !/^\d{6}$/.test(demoCode.trim())
+    ) {
+      return null;
+    }
+
+    return demoCode.trim();
   }
 
   /**

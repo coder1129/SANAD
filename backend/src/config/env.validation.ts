@@ -150,6 +150,17 @@ class EnvironmentVariables {
   SMTP_FROM_EMAIL?: string;
 
   @IsString()
+  @IsOptional()
+  DEMO_OTP_EMAIL?: string;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d{6}$/, {
+    message: 'DEMO_OTP_CODE must be exactly 6 digits',
+  })
+  DEMO_OTP_CODE?: string;
+
+  @IsString()
   @IsIn(['mock', 'bypass'])
   PAYMENT_PROVIDER: string = 'mock';
 
