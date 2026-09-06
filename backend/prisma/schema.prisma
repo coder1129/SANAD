@@ -12,7 +12,10 @@ model users {
   name                     String                  @db.VarChar(255)
   email                    String                  @unique @db.VarChar(255)
   phone                    String?                 @db.VarChar(20)
-  password_hash            String                  @db.VarChar(255)
+  password_hash            String?                 @db.VarChar(255)
+  first_name               String?                 @db.VarChar(100)
+  last_name                String?                 @db.VarChar(100)
+  gender                   String?                 @db.VarChar(20)
   role                     String                  @default("customer") @db.VarChar(20)
   email_verified           Boolean?                @default(false)
   email_verification_token String?                 @db.VarChar(255)
@@ -31,6 +34,7 @@ model users {
   notifications            notifications[]
   order_files              order_files[]
   orders                   orders[]
+  package_reviews          package_reviews[]
   password_reset_tokens    password_reset_tokens[]
   user_sessions            user_sessions[]
 
@@ -58,6 +62,8 @@ model packages {
   offers         offers[]
   orders         orders[]
   package_images package_images[]
+  testimonials   testimonials[]
+  package_reviews package_reviews[]
 }
 
 model offers {
@@ -165,6 +171,7 @@ model orders {
   package              packages?              @relation(fields: [package_id], references: [id], onUpdate: NoAction)
   user                 users?                 @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   payments             payments[]
+  package_review        package_reviews?
 
   @@index([order_number], map: "idx_orders_order_number")
   @@index([user_id], map: "idx_orders_user_id")
@@ -273,6 +280,7 @@ model settings {
 
 model testimonials {
   id             Int       @id @default(autoincrement())
+  package_id     Int?
   customer_name  String    @db.VarChar(255)
   customer_title String?   @db.VarChar(255)
   customer_image String?   @db.VarChar(500)
@@ -283,8 +291,30 @@ model testimonials {
   display_order  Int?      @default(0)
   created_at     DateTime? @default(now()) @db.Timestamp(6)
   updated_at     DateTime? @default(now()) @db.Timestamp(6)
+  package        packages? @relation(fields: [package_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
 
+  @@index([package_id], map: "idx_testimonials_package_id")
   @@index([is_published], map: "idx_testimonials_is_published")
+}
+
+model package_reviews {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  package_id Int
+  order_id   Int       @unique
+  rating     Int
+  comment    String
+  status     String    @default("pending") @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+  user       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  package    packages  @relation(fields: [package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  order      orders    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_package_reviews_user_id")
+  @@index([package_id], map: "idx_package_reviews_package_id")
+  @@index([status], map: "idx_package_reviews_status")
+  @@index([created_at], map: "idx_package_reviews_created_at")
 }
 
 model admin_activity_log {
@@ -412,4 +442,18 @@ model email_verification_tokens {
 
   @@index([token_hash], map: "idx_email_verification_token")
   @@index([user_id], map: "idx_email_verification_user_id")
+}
+
+model email_otp_challenges {
+  id            Int       @id @default(autoincrement())
+  email         String    @db.VarChar(255)
+  otp_hash      String    @db.VarChar(255)
+  expires_at    DateTime  @db.Timestamp(6)
+  attempt_count Int       @default(0)
+  consumed_at   DateTime? @db.Timestamp(6)
+  last_sent_at  DateTime  @default(now()) @db.Timestamp(6)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([email], map: "idx_email_otp_challenges_email")
+  @@index([expires_at], map: "idx_email_otp_challenges_expires_at")
 }

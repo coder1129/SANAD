@@ -41,8 +41,8 @@
   --info: #1d4e89;
   --info-foreground: var(--sanad-white);
 
-  --font-sans: var(--font-inter), Arial, sans-serif;
-  --font-heading: var(--font-dm-serif-display), Georgia, serif;
+  --font-sans: var(--font-merriweather), Georgia, serif;
+  --font-heading: var(--font-merriweather), Georgia, serif;
 
   --sanad-space-xs: 0.5rem;
   --sanad-space-sm: 0.75rem;

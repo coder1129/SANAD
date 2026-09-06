@@ -2,7 +2,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock3,
-  MessageCircle,
   RefreshCcw,
   ShieldCheck,
   Tag,
@@ -20,8 +19,7 @@ import {
 import type { CareerPackage, CheckoutPricing } from '@/types/domain';
 
 interface PackageOrderCardProps {
-  askHref: string;
-  orderHref: string;
+  checkoutHref: string;
   packageItem: CareerPackage;
   pricing: CheckoutPricing | null;
 }
@@ -36,8 +34,7 @@ function formatMoney(value: number, currency: string): string {
 }
 
 export function PackageOrderCard({
-  askHref,
-  orderHref,
+  checkoutHref,
   packageItem,
   pricing,
 }: PackageOrderCardProps) {
@@ -49,7 +46,7 @@ export function PackageOrderCard({
   return (
     <aside
       aria-label="Order summary"
-      className="overflow-hidden rounded-xl border border-border bg-surface shadow-md"
+      className="overflow-hidden rounded-xl border border-border bg-surface text-foreground shadow-md"
     >
       <div className="border-b border-border bg-surface-muted px-6 py-5">
         <div className="flex items-center justify-between gap-4">
@@ -74,7 +71,7 @@ export function PackageOrderCard({
               </Badge>
             ) : null}
             <p className="text-xs font-semibold tracking-[0.12em] text-muted-foreground uppercase">
-              Total including VAT
+              Total
             </p>
             <p className="mt-2 font-display text-4xl leading-none text-primary">
               {formatMoney(pricing.finalAmount, pricing.currency)}
@@ -105,14 +102,6 @@ export function PackageOrderCard({
                   )}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt className="text-muted-foreground">
-                  VAT ({pricing.vatPercentage}%)
-                </dt>
-                <dd className="font-semibold text-foreground">
-                  {formatMoney(pricing.vatAmount, pricing.currency)}
-                </dd>
-              </div>
             </dl>
           </>
         ) : (
@@ -131,7 +120,7 @@ export function PackageOrderCard({
               Delivery
             </dt>
             <dd className="mt-2 text-sm font-semibold text-primary">
-              {packageItem.deliveryDays} days
+              {packageItem.deliveryDays} days estimated
             </dd>
           </div>
           <div>
@@ -146,8 +135,8 @@ export function PackageOrderCard({
         </dl>
 
         <Button asChild className="group mt-6 w-full" size="lg">
-          <Link href={orderHref} rel="noreferrer noopener" target="_blank">
-            Start Your Order
+          <Link href={checkoutHref}>
+            Continue to checkout
             <ArrowRight
               aria-hidden="true"
               className="size-4 transition-transform duration-200 motion-safe:group-hover:translate-x-0.5 motion-reduce:transition-none"
@@ -155,10 +144,7 @@ export function PackageOrderCard({
           </Link>
         </Button>
         <Button asChild className="mt-3 w-full" size="lg" variant="outline">
-          <Link href={askHref} rel="noreferrer noopener" target="_blank">
-            <MessageCircle aria-hidden="true" className="size-4" />
-            Ask a Question First
-          </Link>
+          <Link href="#included-heading">Review the service scope</Link>
         </Button>
 
         <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
@@ -166,8 +152,8 @@ export function PackageOrderCard({
             aria-hidden="true"
             className="mt-0.5 size-4 shrink-0 text-success"
           />
-          Order details and payment steps are confirmed with SANAD before work
-          begins.
+          Review your order before confirming. After confirmation, continue on
+          WhatsApp to share your requirements with SANAD.
         </p>
       </div>
     </aside>

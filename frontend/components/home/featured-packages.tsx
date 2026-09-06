@@ -21,38 +21,38 @@ const featuredPackages = [
     category: 'CV Service',
     title: 'Professional CV',
     description:
-      'A focused CV that presents your experience, strengths, and career direction with clarity.',
-    bestFor: 'Building or refining your core application document.',
+      'A professionally written CV that presents your experience, skills, and career goals in a clear and compelling way.',
+    bestFor: 'Anyone looking to land interviews with a strong, well-structured CV.',
     benefits: [
-      'ATS-conscious content structure',
-      'Achievement-led experience sections',
-      'Clear, recruiter-friendly formatting',
+      'Clear, professional structure from start to finish',
+      'Highlights your achievements and key strengths',
+      'Tailored to your target role and industry',
     ],
     icon: FileCheck2,
   },
   {
-    category: 'Profile Service',
-    title: 'LinkedIn Optimization',
+    category: 'LinkedIn Optimization',
+    title: 'LinkedIn Profile',
     description:
-      'A refined profile that brings your headline, summary, and experience into one consistent professional story.',
-    bestFor: 'Strengthening your professional presence beyond the CV.',
+      'Your LinkedIn profile updated and aligned with your new CV — so your online presence tells the same strong story.',
+    bestFor: 'Professionals who want their LinkedIn to match and reinforce their CV.',
     benefits: [
-      'Focused headline and About section',
-      'Consistent experience positioning',
-      'Practical profile improvement guidance',
+      'Headline and summary written to match your CV',
+      'Experience section aligned with your CV content',
+      'Profile positioned to attract the right opportunities',
     ],
     icon: UserRoundCheck,
   },
   {
-    category: 'Application Support',
-    title: 'Career Documents',
+    category: 'LinkedIn Jobs',
+    title: 'LinkedIn Job Applications',
     description:
-      'Supporting application materials shaped to carry one clear professional message.',
-    bestFor: 'Keeping supporting application materials consistent.',
+      'We apply to relevant job opportunities on LinkedIn on your behalf — saving you time and keeping your search active.',
+    bestFor: 'Professionals who want consistent job applications without the daily effort.',
     benefits: [
-      'Cover letter development',
-      'Consistent voice across documents',
-      'Polished, role-relevant presentation',
+      'Targeted job search based on your role and preferences',
+      'Applications sent on your behalf through LinkedIn',
+      'Regular updates on applications submitted',
     ],
     icon: LayoutTemplate,
   },
@@ -77,7 +77,7 @@ export function FeaturedPackages() {
             <MotionHeading
               className="type-h2 mt-5 max-w-[17ch]"
               id="featured-packages-heading"
-              text="Career Services Built Around Your Next Move"
+              text="Your CV. Your LinkedIn. Your Next Job."
             />
           </div>
 
@@ -87,8 +87,9 @@ export function FeaturedPackages() {
             direction="right"
           >
             <p className="max-w-[34rem] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
-              Choose focused support for the documents and profiles that
-              represent you throughout the hiring process.
+              We write your CV, optimise your LinkedIn to match it, then apply
+              to jobs on your behalf — so you can focus on preparing for
+              interviews.
             </p>
           </MotionReveal>
         </div>
@@ -108,7 +109,7 @@ export function FeaturedPackages() {
                 hoverLift
                 key={title}
               >
-                <Card className="group relative flex h-full flex-col overflow-hidden border-t-2 border-t-accent shadow-xs transition-shadow duration-300 hover:shadow-md focus-within:shadow-md motion-reduce:transition-none">
+                <Card className="group relative flex h-full flex-col overflow-hidden border-t-2 border-t-accent shadow-xs transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-md focus-within:shadow-md motion-reduce:transform-none motion-reduce:transition-none">
                   <span
                     aria-hidden="true"
                     className="absolute inset-x-0 top-0 z-10 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-500 ease-[var(--ease-standard)] motion-safe:group-hover:scale-x-100 motion-safe:group-focus-within:scale-x-100 motion-reduce:transition-none"

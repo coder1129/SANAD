@@ -1,9 +1,9 @@
 'use client';
 
 import { ArrowRight, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
-import Link from 'next/link';
 import { useState } from 'react';
 
+import { AuthModalTrigger } from '@/components/auth/auth-modal-trigger';
 import { Button } from '@/components/ui/button';
 
 const STEPS = [
@@ -193,12 +193,10 @@ export function AtsQuizWidget() {
               </p>
 
               <div className="mt-6 flex flex-col gap-3 justify-center sm:flex-row">
-                <Button asChild className="h-11 px-6 shadow-sm" size="lg">
-                  <Link href="/login?service=professional-cv">
-                    Upgrade to a 98% ATS-Optimized CV
-                    <ArrowRight className="size-4 ml-1" />
-                  </Link>
-                </Button>
+                <AuthModalTrigger className="h-11 px-6 shadow-sm" size="lg">
+                  Upgrade to a 98% ATS-Optimized CV
+                  <ArrowRight className="size-4 ml-1" />
+                </AuthModalTrigger>
                 <Button
                   className="h-11"
                   onClick={handleReset}

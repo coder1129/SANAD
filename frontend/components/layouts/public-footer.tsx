@@ -18,8 +18,8 @@ export function PublicFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-primary text-primary-foreground">
-      <div className="layout-container py-12 sm:py-14">
+    <footer className="border-t border-primary-foreground/10 bg-primary text-primary-foreground">
+      <div className="layout-container py-14 sm:py-16">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-[minmax(0,1.35fr)_repeat(3,minmax(0,1fr))] lg:gap-8">
           <MotionReveal
             className="grid content-start gap-5"
@@ -34,7 +34,7 @@ export function PublicFooter() {
             >
               <BrandLogo size="md" />
             </Link>
-            <p className="max-w-sm text-sm leading-6 text-primary-foreground/75">
+            <p className="max-w-sm text-sm leading-7 text-primary-foreground/75">
               Professional career services designed to help you stand out.
             </p>
             <PublicSocialLinks className="pt-1" />

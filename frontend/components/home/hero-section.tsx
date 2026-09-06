@@ -124,7 +124,7 @@ export function HeroSection() {
 
 function HeroCareerVisual() {
   return (
-    <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-border bg-surface shadow-lg sm:aspect-[5/6] lg:h-[37rem] lg:aspect-auto">
+    <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-border bg-surface shadow-lg sm:aspect-[5/6] lg:h-[37rem] lg:aspect-auto">
       <Image
         alt="Premium CV, cover letter, and professional profile documents arranged in a contemporary UAE office"
         className="object-cover"

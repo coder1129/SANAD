@@ -17,7 +17,7 @@ const pdfFile = (overrides: Record<string, unknown> = {}) =>
     originalname: 'My CV (final).pdf',
     mimetype: 'application/pdf',
     size: 4096,
-    buffer: Buffer.from([...PDF_SIGNATURE, 0x2d, 0x31],),
+    buffer: Buffer.from([...PDF_SIGNATURE, 0x2d, 0x31]),
     ...overrides,
   }) as never;
 
@@ -211,9 +211,9 @@ describe('FilesService', () => {
         uploaded_by: 7,
       });
 
-      await expect(
-        service.deleteCustomerFile(1, 3, 7),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.deleteCustomerFile(1, 3, 7)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
 
     it('refuses to delete an admin deliverable', async () => {
@@ -224,9 +224,9 @@ describe('FilesService', () => {
         uploaded_by: 42,
       });
 
-      await expect(
-        service.deleteCustomerFile(1, 3, 7),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(service.deleteCustomerFile(1, 3, 7)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
       expect(storage.delete).not.toHaveBeenCalled();
     });
 

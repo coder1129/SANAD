@@ -1,10 +1,21 @@
-import Link from 'next/link';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import { ExternalLink, Mail } from 'lucide-react';
 import type { SVGProps } from 'react';
 
-import {
-  PUBLIC_SOCIAL_LINKS,
-  type SocialPlatformKey,
-} from '@/constants/public-navigation';
+import { settingsApi, settingsKeys } from '@/lib/api';
+import { whatsappHref } from '@/lib/orders/presentation';
+
+type SocialPlatformKey =
+  'instagram' | 'whatsapp' | 'email' | 'facebook' | 'twitter' | 'linkedin';
+
+interface PublicSocialLink {
+  platform: SocialPlatformKey;
+  href: string;
+  label: string;
+  ariaLabel: string;
+}
 
 function InstagramIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -40,39 +51,6 @@ function WhatsAppIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-function TikTokIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      fill="currentColor"
-      height="24"
-      viewBox="0 0 24 24"
-      width="24"
-      {...props}
-    >
-      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-1-.05A6.33 6.33 0 003 15.68 6.34 6.34 0 009.34 22a6.34 6.34 0 006.33-6.32V8.92a8.3 8.3 0 005.08 1.77V7.24a4.8 4.8 0 01-1.16-.55z" />
-    </svg>
-  );
-}
-
-function EmailIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      fill="none"
-      height="24"
-      stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      viewBox="0 0 24 24"
-      width="24"
-      {...props}
-    >
-      <rect height="16" rx="2" width="20" x="2" y="4" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </svg>
-  );
-}
-
 function FacebookIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -93,28 +71,101 @@ const PLATFORM_ICONS: Record<
 > = {
   instagram: InstagramIcon,
   whatsapp: WhatsAppIcon,
-  tiktok: TikTokIcon,
-  email: EmailIcon,
+  email: Mail,
   facebook: FacebookIcon,
+  twitter: ExternalLink,
+  linkedin: ExternalLink,
 };
+
+function configuredLinks(
+  settings: Record<string, string | null> | undefined,
+): PublicSocialLink[] {
+  if (!settings) return [];
+
+  const links: PublicSocialLink[] = [];
+  const add = (
+    platform: SocialPlatformKey,
+    href: string | null | undefined,
+    label: string,
+    ariaLabel: string,
+  ) => {
+    if (href?.trim())
+      links.push({ platform, href: href.trim(), label, ariaLabel });
+  };
+  const externalUrl = (value: string | null | undefined) => {
+    if (!value?.trim()) return null;
+    try {
+      const url = new URL(value.trim());
+      return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
+    } catch {
+      return null;
+    }
+  };
+
+  add(
+    'instagram',
+    externalUrl(settings.instagram_url),
+    'Instagram',
+    'Follow us on Instagram',
+  );
+  add(
+    'whatsapp',
+    whatsappHref(
+      settings.whatsapp_number,
+      'Hello, I would like to ask about SANAD career services.',
+    ),
+    'WhatsApp',
+    'Contact us on WhatsApp',
+  );
+  add(
+    'email',
+    settings.support_email ? `mailto:${settings.support_email.trim()}` : null,
+    'Email',
+    'Send us an email',
+  );
+  add(
+    'facebook',
+    externalUrl(settings.facebook_url),
+    'Facebook',
+    'Follow us on Facebook',
+  );
+  add('twitter', externalUrl(settings.twitter_url), 'X', 'Follow us on X');
+  add(
+    'linkedin',
+    externalUrl(settings.linkedin_url),
+    'LinkedIn',
+    'Follow us on LinkedIn',
+  );
+
+  return links;
+}
 
 interface PublicSocialLinksProps {
   className?: string;
 }
 
 export function PublicSocialLinks({ className = '' }: PublicSocialLinksProps) {
+  const settings = useQuery({
+    queryKey: settingsKeys.public,
+    queryFn: ({ signal }) => settingsApi.getPublic({ signal }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const links = configuredLinks(settings.data);
+
+  if (links.length === 0) return null;
+
   return (
     <div
       aria-label="Social media and contact channels"
       className={`flex flex-wrap items-center gap-2.5 ${className}`}
       role="list"
     >
-      {PUBLIC_SOCIAL_LINKS.map((item) => {
+      {links.map((item) => {
         const IconComponent = PLATFORM_ICONS[item.platform];
         const isEmail = item.href.startsWith('mailto:');
 
         return (
-          <Link
+          <a
             aria-label={item.ariaLabel}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground/80 shadow-xs transition-all duration-200 hover:scale-110 hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:scale-95"
             href={item.href}
@@ -122,9 +173,10 @@ export function PublicSocialLinks({ className = '' }: PublicSocialLinksProps) {
             rel={isEmail ? undefined : 'noreferrer noopener'}
             role="listitem"
             target={isEmail ? undefined : '_blank'}
+            title={item.label}
           >
             {IconComponent && <IconComponent className="h-4 w-4 shrink-0" />}
-          </Link>
+          </a>
         );
       })}
     </div>

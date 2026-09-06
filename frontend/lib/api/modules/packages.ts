@@ -37,6 +37,9 @@ const packagePayloadSchema = z.object({
   delivery_days: z.number().int().positive(),
   max_revisions: z.number().int().nonnegative().nullish(),
   sort_order: z.number().int().nullish(),
+  buyer_count: z.number().int().nonnegative().nullish(),
+  rating_average: decimalSchema.pipe(z.number().max(5)).nullish(),
+  rating_count: z.number().int().nonnegative().nullish(),
   package_images: z.array(packageImagePayloadSchema).nullish(),
   offers: z.array(packageOfferPayloadSchema).nullish(),
 });
@@ -101,6 +104,9 @@ function toCareerPackage(payload: PackagePayload): CareerPackage {
     sortOrder: payload.sort_order ?? 0,
     images: (payload.package_images ?? []).map(toPackageImage),
     offers: (payload.offers ?? []).map(toPackageOffer),
+    buyerCount: payload.buyer_count ?? 0,
+    ratingAverage: payload.rating_average ?? null,
+    ratingCount: payload.rating_count ?? 0,
   };
 }
 

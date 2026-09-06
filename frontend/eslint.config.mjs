@@ -11,6 +11,9 @@ const eslintConfig = defineConfig([
     '.next/**',
     'out/**',
     'build/**',
+    'coverage/**',
+    'playwright-report/**',
+    'test-results/**',
     'next-env.d.ts',
   ]),
   // HTTP transport stays behind lib/api. Everything else consumes domain API

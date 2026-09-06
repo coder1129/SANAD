@@ -11,7 +11,6 @@ const PUBLIC_SETTING_KEYS = [
   'support_phone',
   'whatsapp_number',
   'currency',
-  'vat_percentage',
   'facebook_url',
   'twitter_url',
   'linkedin_url',
@@ -21,6 +20,13 @@ const PUBLIC_SETTING_KEYS = [
   'hero_subtitle_ar',
   'hero_subtitle_en',
 ];
+
+const SOCIAL_URL_SETTING_KEYS = new Set([
+  'facebook_url',
+  'twitter_url',
+  'linkedin_url',
+  'instagram_url',
+]);
 
 @Injectable()
 export class SettingsService {
@@ -41,7 +47,6 @@ export class SettingsService {
 
     // Default fallbacks if empty
     if (!result.currency) result.currency = 'AED';
-    if (!result.vat_percentage) result.vat_percentage = '5';
     if (!result.site_name)
       result.site_name = 'سند | المنصة الأولى للخدمات المهنية';
 
@@ -106,18 +111,39 @@ export class SettingsService {
     if (String(value).length > 10_000) {
       throw new BadRequestException(`Setting value is too long: ${key}`);
     }
-    if (key === 'vat_percentage') {
-      const vat = Number(value);
-      if (!Number.isFinite(vat) || vat < 0 || vat > 100) {
-        throw new BadRequestException(
-          'VAT percentage must be between 0 and 100',
-        );
-      }
-    }
     if (key === 'currency' && !/^[A-Z]{3}$/.test(String(value))) {
       throw new BadRequestException(
         'Currency must be a 3-letter uppercase code',
       );
+    }
+    if (key === 'whatsapp_number' && String(value).trim()) {
+      const raw = String(value).trim();
+      const digits = raw.replace(/\D/g, '');
+      if (
+        !/^\+?[0-9 ()-]+$/.test(raw) ||
+        digits.length < 8 ||
+        digits.length > 15
+      ) {
+        throw new BadRequestException(
+          'WhatsApp number must be a valid international phone number',
+        );
+      }
+    }
+    if (key === 'support_email' && String(value).trim()) {
+      const email = String(value).trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new BadRequestException('Support email must be valid');
+      }
+    }
+    if (SOCIAL_URL_SETTING_KEYS.has(key) && String(value).trim()) {
+      try {
+        const url = new URL(String(value).trim());
+        if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+      } catch {
+        throw new BadRequestException(
+          `${key} must be a complete http or https URL`,
+        );
+      }
     }
   }
 }

@@ -5,6 +5,8 @@ import {
   MaxLength,
   IsOptional,
   Matches,
+  IsIn,
+  Length,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -50,10 +52,14 @@ export class LoginDto {
 }
 
 export class RefreshTokenDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    description:
+      'Legacy fallback. Browser clients use the HttpOnly refresh-token cookie.',
+  })
+  @IsOptional()
   @IsString()
   @MaxLength(2048)
-  refreshToken!: string;
+  refreshToken?: string;
 }
 
 export class LogoutDto {
@@ -117,4 +123,51 @@ export class ResendVerificationDto {
   @IsEmail()
   @MaxLength(255)
   email!: string;
+}
+
+export class PasswordlessRequestDto {
+  @ApiProperty({ example: 'customer@example.com' })
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+}
+
+export class PasswordlessVerifyDto {
+  @ApiProperty({ example: 'customer@example.com' })
+  @IsEmail()
+  @MaxLength(255)
+  email!: string;
+
+  @ApiProperty({ example: '123456' })
+  @IsString()
+  @Length(6, 6)
+  otp!: string;
+}
+
+export class PasswordlessCompleteProfileDto {
+  @ApiProperty()
+  @IsString()
+  registrationToken!: string;
+
+  @ApiProperty({ example: 'Ahmed' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  firstName!: string;
+
+  @ApiProperty({ example: 'Ali' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(100)
+  lastName!: string;
+
+  @ApiProperty({ example: '+971501234567' })
+  @IsString()
+  @MinLength(5)
+  @MaxLength(20)
+  phone!: string;
+
+  @ApiProperty({ example: 'male', enum: ['male', 'female'] })
+  @IsIn(['male', 'female'])
+  gender!: 'male' | 'female';
 }

@@ -25,6 +25,7 @@ import { SettingsModule } from './settings/settings.module';
 import { MediaModule } from './media/media.module';
 import { AdminModule } from './admin/admin.module';
 import { HealthModule } from './health/health.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { LoggerModule } from './common/logger';
 import { CorrelationIdMiddleware } from './common/context';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
@@ -51,6 +52,7 @@ import { RateLimitGuard, RolesGuard } from './common/guards';
     NotificationsModule,
     EmailModule,
     TestimonialsModule,
+    ReviewsModule,
     PagesModule,
     SettingsModule,
     MediaModule,

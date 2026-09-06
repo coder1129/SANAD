@@ -151,7 +151,9 @@ describe('MediaService', () => {
         service.uploadSiteMedia(pngFile(), { media_key: 'logo' } as never, 1),
       ).rejects.toThrow('constraint violation');
 
-      expect(storage.delete).toHaveBeenCalledWith(storage.upload.mock.calls[0][0]);
+      expect(storage.delete).toHaveBeenCalledWith(
+        storage.upload.mock.calls[0][0],
+      );
     });
 
     it('deletes the replaced object once the new row is committed', async () => {
@@ -166,7 +168,11 @@ describe('MediaService', () => {
         media_path: 'media/site/logo_new.png',
       });
 
-      await service.uploadSiteMedia(pngFile(), { media_key: 'logo' } as never, 1);
+      await service.uploadSiteMedia(
+        pngFile(),
+        { media_key: 'logo' } as never,
+        1,
+      );
 
       expect(storage.delete).toHaveBeenCalledWith('media/site/logo_old.png');
     });
@@ -181,7 +187,11 @@ describe('MediaService', () => {
         media_path: 'media/site/logo.png',
       });
 
-      await service.uploadSiteMedia(pngFile(), { media_key: 'logo' } as never, 1);
+      await service.uploadSiteMedia(
+        pngFile(),
+        { media_key: 'logo' } as never,
+        1,
+      );
 
       expect(storage.delete).not.toHaveBeenCalled();
     });
@@ -189,7 +199,11 @@ describe('MediaService', () => {
     it('records the action in the admin activity log', async () => {
       tx.site_media.upsert.mockResolvedValue({ id: 1, media_path: 'k.png' });
 
-      await service.uploadSiteMedia(pngFile(), { media_key: 'logo' } as never, 42);
+      await service.uploadSiteMedia(
+        pngFile(),
+        { media_key: 'logo' } as never,
+        42,
+      );
 
       expect(tx.admin_activity_log.create.mock.calls[0][0].data).toEqual(
         expect.objectContaining({ admin_id: 42, action: 'upload_site_media' }),
@@ -234,7 +248,10 @@ describe('MediaService', () => {
     it('makes the first image primary and starts ordering at one', async () => {
       prisma.packages.findUnique.mockResolvedValue({ id: 3, name_ar: 'باقة' });
       tx.package_images.findFirst.mockResolvedValue(null);
-      tx.package_images.create.mockResolvedValue({ id: 8, image_path: 'k.png' });
+      tx.package_images.create.mockResolvedValue({
+        id: 8,
+        image_path: 'k.png',
+      });
 
       await service.uploadPackageImage(3, pngFile(), {} as never, 1);
 
@@ -251,7 +268,10 @@ describe('MediaService', () => {
     it('demotes existing primaries when a new primary is uploaded', async () => {
       prisma.packages.findUnique.mockResolvedValue({ id: 3, name_ar: 'باقة' });
       tx.package_images.findFirst.mockResolvedValue({ display_order: 4 });
-      tx.package_images.create.mockResolvedValue({ id: 9, image_path: 'k.png' });
+      tx.package_images.create.mockResolvedValue({
+        id: 9,
+        image_path: 'k.png',
+      });
 
       await service.uploadPackageImage(
         3,
@@ -272,7 +292,10 @@ describe('MediaService', () => {
     it('does not make a later image primary by default', async () => {
       prisma.packages.findUnique.mockResolvedValue({ id: 3, name_ar: 'باقة' });
       tx.package_images.findFirst.mockResolvedValue({ display_order: 2 });
-      tx.package_images.create.mockResolvedValue({ id: 9, image_path: 'k.png' });
+      tx.package_images.create.mockResolvedValue({
+        id: 9,
+        image_path: 'k.png',
+      });
 
       await service.uploadPackageImage(3, pngFile(), {} as never, 1);
 
@@ -302,9 +325,9 @@ describe('MediaService', () => {
         image_path: 'k.png',
       });
 
-      await expect(
-        service.deletePackageImage(3, 8, 1),
-      ).rejects.toBeInstanceOf(NotFoundException);
+      await expect(service.deletePackageImage(3, 8, 1)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(storage.delete).not.toHaveBeenCalled();
     });

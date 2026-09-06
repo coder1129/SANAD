@@ -40,7 +40,14 @@ describe('PackagesService', () => {
       expect(prisma.packages.findMany.mock.calls[0][0].where).toEqual({
         is_active: true,
       });
-      expect(result.data.items).toEqual([{ id: 1 }]);
+      expect(result.data.items).toEqual([
+        {
+          id: 1,
+          buyer_count: 0,
+          rating_average: null,
+          rating_count: 0,
+        },
+      ]);
       expect(result.data.meta).toEqual({
         page: 1,
         limit: 20,
@@ -70,6 +77,40 @@ describe('PackagesService', () => {
       expect(offerWhere.end_date.gte).toBeInstanceOf(Date);
     });
 
+    it('returns real purchase and published rating summaries', async () => {
+      prisma.packages.findMany.mockResolvedValue([
+        {
+          id: 1,
+          _count: { orders: 3 },
+          package_reviews: [{ rating: 5 }, { rating: 4 }],
+        },
+      ]);
+      prisma.packages.count.mockResolvedValue(1);
+
+      const result = await service.findAllPublic(query());
+      const include = prisma.packages.findMany.mock.calls[0][0].include;
+
+      expect(include._count.select.orders.where.status.in).toEqual([
+        'paid',
+        'awaiting_information',
+        'received',
+        'in_progress',
+        'under_review',
+        'ready',
+        'completed',
+      ]);
+      expect(include.package_reviews).toEqual({
+        where: { status: 'published' },
+        select: { rating: true },
+      });
+      expect(result.data.items[0]).toEqual({
+        id: 1,
+        buyer_count: 3,
+        rating_average: 4.5,
+        rating_count: 2,
+      });
+    });
+
     it('adds a usable URL for package images stored by the admin', async () => {
       prisma.packages.findMany.mockResolvedValue([
         {
@@ -81,8 +122,10 @@ describe('PackagesService', () => {
 
       const result = await service.findAllPublic(query());
 
-      expect(result.data.items[0].package_images[0].image_url).toBe(
-        'signed:packages/1/image.png',
+      expect(result.data.items[0].package_images[0]).toEqual(
+        expect.objectContaining({
+          image_url: 'signed:packages/1/image.png',
+        }),
       );
     });
   });

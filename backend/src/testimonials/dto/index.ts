@@ -10,6 +10,15 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateTestimonialDto {
+  @ApiPropertyOptional({
+    description: 'Service/package this feedback belongs to',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  package_id?: number;
+
   @ApiProperty({ example: 'أحمد المنصوري' })
   @IsString()
   customer_name!: string;
@@ -59,6 +68,15 @@ export class CreateTestimonialDto {
 }
 
 export class UpdateTestimonialDto {
+  @ApiPropertyOptional({
+    description: 'Service/package this feedback belongs to',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  package_id?: number;
+
   @ApiPropertyOptional() @IsOptional() @IsString() customer_name?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customer_title?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customer_image?: string;

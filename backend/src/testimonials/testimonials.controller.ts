@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -24,8 +25,20 @@ export class TestimonialsController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'Get all published client testimonials' })
-  async findAllPublished() {
-    return this.testimonialsService.findAllPublished();
+  async findAllPublished(@Query('package_id') packageId?: string) {
+    if (packageId === undefined || packageId.trim() === '') {
+      return this.testimonialsService.findAllPublished();
+    }
+
+    const parsedPackageId = Number(packageId);
+    if (!Number.isSafeInteger(parsedPackageId) || parsedPackageId <= 0) {
+      throw new BadRequestException({
+        message: 'package_id must be a positive integer',
+        code: 'INVALID_PACKAGE_ID',
+      });
+    }
+
+    return this.testimonialsService.findAllPublished(parsedPackageId);
   }
 }
 

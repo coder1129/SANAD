@@ -25,6 +25,9 @@ export interface User {
   phone: string | null;
   role: UserRole;
   emailVerified: boolean;
+  firstName?: string | null;
+  lastName?: string | null;
+  gender?: string | null;
   lastLoginAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;

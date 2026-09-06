@@ -10,6 +10,9 @@ import type {
   RegisterResponse,
   ResetPasswordInput,
   User,
+  PasswordlessRequestResult,
+  PasswordlessVerifyResult,
+  PasswordlessCompleteProfileInput,
 } from '@/types/domain';
 import { USER_ROLES } from '@/types/domain';
 
@@ -30,6 +33,9 @@ const userPayloadSchema = z.object({
   // must fail closed, while the backend guard stays the real authority.
   role: z.enum(USER_ROLES).catch('customer'),
   email_verified: z.boolean().nullish(),
+  first_name: z.string().nullish(),
+  last_name: z.string().nullish(),
+  gender: z.string().nullish(),
   last_login: z.string().nullish(),
   created_at: z.string().nullish(),
   updated_at: z.string().nullish(),
@@ -37,13 +43,11 @@ const userPayloadSchema = z.object({
 
 const tokenPairSchema = z.object({
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
 });
 
 const loginPayloadSchema = z.object({
   user: userPayloadSchema,
   accessToken: z.string().min(1),
-  refreshToken: z.string().min(1),
 });
 
 /**
@@ -53,12 +57,34 @@ const loginPayloadSchema = z.object({
 const registerPayloadSchema = z.object({
   user: userPayloadSchema,
   accessToken: z.string().min(1).optional(),
-  refreshToken: z.string().min(1).optional(),
   verificationRequired: z.boolean().optional(),
   message: z.string().nullish(),
 });
 
 const messagePayloadSchema = z.object({ message: z.string().nullish() });
+
+const passwordlessRequestSchema = z.object({
+  message: z.string(),
+  email: z.string(),
+});
+
+const passwordlessVerifySchema = z.discriminatedUnion('status', [
+  z.object({
+    status: z.literal('authenticated'),
+    user: userPayloadSchema,
+    accessToken: z.string().min(1),
+  }),
+  z.object({
+    status: z.literal('profile_required'),
+    registrationToken: z.string().min(1),
+  }),
+]);
+
+const passwordlessCompleteProfileSchema = z.object({
+  status: z.literal('authenticated'),
+  user: userPayloadSchema,
+  accessToken: z.string().min(1),
+});
 
 type UserPayload = z.infer<typeof userPayloadSchema>;
 
@@ -70,6 +96,9 @@ function toUser(payload: UserPayload): User {
     phone: payload.phone ?? null,
     role: payload.role,
     emailVerified: payload.email_verified === true,
+    firstName: payload.first_name ?? null,
+    lastName: payload.last_name ?? null,
+    gender: payload.gender ?? null,
     lastLoginAt: payload.last_login ?? null,
     createdAt: payload.created_at ?? null,
     updatedAt: payload.updated_at ?? null,
@@ -134,7 +163,6 @@ export const authApi = {
     return {
       user: toUser(parsed.user),
       accessToken: parsed.accessToken,
-      refreshToken: parsed.refreshToken,
     };
   },
 
@@ -157,15 +185,13 @@ export const authApi = {
 
     if (
       parsed.verificationRequired !== true &&
-      parsed.accessToken !== undefined &&
-      parsed.refreshToken !== undefined
+      parsed.accessToken !== undefined
     ) {
       return {
         status: 'authenticated',
         user,
         tokens: {
           accessToken: parsed.accessToken,
-          refreshToken: parsed.refreshToken,
         },
       };
     }
@@ -178,19 +204,20 @@ export const authApi = {
   },
 
   /**
-   * `POST /auth/refresh`. The backend rotates: the presented refresh token is
-   * deactivated and a new pair is issued, so the returned pair must replace both
-   * stored tokens. Replaying a consumed token answers 401
+   * `POST /auth/refresh`. The backend rotates the HttpOnly cookie and returns a
+   * new browser-visible access token. Replaying a consumed cookie answers 401
    * `REFRESH_TOKEN_REUSED`.
    *
    * `authMode: 'none'` is what stops a failed refresh from triggering another
    * refresh.
    */
-  async refresh(refreshToken: string): Promise<AuthTokens> {
+  async refresh(): Promise<AuthTokens> {
     const payload = await api.post<unknown>(
       '/auth/refresh',
-      { refreshToken },
-      { authMode: 'none' },
+      {},
+      {
+        authMode: 'none',
+      },
     );
 
     return parsePayload(tokenPairSchema, payload, 'POST /auth/refresh');
@@ -198,14 +225,17 @@ export const authApi = {
 
   /**
    * `POST /auth/logout`. Requires a bearer token; deactivates the session behind
-   * the given refresh token (every session when omitted) and increments the
-   * user's token version, which invalidates outstanding access tokens too.
+   * the HttpOnly refresh cookie and increments the user's token version, which
+   * invalidates outstanding access tokens too. A stale access token may refresh
+   * once so the server can reliably clear and deactivate the session.
    */
-  async logout(refreshToken?: string): Promise<AuthMessageResult> {
+  async logout(): Promise<AuthMessageResult> {
     const payload = await api.post<unknown>(
       '/auth/logout',
-      refreshToken === undefined ? undefined : { refreshToken },
-      { authMode: 'bearer' },
+      {},
+      {
+        authMode: 'session',
+      },
     );
 
     return readMessage(payload);
@@ -283,5 +313,85 @@ export const authApi = {
     const payload = await api.post<unknown>('/auth/change-password', input);
 
     return readMessage(payload);
+  },
+
+  /**
+   * `POST /auth/passwordless/request`. Initiates passwordless sign-in with 6-digit OTP challenge.
+   */
+  async requestPasswordlessOtp(
+    email: string,
+  ): Promise<PasswordlessRequestResult> {
+    const payload = await api.post<unknown>(
+      '/auth/passwordless/request',
+      { email },
+      { authMode: 'none' },
+    );
+
+    return parsePayload(
+      passwordlessRequestSchema,
+      payload,
+      'POST /auth/passwordless/request',
+    );
+  },
+
+  /**
+   * `POST /auth/passwordless/verify`. Verifies OTP; returns either tokens or registrationToken for profile completion.
+   */
+  async verifyPasswordlessOtp(
+    email: string,
+    otp: string,
+  ): Promise<PasswordlessVerifyResult> {
+    const payload = await api.post<unknown>(
+      '/auth/passwordless/verify',
+      { email, otp },
+      { authMode: 'none' },
+    );
+
+    const parsed = parsePayload(
+      passwordlessVerifySchema,
+      payload,
+      'POST /auth/passwordless/verify',
+    );
+
+    if (parsed.status === 'authenticated') {
+      return {
+        status: 'authenticated',
+        user: toUser(parsed.user),
+        tokens: {
+          accessToken: parsed.accessToken,
+        },
+      };
+    }
+
+    return {
+      status: 'profile_required',
+      registrationToken: parsed.registrationToken,
+    };
+  },
+
+  /**
+   * `POST /auth/passwordless/complete-profile`. Completes profile registration for verified new customer.
+   */
+  async completePasswordlessProfile(
+    input: PasswordlessCompleteProfileInput,
+  ): Promise<{ user: User; tokens: AuthTokens }> {
+    const payload = await api.post<unknown>(
+      '/auth/passwordless/complete-profile',
+      input,
+      { authMode: 'none' },
+    );
+
+    const parsed = parsePayload(
+      passwordlessCompleteProfileSchema,
+      payload,
+      'POST /auth/passwordless/complete-profile',
+    );
+
+    return {
+      user: toUser(parsed.user),
+      tokens: {
+        accessToken: parsed.accessToken,
+      },
+    };
   },
 };

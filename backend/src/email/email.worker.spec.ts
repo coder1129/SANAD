@@ -119,7 +119,10 @@ describe('EmailWorker', () => {
 
   it('dead-letters at max attempts and raises it to Sentry', async () => {
     prisma.$queryRaw.mockResolvedValue([queued({ attempts: 3 })]);
-    email.sendDirect.mockResolvedValue({ success: false, error: 'mailbox full' });
+    email.sendDirect.mockResolvedValue({
+      success: false,
+      error: 'mailbox full',
+    });
 
     await worker.processEmailQueue();
 

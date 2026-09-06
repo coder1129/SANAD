@@ -14,6 +14,9 @@ export class UsersService {
         name: true,
         email: true,
         phone: true,
+        first_name: true,
+        last_name: true,
+        gender: true,
         role: true,
         email_verified: true,
         last_login: true,
@@ -35,17 +38,32 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    const firstName = dto.first_name?.trim();
+    const lastName = dto.last_name?.trim();
+    const effectiveFirstName = firstName ?? user.first_name;
+    const effectiveLastName = lastName ?? user.last_name;
+    const syncedName =
+      effectiveFirstName || effectiveLastName
+        ? [effectiveFirstName, effectiveLastName].filter(Boolean).join(' ')
+        : dto.name;
+
     return this.prisma.users.update({
       where: { id: userId },
       data: {
-        ...(dto.name !== undefined && { name: dto.name }),
+        ...(syncedName !== undefined && { name: syncedName }),
+        ...(firstName !== undefined && { first_name: firstName }),
+        ...(lastName !== undefined && { last_name: lastName }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.gender !== undefined && { gender: dto.gender }),
       },
       select: {
         id: true,
         name: true,
         email: true,
         phone: true,
+        first_name: true,
+        last_name: true,
+        gender: true,
         role: true,
         email_verified: true,
         last_login: true,

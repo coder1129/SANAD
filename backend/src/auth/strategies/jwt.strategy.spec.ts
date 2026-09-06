@@ -29,7 +29,13 @@ describe('JwtStrategy', () => {
   });
 
   const payload = (overrides: Record<string, unknown> = {}) =>
-    ({ sub: 7, email: 'user@example.com', role: 'customer', ver: 3, ...overrides }) as never;
+    ({
+      sub: 7,
+      email: 'user@example.com',
+      role: 'customer',
+      ver: 3,
+      ...overrides,
+    }) as never;
 
   it('resolves the caller to id, email, and role only', async () => {
     prisma.users.findUnique.mockResolvedValue(storedUser());
@@ -56,9 +62,9 @@ describe('JwtStrategy', () => {
   it('trusts the stored role over the role claim in the token', async () => {
     prisma.users.findUnique.mockResolvedValue(storedUser({ role: 'customer' }));
 
-    await expect(strategy.validate(payload({ role: 'super_admin' }))).resolves.toEqual(
-      expect.objectContaining({ role: 'customer' }),
-    );
+    await expect(
+      strategy.validate(payload({ role: 'super_admin' })),
+    ).resolves.toEqual(expect.objectContaining({ role: 'customer' }));
   });
 
   it.each([

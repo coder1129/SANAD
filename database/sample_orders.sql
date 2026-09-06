@@ -35,9 +35,9 @@ INSERT INTO orders (
     'completed',
     299.00,
     29.90, -- WELCOME10 coupon (10%)
-    13.46, -- VAT 5% on (299 - 29.90)
-    282.56,
-    282.56,
+    0.00,
+    269.10,
+    269.10,
     'WELCOME10',
     CURRENT_DATE - INTERVAL '3 days',
     'سيرة ذاتية لمهندس برمجيات',
@@ -128,9 +128,9 @@ INSERT INTO orders (
     'in_progress',
     499.00,
     74.85, -- 15% offer discount
-    21.21, -- VAT 5%
-    445.36,
-    445.36,
+    0.00,
+    424.15,
+    424.15,
     CURRENT_DATE + INTERVAL '4 days',
     'سيرة ذاتية ثنائية اللغة لمديرة تسويق',
     CURRENT_TIMESTAMP - INTERVAL '3 days',
@@ -189,9 +189,9 @@ INSERT INTO orders (
     'pending',
     799.00,
     50.00, -- FIRST50 coupon
-    37.45, -- VAT 5%
-    786.45,
-    786.45,
+    0.00,
+    749.00,
+    749.00,
     'FIRST50',
     CURRENT_DATE + INTERVAL '10 days',
     'حزمة كاملة مع استشارة مهنية',
@@ -259,9 +259,9 @@ INSERT INTO orders (
     'paid',
     299.00,
     0.00,
-    14.95, -- VAT 5%
-    313.95,
-    313.95,
+    0.00,
+    299.00,
+    299.00,
     CURRENT_DATE + INTERVAL '5 days',
     'سيرة ذاتية لخريجة جديدة',
     CURRENT_TIMESTAMP - INTERVAL '1 day',

@@ -82,9 +82,7 @@ describe('CouponsService', () => {
     });
 
     it('rejects a deactivated coupon', async () => {
-      prisma.coupons.findUnique.mockResolvedValue(
-        coupon({ is_active: false }),
-      );
+      prisma.coupons.findUnique.mockResolvedValue(coupon({ is_active: false }));
 
       expect(await errorCode(service.validateCoupon('SAVE20', 1, 1))).toBe(
         'COUPON_INACTIVE',
@@ -120,9 +118,9 @@ describe('CouponsService', () => {
       );
       activePackage();
 
-      await expect(
-        service.validateCoupon('SAVE20', 1, 1),
-      ).resolves.toEqual(expect.objectContaining({ valid: true }));
+      await expect(service.validateCoupon('SAVE20', 1, 1)).resolves.toEqual(
+        expect.objectContaining({ valid: true }),
+      );
     });
 
     it('rejects a coupon that has reached its global limit', async () => {
@@ -141,9 +139,9 @@ describe('CouponsService', () => {
       );
       activePackage();
 
-      await expect(
-        service.validateCoupon('SAVE20', 1, 1),
-      ).resolves.toEqual(expect.objectContaining({ valid: true }));
+      await expect(service.validateCoupon('SAVE20', 1, 1)).resolves.toEqual(
+        expect.objectContaining({ valid: true }),
+      );
     });
 
     it('treats a null usage_limit as unlimited', async () => {
@@ -152,9 +150,9 @@ describe('CouponsService', () => {
       );
       activePackage();
 
-      await expect(
-        service.validateCoupon('SAVE20', 1, 1),
-      ).resolves.toEqual(expect.objectContaining({ valid: true }));
+      await expect(service.validateCoupon('SAVE20', 1, 1)).resolves.toEqual(
+        expect.objectContaining({ valid: true }),
+      );
     });
 
     it('rejects a second redemption by the same customer', async () => {
@@ -178,9 +176,9 @@ describe('CouponsService', () => {
       prisma.coupon_usage.count.mockResolvedValue(2);
       activePackage();
 
-      await expect(
-        service.validateCoupon('SAVE20', 1, 7),
-      ).resolves.toEqual(expect.objectContaining({ valid: true }));
+      await expect(service.validateCoupon('SAVE20', 1, 7)).resolves.toEqual(
+        expect.objectContaining({ valid: true }),
+      );
     });
 
     // A checkout preview has no authenticated user; the per-user cap is
@@ -233,9 +231,9 @@ describe('CouponsService', () => {
       );
       activePackage(500);
 
-      await expect(
-        service.validateCoupon('SAVE20', 1, 1),
-      ).resolves.toEqual(expect.objectContaining({ valid: true }));
+      await expect(service.validateCoupon('SAVE20', 1, 1)).resolves.toEqual(
+        expect.objectContaining({ valid: true }),
+      );
     });
 
     // The minimum is checked against the post-offer subtotal, so a package
@@ -290,9 +288,9 @@ describe('CouponsService', () => {
       );
       activePackage(500);
 
-      expect((await service.validateCoupon('SAVE20', 1, 1)).discountAmount).toBe(
-        50,
-      );
+      expect(
+        (await service.validateCoupon('SAVE20', 1, 1)).discountAmount,
+      ).toBe(50);
     });
 
     it('rejects a percentage coupon configured above 100', async () => {
@@ -381,9 +379,9 @@ describe('CouponsService', () => {
         lockForUpdate: true,
       });
 
-      const sql = Array.from(prisma.$queryRaw.mock.calls[0][0] as string[]).join(
-        ' ',
-      );
+      const sql = Array.from(
+        prisma.$queryRaw.mock.calls[0][0] as string[],
+      ).join(' ');
       expect(sql).toContain('FOR UPDATE');
       expect(prisma.$queryRaw.mock.calls[0][1]).toBe('SAVE20');
     });

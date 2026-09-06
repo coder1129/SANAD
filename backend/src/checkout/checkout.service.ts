@@ -109,29 +109,7 @@ export class CheckoutService {
       Math.round((priceAfterOffer - couponDiscountAmount) * 100) / 100,
     );
 
-    // 4. VAT Calculation (5% UAE Standard if configured, or 0% if included)
-    // Checking settings table for 'vat_rate'
-    const vatSetting = await client.settings.findUnique({
-      where: { setting_key: 'vat_percentage' },
-    });
-    const vatPercentage = vatSetting
-      ? parseFloat(vatSetting.setting_value || '0')
-      : 0;
-    if (
-      !Number.isFinite(vatPercentage) ||
-      vatPercentage < 0 ||
-      vatPercentage > 100
-    ) {
-      throw new BadRequestException({
-        message: 'VAT configuration is invalid',
-        code: 'VAT_CONFIGURATION_INVALID',
-      });
-    }
-    const vatAmount =
-      Math.round(((subtotalAfterDiscounts * vatPercentage) / 100) * 100) / 100;
-
-    const totalAmount =
-      Math.round((subtotalAfterDiscounts + vatAmount) * 100) / 100;
+    const totalAmount = subtotalAfterDiscounts;
     const finalAmount = totalAmount;
 
     // Currency
@@ -152,8 +130,6 @@ export class CheckoutService {
       coupon_code: validatedCouponCode,
       coupon_discount_amount: couponDiscountAmount,
       subtotal_after_discounts: subtotalAfterDiscounts,
-      vat_percentage: vatPercentage,
-      vat_amount: vatAmount,
       total_amount: totalAmount,
       final_amount: finalAmount,
       currency,

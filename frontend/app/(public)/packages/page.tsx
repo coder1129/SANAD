@@ -1,152 +1,136 @@
-import { BriefcaseBusiness, Check, ChevronRight, Scale } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-
-import { PackageCard } from '@/components/packages/package-card';
-import { EmptyState } from '@/components/feedback/empty-state';
+import { ArrowDown, ArrowRight, MessageCircle } from 'lucide-react';
+import { ServicesCatalog } from '@/components/packages/services-catalog';
+import { getServiceCategory } from '@/lib/packages/categories';
+import { PackageComparison } from '@/components/packages/package-comparison';
 import { Button } from '@/components/ui/button';
-import { packagesApi } from '@/lib/api';
+import { packagesApi, settingsApi } from '@/lib/api';
+import { whatsappHref } from '@/lib/orders/presentation';
 
 export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
-  title: 'Career Services & Packages | SANAD',
+  title: 'Career Services | SANAD',
   description:
-    'Compare SANAD career-service packages, pricing, included deliverables, delivery estimates, and revision allowances.',
+    'Compare CV writing, LinkedIn optimization, application support and complete career packages by scope, price, delivery and revisions.',
+  alternates: { canonical: '/packages' },
 };
 
-const comparisonPoints = [
-  'Clear service scope and included deliverables',
-  'Current pricing and active offers',
-  'Delivery estimates and revision allowances',
-] as const;
-
 export default async function PackagesPage() {
-  const { items, meta } = await packagesApi.list({ limit: 100 });
-  const packages = [...items].sort(
-    (first, second) => first.sortOrder - second.sortOrder,
+  const [catalog, settingsResult] = await Promise.all([
+    packagesApi.list({ limit: 100 }),
+    settingsApi.getPublic().catch(() => null),
+  ]);
+  const packages = [...catalog.items].sort((a, b) => a.sortOrder - b.sortOrder);
+  const hasComparison =
+    packages.filter((item) => getServiceCategory(item) === 'bundles').length >=
+    2;
+  const contact = whatsappHref(
+    settingsResult?.whatsapp_number,
+    'Hello, I would like help comparing SANAD services and confirming the scope before ordering.',
   );
-
   return (
     <>
-      <section className="border-b border-border bg-surface-muted">
-        <div className="layout-container py-12 sm:py-16 lg:py-20">
-          <nav aria-label="Breadcrumb">
-            <ol className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-              <li>
-                <Link className="transition-colors hover:text-primary" href="/">
-                  Home
-                </Link>
-              </li>
-              <li aria-hidden="true">
-                <ChevronRight className="size-4" />
-              </li>
-              <li aria-current="page" className="font-semibold text-primary">
-                Services
-              </li>
-            </ol>
-          </nav>
-
-          <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.8fr)] lg:items-end lg:gap-16">
-            <div>
-              <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
-                <span aria-hidden="true" className="h-px w-8 bg-accent" />
-                Career services
-              </p>
-              <h1 className="type-h1 mt-5 max-w-[18ch] text-primary">
-                Choose the support that fits your next professional move.
-              </h1>
-              <p className="mt-6 max-w-[42rem] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-                Compare each service by scope, price, delivery estimate, and
-                included revisions before deciding what you need.
-              </p>
-            </div>
-
-            <div className="border-t border-border pt-7 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-10">
-              <p className="type-label text-primary">What you can compare</p>
-              <ul className="mt-4 grid gap-3">
-                {comparisonPoints.map((point) => (
-                  <li
-                    className="flex items-start gap-3 text-sm leading-6 text-foreground"
-                    key={point}
-                  >
-                    <Check
-                      aria-hidden="true"
-                      className="mt-1 size-4 shrink-0 text-accent"
-                    />
-                    <span>{point}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section
-        aria-labelledby="packages-catalog-heading"
-        className="bg-background"
-      >
-        <div className="layout-container layout-section">
-          <div className="flex flex-col gap-3 border-b border-border pb-8 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
-                Available now
-              </p>
-              <h2
-                className="type-h2 mt-3 text-primary"
-                id="packages-catalog-heading"
-              >
-                Compare Career Services
-              </h2>
-            </div>
-            <p className="text-sm font-semibold text-muted-foreground">
-              {meta.total} {meta.total === 1 ? 'service' : 'services'} available
-            </p>
-          </div>
-
-          {packages.length > 0 ? (
-            <ul className="mt-10 grid items-stretch gap-6 md:grid-cols-2 lg:mt-12 lg:grid-cols-3">
-              {packages.map((packageItem, index) => (
-                <li key={packageItem.id}>
-                  <PackageCard index={index} packageItem={packageItem} />
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState
-              action={
-                <Button asChild>
-                  <Link href="/">Return Home</Link>
-                </Button>
-              }
-              className="mt-10"
-              description="There are no published services to compare at the moment."
-              icon={<BriefcaseBusiness />}
-              title="No services are currently available"
-            />
-          )}
-        </div>
-      </section>
-
-      <section className="border-y border-border bg-surface-muted">
-        <div className="layout-container py-12 sm:py-14">
-          <div className="grid gap-7 md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:gap-8">
-            <span
-              aria-hidden="true"
-              className="grid size-12 place-items-center rounded-md bg-primary text-primary-foreground"
-            >
-              <Scale className="size-5" />
+      <section className="border-b border-border bg-primary text-primary-foreground">
+        <div className="layout-container py-7 sm:py-10">
+          <nav aria-label="Breadcrumb" className="text-sm">
+            <Link className="underline underline-offset-4" href="/">
+              Home
+            </Link>
+            <span aria-hidden="true" className="mx-3">
+              /
             </span>
+            <span aria-current="page">Services</span>
+          </nav>
+          <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-accent">
+                SANAD career services
+              </p>
+              <h1 className="type-h2 mt-3 text-primary-foreground">
+                Choose your next career step.
+              </h1>
+              <p className="mt-4 leading-7 text-primary-foreground/80">
+                Compare focused services and complete packages. See what you
+                receive, the price and the delivery estimate before you choose.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button
+                asChild
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+              >
+                <Link href="#services-catalog">
+                  Explore services
+                  <ArrowDown aria-hidden="true" className="size-4" />
+                </Link>
+              </Button>
+              {hasComparison ? (
+                <Link
+                  className="inline-flex min-h-11 items-center px-3 font-semibold underline underline-offset-4"
+                  href="#compare-packages"
+                >
+                  Compare packages
+                </Link>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+      <ServicesCatalog packages={packages} />
+      <PackageComparison packages={packages} />
+      <section className="bg-surface" aria-labelledby="next-steps-heading">
+        <div className="layout-container layout-section">
+          <h2 id="next-steps-heading" className="type-h3 text-primary">
+            From choosing a service to receiving your work
+          </h2>
+          <ol className="mt-7 grid gap-6 md:grid-cols-3">
+            {[
+              [
+                'Choose your scope',
+                'Review the deliverables, total and revision allowance.',
+              ],
+              [
+                'Share your background',
+                'After order confirmation, use WhatsApp to share the information needed to begin.',
+              ],
+              [
+                'Review your delivery',
+                'Review the work and request changes within the agreed scope.',
+              ],
+            ].map(([title, description], index) => (
+              <li key={title} className="border-t-2 border-accent pt-4">
+                <span className="text-sm font-semibold text-secondary">
+                  0{index + 1}
+                </span>
+                <h3 className="mt-2 font-semibold">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  {description}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <div className="mt-10 flex flex-col gap-5 rounded-lg border border-border bg-surface-muted p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="type-h4 text-primary">Need help comparing?</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                Review the common questions about choosing a service, sharing
-                your information, and receiving completed documents.
+              <h3 className="font-semibold text-primary">
+                Not sure which service fits?
+              </h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Confirm the scope and timeline with SANAD before ordering.
               </p>
             </div>
             <Button asChild variant="outline">
-              <Link href="/#faq">Read the FAQ</Link>
+              {contact ? (
+                <a href={contact} target="_blank" rel="noopener noreferrer">
+                  Ask about a service
+                  <MessageCircle className="size-4" aria-hidden="true" />
+                </a>
+              ) : (
+                <Link href="/faq">
+                  Read the FAQ
+                  <ArrowRight className="size-4" aria-hidden="true" />
+                </Link>
+              )}
             </Button>
           </div>
         </div>

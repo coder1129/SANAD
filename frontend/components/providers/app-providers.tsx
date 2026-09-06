@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { AuthProvider } from './auth-provider';
+import { AuthModalProvider } from '@/components/auth/auth-modal';
 import { QueryProvider } from './query-provider';
 
 interface AppProvidersProps {
@@ -21,7 +22,9 @@ interface AppProvidersProps {
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <QueryProvider>
-      <AuthProvider>{children}</AuthProvider>
+      <AuthProvider>
+        <AuthModalProvider>{children}</AuthModalProvider>
+      </AuthProvider>
     </QueryProvider>
   );
 }

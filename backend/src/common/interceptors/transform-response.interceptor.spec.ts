@@ -53,7 +53,10 @@ describe('TransformResponseInterceptor', () => {
   it('passes through a payload that is already an envelope', async () => {
     const paginated = {
       success: true,
-      data: { items: [], meta: { page: 1, limit: 20, total: 0, totalPages: 0 } },
+      data: {
+        items: [],
+        meta: { page: 1, limit: 20, total: 0, totalPages: 0 },
+      },
       message: null,
     };
 
@@ -61,9 +64,22 @@ describe('TransformResponseInterceptor', () => {
   });
 
   it('passes through a failure envelope unchanged', async () => {
-    const failure = { success: false, message: 'nope', code: 'X', errors: null };
+    const failure = {
+      success: false,
+      message: 'nope',
+      code: 'X',
+      errors: null,
+    };
 
     await expect(run(failure)).resolves.toBe(failure);
+  });
+
+  it('normalizes a success payload missing data to include data: null', async () => {
+    await expect(run({ success: true, message: 'Deleted' })).resolves.toEqual({
+      success: true,
+      data: null,
+      message: 'Deleted',
+    });
   });
 
   it('wraps primitives rather than treating them as envelopes', async () => {

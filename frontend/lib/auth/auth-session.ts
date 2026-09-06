@@ -9,6 +9,7 @@ import type {
   LoginResult,
   RegisterInput,
   RegisterResult,
+  User,
 } from '@/types/domain';
 
 import {
@@ -17,10 +18,10 @@ import {
   setAccessToken,
 } from './access-token';
 import {
-  clearRefreshToken,
-  getRefreshToken,
-  setRefreshToken,
-} from './refresh-token';
+  clearSessionHint,
+  hasSessionHint,
+  setSessionHint,
+} from './session-hint';
 
 /**
  * The session engine: every transition an authenticated session can make lives
@@ -33,7 +34,7 @@ import {
 
 /**
  * Counts identity changes. A refresh that started before a login or logout
- * completed must not write its rotated token pair afterwards: the pair belongs to
+ * completed must not write its rotated access token afterwards: it belongs to
  * the identity that has just been replaced, and storing it would revive it. Every
  * refresh captures the epoch at its start and discards its result if the epoch
  * moved on.
@@ -72,13 +73,14 @@ export function ensureAuthInterceptors(): void {
 /**
  * Restores the session on application startup, exactly once.
  *
- * The access token is gone after a reload by design, so the refresh token is the
- * only thing that can prove who this tab is:
+ * The access token is gone after a reload by design. A non-sensitive local hint
+ * tells us whether it is worth asking the backend to validate its HttpOnly
+ * refresh cookie:
  *
- * - no refresh token → `anonymous`, no requests issued;
- * - refresh token → refresh (which rotates the pair), load `GET /auth/me`, and
- *   settle on `authenticated` with a backend-confirmed user;
- * - anything else → the session is ended and the state settles on `anonymous`.
+ * - no hint → `anonymous`, no requests issued;
+ * - hint present → rotate the cookie, load `GET /auth/me`, and settle on
+ *   `authenticated` with a backend-confirmed user;
+ * - any failed validation → clear local state and settle on `anonymous`.
  *
  * The promise is cached, so React's double-invoked effects in development, a
  * remount, or a concurrent caller all await the same restore instead of starting
@@ -93,7 +95,7 @@ export function bootstrapAuthSession(): Promise<void> {
 async function runBootstrap(): Promise<void> {
   ensureAuthInterceptors();
 
-  if (getRefreshToken() === null) {
+  if (!hasSessionHint()) {
     useAuthStore.getState().setAnonymous();
     return;
   }
@@ -112,7 +114,7 @@ async function runBootstrap(): Promise<void> {
   } catch {
     if (epoch !== sessionEpoch) return;
 
-    endSession({ discardTokens: true });
+    endSession();
   }
 }
 
@@ -143,25 +145,14 @@ export function refreshAuthSession(): Promise<string> {
 
 async function runRefresh(): Promise<string> {
   const epoch = sessionEpoch;
-  const refreshToken = getRefreshToken();
-
-  if (refreshToken === null) {
-    endSession({ discardTokens: true });
-
-    throw new ApiError({
-      kind: 'unauthorized',
-      message: 'No refresh token is available for this session',
-    });
-  }
 
   let tokens: AuthTokens;
   try {
-    tokens = await authApi.refresh(refreshToken);
+    tokens = await authApi.refresh();
   } catch (error) {
-    // A failed refresh cannot establish a usable session. Clear both tokens for
-    // every failure kind so an offline/server error cannot leave the browser
-    // holding a refresh credential after auth state and identity cache reset.
-    endSession({ discardTokens: true });
+    // A failed refresh cannot establish a usable session. The backend owns and
+    // expires the cookie; locally we clear access state and the session hint.
+    endSession();
 
     throw error;
   }
@@ -173,9 +164,8 @@ async function runRefresh(): Promise<string> {
     });
   }
 
-  // Rotation is atomic from the application's point of view: both halves are
-  // replaced together, with no await in between, so no reader can observe a new
-  // access token beside the consumed refresh token.
+  // The rotated refresh credential is already in an HttpOnly response cookie.
+  // Only the short-lived access token is visible to this module.
   applyTokens(tokens);
 
   return tokens.accessToken;
@@ -184,7 +174,7 @@ async function runRefresh(): Promise<string> {
 /**
  * Signs in and takes ownership of the tab's session.
  *
- * The previous identity's cache is dropped before the new tokens are stored, so
+ * The previous identity's cache is dropped before the new token is stored, so
  * an in-flight request from the previous session can neither be replayed with the
  * new token nor land in the cache the new identity is about to read.
  */
@@ -200,6 +190,20 @@ export async function login(
   useAuthStore.getState().setAuthenticatedUser(response.user);
 
   return { user: response.user };
+}
+
+/**
+ * Takes ownership of the tab's session with a newly issued token pair and authenticated user.
+ * Used by passwordless authentication flows (verify & complete profile).
+ */
+export function establishAuthenticatedSession(data: {
+  user: User;
+  tokens: AuthTokens;
+}): void {
+  ensureAuthInterceptors();
+  startIdentity();
+  applyTokens(data.tokens);
+  useAuthStore.getState().setAuthenticatedUser(data.user);
 }
 
 /**
@@ -239,19 +243,18 @@ export async function register(input: RegisterInput): Promise<RegisterResult> {
  * outcome by a wide margin, and the abandoned server session expires on its own.
  */
 export async function logout(): Promise<void> {
-  const refreshToken = getRefreshToken();
   const hasAccessToken = getAccessToken() !== null;
 
   try {
-    // Without an access token the request could only be answered with a 401, and
-    // `authMode: 'bearer'` means it would not be retried after a refresh either.
+    // The authenticated UI always has an in-memory access token. Without one,
+    // the protected endpoint cannot be reached, but local state still ends.
     if (hasAccessToken) {
-      await authApi.logout(refreshToken ?? undefined);
+      await authApi.logout();
     }
   } catch {
     // Intentionally ignored — see above.
   } finally {
-    endSession({ discardTokens: true });
+    endSession();
   }
 }
 
@@ -259,8 +262,8 @@ export async function logout(): Promise<void> {
  * Changes the password and ends the local session.
  *
  * Verified backend behaviour: `AuthService.changePassword` increments the user's
- * token version and deactivates every session row, so both of this tab's tokens
- * are dead the moment it succeeds. Clearing immediately is honest — the
+ * token version and deactivates every session row, so all issued credentials are
+ * dead the moment it succeeds. Clearing immediately is honest — the
  * alternative is a UI that looks signed in until the next request 401s. Callers
  * should send the user to sign in again.
  */
@@ -269,47 +272,42 @@ export async function changePassword(
 ): Promise<AuthMessageResult> {
   const result = await authApi.changePassword(input);
 
-  endSession({ discardTokens: true });
+  endSession();
 
   return result;
 }
 
 /**
  * Opens a new identity: invalidates anything the previous one left behind before
- * the caller stores the new tokens.
+ * the caller stores the new access token.
  */
 function startIdentity(): void {
   sessionEpoch += 1;
   clearAccessToken();
-  clearRefreshToken();
   resetIdentityCache();
 }
 
-/** Replaces both tokens together. */
+/** Stores only the short-lived access token; refresh rotation is cookie-only. */
 function applyTokens(tokens: AuthTokens): void {
   setAccessToken(tokens.accessToken);
-  setRefreshToken(tokens.refreshToken);
+  setSessionHint();
 }
 
 /**
- * Ends the local session: tokens gone, state anonymous, cached data dropped.
- *
- * `discardTokens` controls removal of the refresh credential. Every Phase 7
- * failure and sign-out transition passes `true`, so no failed session leaves a
- * refresh token behind. The access token always goes.
+ * Ends the local session: access token and hint gone, state anonymous, cached
+ * data dropped. The backend clears its HttpOnly cookie during explicit logout;
+ * an invalid or expired cookie cannot authenticate another request.
  *
  * Idempotent, and quiet when there was nothing to end: a 401 for a visitor who was
  * never signed in must not keep clearing a cache full of public data.
  */
-function endSession({ discardTokens }: { discardTokens: boolean }): void {
+function endSession(): void {
   const hadSession =
-    useAuthStore.getState().status !== 'anonymous' ||
-    getAccessToken() !== null ||
-    getRefreshToken() !== null;
+    useAuthStore.getState().status !== 'anonymous' || getAccessToken() !== null;
 
   sessionEpoch += 1;
   clearAccessToken();
-  if (discardTokens) clearRefreshToken();
+  clearSessionHint();
   useAuthStore.getState().setAnonymous();
 
   if (hadSession) resetIdentityCache();

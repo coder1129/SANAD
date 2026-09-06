@@ -65,7 +65,7 @@ export function WhySanad() {
           >
             {reasons.map(({ description, title }, index) => (
               <MotionStaggerItem
-                className="grid gap-4 border-b border-border py-6 last:border-b-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-6 sm:py-7"
+                className="grid gap-4 border-b border-border py-6 transition-colors duration-200 hover:bg-background/60 last:border-b-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-6 sm:py-7"
                 key={title}
               >
                 <span

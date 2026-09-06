@@ -52,17 +52,17 @@ export function unwrapEnvelope(
     });
   }
 
-  return body.data;
+  return (body as { data?: unknown }).data ?? null;
 }
 
 function isSuccessfulEnvelope(body: unknown): body is SuccessfulEnvelope {
   return (
     isRecord(body) &&
     body.success === true &&
-    hasOwn(body, 'data') &&
-    body.data !== undefined &&
-    hasOwn(body, 'message') &&
-    (body.message === null || typeof body.message === 'string')
+    (!hasOwn(body, 'data') || body.data !== undefined) &&
+    (!hasOwn(body, 'message') ||
+      body.message === null ||
+      typeof body.message === 'string')
   );
 }
 

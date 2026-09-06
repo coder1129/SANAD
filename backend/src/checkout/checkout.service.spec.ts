@@ -43,7 +43,7 @@ describe('CheckoutService', () => {
       );
     });
 
-    it('should calculate base price with VAT correctly', async () => {
+    it('should calculate base price correctly', async () => {
       prisma.packages.findUnique.mockResolvedValue({
         id: 1,
         name_ar: 'الباقة المتقدمة',
@@ -54,8 +54,6 @@ describe('CheckoutService', () => {
       });
       prisma.offers.findFirst.mockResolvedValue(null);
       prisma.settings.findUnique.mockImplementation(({ where }: any) => {
-        if (where.setting_key === 'vat_percentage')
-          return Promise.resolve({ setting_value: '5' });
         if (where.setting_key === 'currency')
           return Promise.resolve({ setting_value: 'AED' });
         return Promise.resolve(null);
@@ -66,8 +64,7 @@ describe('CheckoutService', () => {
       expect(pricing.offer_discount_amount).toBe(0);
       expect(pricing.coupon_discount_amount).toBe(0);
       expect(pricing.subtotal_after_discounts).toBe(1000);
-      expect(pricing.vat_amount).toBe(50);
-      expect(pricing.total_amount).toBe(1050);
+      expect(pricing.total_amount).toBe(1000);
       expect(pricing.currency).toBe('AED');
     });
 
@@ -89,8 +86,6 @@ describe('CheckoutService', () => {
         discountAmount: 50,
       });
       prisma.settings.findUnique.mockImplementation(({ where }: any) => {
-        if (where.setting_key === 'vat_percentage')
-          return Promise.resolve({ setting_value: '0' });
         if (where.setting_key === 'currency')
           return Promise.resolve({ setting_value: 'AED' });
         return Promise.resolve(null);

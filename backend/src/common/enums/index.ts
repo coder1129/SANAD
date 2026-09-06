@@ -26,6 +26,12 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
 }
 
+export enum ReviewStatus {
+  PENDING = 'pending',
+  PUBLISHED = 'published',
+  HIDDEN = 'hidden',
+}
+
 export enum PaymentMethod {
   TELR = 'telr',
   PAYTABS = 'paytabs',

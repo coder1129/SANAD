@@ -3,7 +3,10 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -11,6 +14,7 @@ import * as argon2 from 'argon2';
 import * as crypto from 'crypto';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmailService } from '../email/email.service';
 import {
   RegisterDto,
   LoginDto,
@@ -19,6 +23,9 @@ import {
   ChangePasswordDto,
   VerifyEmailDto,
   ResendVerificationDto,
+  PasswordlessRequestDto,
+  PasswordlessVerifyDto,
+  PasswordlessCompleteProfileDto,
 } from './dto';
 
 interface EmailVerificationTokenRow {
@@ -41,6 +48,9 @@ const PUBLIC_USER_FIELDS = [
   'phone',
   'role',
   'email_verified',
+  'first_name',
+  'last_name',
+  'gender',
   'last_login',
   'created_at',
   'updated_at',
@@ -54,6 +64,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    @Optional() private readonly emailService?: EmailService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -663,9 +674,11 @@ export class AuthService {
 
   private async verifyPassword(
     userId: number,
-    passwordHash: string,
+    passwordHash: string | null | undefined,
     password: string,
   ): Promise<boolean> {
+    if (!passwordHash) return false;
+
     if (passwordHash.startsWith('$argon2')) {
       try {
         return await argon2.verify(passwordHash, password);
@@ -730,5 +743,332 @@ export class AuthService {
       if (field in user) sanitized[field] = user[field];
     }
     return sanitized;
+  }
+
+  /**
+   * Masks an email address for privacy (e.g. j***@example.com)
+   */
+  private maskEmail(email: string): string {
+    const atIndex = email.indexOf('@');
+    if (atIndex <= 0) return email;
+    const userPart = email.slice(0, atIndex);
+    const domainPart = email.slice(atIndex);
+    if (userPart.length <= 2) {
+      return `${userPart[0]}***${domainPart}`;
+    }
+    return `${userPart.slice(0, 2)}***${domainPart}`;
+  }
+
+  /**
+   * Initiates passwordless authentication by issuing a 6-digit OTP to the provided email.
+   * Returns a generic response to prevent account enumeration.
+   */
+  async requestPasswordlessOtp(dto: PasswordlessRequestDto) {
+    const email = dto.email.toLowerCase().trim();
+
+    // 1. Rate-limiting: Enforce 60-second cooldown per email
+    const latestChallenge = await this.prisma.email_otp_challenges.findFirst({
+      where: { email },
+      orderBy: { created_at: 'desc' },
+    });
+
+    if (latestChallenge && latestChallenge.last_sent_at) {
+      const elapsedMs = Date.now() - latestChallenge.last_sent_at.getTime();
+      if (elapsedMs < 60_000) {
+        const retryAfter = Math.ceil((60_000 - elapsedMs) / 1000);
+        throw new HttpException(
+          {
+            statusCode: HttpStatus.TOO_MANY_REQUESTS,
+            message: 'Please wait before requesting another code.',
+            retryAfter,
+          },
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    }
+
+    // 2. Invalidate any unconsumed challenges for this email
+    await this.prisma.email_otp_challenges.updateMany({
+      where: { email, consumed_at: null },
+      data: { consumed_at: new Date() },
+    });
+
+    // 3. Generate cryptographically secure 6-digit OTP
+    const otp = crypto.randomInt(100000, 1000000).toString();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // 4. Save challenge record
+    await this.prisma.email_otp_challenges.create({
+      data: {
+        email,
+        otp_hash: otpHash,
+        expires_at: expiresAt,
+        attempt_count: 0,
+        last_sent_at: new Date(),
+      },
+    });
+
+    // 5. Send email (never log plaintext OTP in production)
+    try {
+      if (this.emailService) {
+        await this.emailService.sendOtpEmail(email, otp);
+      } else {
+        await this.prisma.email_queue.create({
+          data: {
+            recipient_email: email,
+            subject: 'Your SANAD verification code',
+            body_html: `<div><p>Your verification code is: <strong>${otp}</strong></p><p>This code expires in 10 minutes.</p></div>`,
+            body_text: `Your verification code is: ${otp}\n\nThis code expires in 10 minutes.`,
+            template_name: 'otp_verification',
+            priority: 1,
+            status: 'pending',
+          },
+        });
+      }
+    } catch (error) {
+      this.logger.error(`Failed to send OTP email to ${email}`, error);
+    }
+
+    // 6. Generic response - never leaks whether the account exists
+    return {
+      message: 'If the email is valid, a verification code has been sent',
+      email: this.maskEmail(email),
+    };
+  }
+
+  /**
+   * Verifies the 6-digit OTP.
+   * If customer exists -> returns session + tokens.
+   * If new customer -> returns a 15-minute signed registration token.
+   * If admin account -> informs user to use administrator sign-in.
+   */
+  async verifyPasswordlessOtp(dto: PasswordlessVerifyDto) {
+    const email = dto.email.toLowerCase().trim();
+    const otp = dto.otp.trim();
+
+    // 1. Locate active challenge
+    const challenge = await this.prisma.email_otp_challenges.findFirst({
+      where: {
+        email,
+        consumed_at: null,
+        expires_at: { gt: new Date() },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+
+    if (!challenge || challenge.attempt_count >= 5) {
+      throw new BadRequestException({
+        message: 'This verification code has expired.',
+        code: 'OTP_EXPIRED',
+      });
+    }
+
+    // 2. Compare SHA-256 hash using timingSafeEqual
+    const candidateHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const hashBuffer = Buffer.from(challenge.otp_hash, 'hex');
+    const candidateBuffer = Buffer.from(candidateHash, 'hex');
+    const isValid =
+      hashBuffer.length === candidateBuffer.length &&
+      crypto.timingSafeEqual(hashBuffer, candidateBuffer);
+
+    if (!isValid) {
+      const newAttempts = challenge.attempt_count + 1;
+      await this.prisma.email_otp_challenges.update({
+        where: { id: challenge.id },
+        data: {
+          attempt_count: newAttempts,
+          ...(newAttempts >= 5 ? { consumed_at: new Date() } : {}),
+        },
+      });
+
+      if (newAttempts >= 5) {
+        throw new BadRequestException({
+          message:
+            'Too many incorrect attempts. This verification code has expired.',
+          code: 'OTP_MAX_ATTEMPTS',
+        });
+      }
+
+      throw new BadRequestException({
+        message: 'Incorrect verification code.',
+        code: 'OTP_INVALID',
+      });
+    }
+
+    // 3. Mark challenge consumed immediately
+    await this.prisma.email_otp_challenges.update({
+      where: { id: challenge.id },
+      data: { consumed_at: new Date() },
+    });
+
+    // 4. Check if account already exists
+    const user = await this.prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (user) {
+      // Check if user is an admin
+      if (user.role !== 'customer') {
+        throw new UnauthorizedException({
+          message: 'This account must use the administrator sign-in.',
+          code: 'ADMIN_SIGN_IN_REQUIRED',
+        });
+      }
+
+      // Check account lockout
+      if (
+        user.account_locked &&
+        user.locked_until &&
+        new Date() < user.locked_until
+      ) {
+        throw new UnauthorizedException({
+          message: 'Account is temporarily locked. Please try again later.',
+          code: 'ACCOUNT_LOCKED',
+        });
+      }
+
+      // Reset failed attempts, mark email verified, record login
+      await this.prisma.users.update({
+        where: { id: user.id },
+        data: {
+          failed_login_attempts: 0,
+          account_locked: false,
+          locked_until: null,
+          last_login: new Date(),
+          email_verified: true,
+        },
+      });
+
+      const tokens = await this.generateTokens(
+        user.id,
+        user.email,
+        user.role,
+        user.token_version,
+      );
+      await this.createSession(user.id, tokens.refreshToken);
+
+      return {
+        status: 'authenticated' as const,
+        user: this.sanitizeUser(user),
+        ...tokens,
+      };
+    }
+
+    // 5. New customer -> issue short-lived, purpose-bound registration token
+    const registrationToken = await this.jwtService.signAsync(
+      {
+        email,
+        purpose: 'customer_registration',
+      },
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: '15m',
+      },
+    );
+
+    return {
+      status: 'profile_required' as const,
+      registrationToken,
+    };
+  }
+
+  /**
+   * Completes profile registration for a new verified customer.
+   */
+  async completePasswordlessProfile(dto: PasswordlessCompleteProfileDto) {
+    // 1. Verify and decode registration token
+    let payload: Record<string, unknown>;
+    try {
+      payload = await this.jwtService.verifyAsync(dto.registrationToken, {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+      });
+    } catch {
+      throw new BadRequestException({
+        message:
+          'Registration session expired or invalid. Please sign in again.',
+        code: 'INVALID_REGISTRATION_TOKEN',
+      });
+    }
+
+    if (
+      payload.purpose !== 'customer_registration' ||
+      typeof payload.email !== 'string'
+    ) {
+      throw new BadRequestException({
+        message: 'Invalid registration session token.',
+        code: 'INVALID_REGISTRATION_TOKEN',
+      });
+    }
+
+    const email = payload.email.toLowerCase().trim();
+    const firstName = dto.firstName.trim();
+    const lastName = dto.lastName.trim();
+    const phone = dto.phone.trim();
+    const gender = dto.gender;
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    // 2. Handle duplicate race condition safely
+    const existingUser = await this.prisma.users.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      if (existingUser.role !== 'customer') {
+        throw new UnauthorizedException({
+          message: 'This account must use the administrator sign-in.',
+          code: 'ADMIN_SIGN_IN_REQUIRED',
+        });
+      }
+      const tokens = await this.generateTokens(
+        existingUser.id,
+        existingUser.email,
+        existingUser.role,
+        existingUser.token_version,
+      );
+      await this.createSession(existingUser.id, tokens.refreshToken);
+      return {
+        status: 'authenticated' as const,
+        user: this.sanitizeUser(existingUser),
+        ...tokens,
+      };
+    }
+
+    // 3. Create new customer user with role strictly customer
+    const user = await this.prisma.users.create({
+      data: {
+        email,
+        name: fullName,
+        first_name: firstName,
+        last_name: lastName,
+        phone,
+        gender,
+        role: 'customer',
+        email_verified: true,
+        password_hash: null,
+      },
+    });
+
+    // 4. Send welcome email (fire and forget)
+    if (this.emailService) {
+      this.emailService.sendWelcomeEmail(user.email, user.name).catch((err) => {
+        this.logger.error(`Failed to send welcome email to ${user.email}`, err);
+      });
+    }
+
+    // 5. Issue tokens and create session
+    const tokens = await this.generateTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.token_version,
+    );
+    await this.createSession(user.id, tokens.refreshToken);
+
+    return {
+      status: 'authenticated' as const,
+      user: this.sanitizeUser(user),
+      ...tokens,
+    };
   }
 }

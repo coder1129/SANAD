@@ -8,9 +8,12 @@ export class TestimonialsService {
   constructor(private readonly prisma: PrismaService) {}
 
   // Public: published only
-  async findAllPublished() {
+  async findAllPublished(packageId?: number) {
     return this.prisma.testimonials.findMany({
-      where: { is_published: true },
+      where: {
+        is_published: true,
+        ...(packageId === undefined ? {} : { package_id: packageId }),
+      },
       orderBy: [{ display_order: 'asc' }, { created_at: 'desc' }],
     });
   }
@@ -51,6 +54,7 @@ export class TestimonialsService {
   async create(dto: CreateTestimonialDto) {
     return this.prisma.testimonials.create({
       data: {
+        ...(dto.package_id === undefined ? {} : { package_id: dto.package_id }),
         customer_name: dto.customer_name,
         customer_title: dto.customer_title,
         customer_image: dto.customer_image,

@@ -52,11 +52,6 @@ export {
   register,
 } from './auth-session';
 export {
-  clearRefreshToken,
-  getRefreshToken,
-  setRefreshToken,
-} from './refresh-token';
-export {
   currentRelativeLocation,
   DEFAULT_REDIRECT_PATH,
   sanitizeRedirectPath,

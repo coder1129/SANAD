@@ -21,7 +21,7 @@ export class CreatePaymentDto {
   order_id!: number;
 
   @ApiPropertyOptional({
-    description: 'Payment method e.g. card, apple_pay, mada',
+    description: 'Payment method e.g. card, apple_pay',
     example: 'card',
   })
   @IsOptional()

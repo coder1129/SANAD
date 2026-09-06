@@ -7,9 +7,9 @@ import { useEffect, useState } from 'react';
 import {
   PUBLIC_NAVIGATION_LINKS,
   PUBLIC_PRIMARY_ACTION,
-  PUBLIC_SIGN_IN_LINK,
 } from '@/constants/public-navigation';
 import { Button } from '@/components/ui/button';
+import { AccountNavigation } from '@/components/auth/account-navigation';
 import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
@@ -75,13 +75,7 @@ export function MobileNavigation() {
             <Separator className="my-5" />
 
             <div className="mt-auto grid gap-3 pt-3">
-              <SheetClose asChild>
-                <Button asChild className="w-full" size="lg" variant="outline">
-                  <Link href={PUBLIC_SIGN_IN_LINK.href}>
-                    {PUBLIC_SIGN_IN_LINK.label}
-                  </Link>
-                </Button>
-              </SheetClose>
+              <AccountNavigation mobile onNavigate={() => setOpen(false)} />
               <SheetClose asChild>
                 <Button asChild className="w-full" size="lg" variant="primary">
                   <Link href={PUBLIC_PRIMARY_ACTION.href}>

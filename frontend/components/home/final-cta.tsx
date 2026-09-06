@@ -13,13 +13,9 @@ export function FinalCta() {
   return (
     <section
       aria-labelledby="final-cta-heading"
-      className="relative isolate overflow-hidden bg-surface-muted"
+      className="border-t border-border bg-surface-muted"
     >
-      <div
-        aria-hidden="true"
-        className="sanad-cta-glow absolute -right-20 -bottom-56 size-[30rem] rounded-full bg-accent/10 blur-3xl"
-      />
-      <div className="layout-container layout-section relative">
+      <div className="layout-container layout-section">
         <div className="mx-auto max-w-2xl text-center">
           <MotionAccentLine className="mx-auto block h-px w-12 origin-center bg-accent" />
           <MotionHeading

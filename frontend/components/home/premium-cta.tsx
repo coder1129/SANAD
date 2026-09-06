@@ -19,10 +19,6 @@ export function PremiumCta() {
         aria-hidden="true"
         className="absolute inset-x-0 top-0 h-px bg-primary-foreground/15"
       />
-      <div
-        aria-hidden="true"
-        className="sanad-cta-glow absolute -top-28 left-[12%] size-[32rem] rounded-full bg-accent/10 blur-3xl"
-      />
 
       <div className="layout-container relative py-14 sm:py-16 lg:py-20">
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)] lg:items-end lg:gap-16 xl:gap-24">

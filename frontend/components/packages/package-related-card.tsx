@@ -3,9 +3,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { PackagePrice } from '@/components/packages/package-price';
+import { PackageSocialProof } from '@/components/packages/package-social-proof';
 import {
   getPackageHref,
   getPackagePrimaryImage,
+  getPackageShortDescription,
+  getPackageShortTitle,
 } from '@/lib/packages/presentation';
 import type { CareerPackage } from '@/types/domain';
 
@@ -15,7 +18,6 @@ interface PackageRelatedCardProps {
 
 export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
   const image = getPackagePrimaryImage(packageItem);
-  const firstFeature = packageItem.features[0];
 
   return (
     <Link
@@ -49,22 +51,16 @@ export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
           />
         </div>
         <h3 className="mt-4 text-lg font-semibold text-primary">
-          {packageItem.name}
+          {getPackageShortTitle(packageItem)}
         </h3>
-        {firstFeature ? (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Includes {firstFeature.toLowerCase()}
-            {packageItem.features.length > 1
-              ? ` and ${packageItem.features.length - 1} more`
-              : ''}
-            .
-          </p>
-        ) : (
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Review the complete service scope.
-          </p>
-        )}
+        <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-muted-foreground">
+          {getPackageShortDescription(packageItem)}
+        </p>
         <PackagePrice className="mt-5" packageItem={packageItem} />
+        <PackageSocialProof
+          className="mt-4 border-t border-border/70 pt-4"
+          packageItem={packageItem}
+        />
       </div>
     </Link>
   );

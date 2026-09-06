@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { validatePublicEnvironment } from './public-env-schema';
 
 /**
  * Validation for the public (browser-exposed) frontend configuration.
@@ -9,12 +9,29 @@ import { z } from 'zod';
  * member accesses, which is why each variable is read explicitly instead of
  * through a loop over `process.env`.
  */
-const apiBaseUrlSchema = z
-  .url({ protocol: /^https?$/ })
-  // A trailing slash would produce `//` once endpoint paths are appended.
-  .transform((value) => value.replace(/\/+$/, ''));
+let cachedEnvironment:
+  { apiBaseUrl: string; mediaBaseUrl: string; siteUrl: string } | undefined;
 
-let cachedApiBaseUrl: string | undefined;
+function getPublicEnvironment() {
+  if (cachedEnvironment) return cachedEnvironment;
+
+  const parsed = validatePublicEnvironment(
+    {
+      NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
+      NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    },
+    { requireAll: true },
+  );
+
+  cachedEnvironment = {
+    apiBaseUrl: parsed.apiBaseUrl!,
+    mediaBaseUrl: parsed.mediaBaseUrl!,
+    siteUrl: parsed.siteUrl!,
+  };
+
+  return cachedEnvironment;
+}
 
 /**
  * Backend API base URL including its version prefix, for example
@@ -25,20 +42,13 @@ let cachedApiBaseUrl: string | undefined;
  * instead of silently issuing requests against a relative URL.
  */
 export function getApiBaseUrl(): string {
-  if (cachedApiBaseUrl !== undefined) return cachedApiBaseUrl;
+  return getPublicEnvironment().apiBaseUrl;
+}
 
-  const result = apiBaseUrlSchema.safeParse(
-    process.env.NEXT_PUBLIC_API_BASE_URL,
-  );
+export function getSiteUrl(): string {
+  return getPublicEnvironment().siteUrl;
+}
 
-  if (!result.success) {
-    throw new Error(
-      'NEXT_PUBLIC_API_BASE_URL is missing or is not a valid http(s) URL. ' +
-        'Set it to the backend API base including the version prefix, ' +
-        'for example https://backend.example.com/api/v1.',
-    );
-  }
-
-  cachedApiBaseUrl = result.data;
-  return cachedApiBaseUrl;
+export function getMediaBaseUrl(): string {
+  return getPublicEnvironment().mediaBaseUrl;
 }

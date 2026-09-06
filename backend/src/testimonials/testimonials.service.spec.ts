@@ -33,6 +33,15 @@ describe('TestimonialsService', () => {
         is_published: true,
       });
     });
+
+    it('filters published testimonials by service', async () => {
+      await service.findAllPublished(4);
+
+      expect(prisma.testimonials.findMany.mock.calls[0][0].where).toEqual({
+        is_published: true,
+        package_id: 4,
+      });
+    });
   });
 
   describe('findAllAdmin', () => {
@@ -51,9 +60,9 @@ describe('TestimonialsService', () => {
     it('searches names and both testimonial languages', async () => {
       await service.findAllAdmin(query({ search: 'sara' }));
 
-      expect(prisma.testimonials.findMany.mock.calls[0][0].where.OR).toHaveLength(
-        4,
-      );
+      expect(
+        prisma.testimonials.findMany.mock.calls[0][0].where.OR,
+      ).toHaveLength(4);
     });
   });
 

@@ -26,6 +26,7 @@ describe('PostgreSQL schema integration', () => {
         '20260828030000_init',
         '20260828032000_add_rate_limit_buckets',
         '20260828050000_add_email_verification_tokens',
+        '20260905150000_add_package_reviews',
       ]),
     );
   });
@@ -43,6 +44,9 @@ describe('PostgreSQL schema integration', () => {
           ('order_files', 'file_category'),
           ('order_files', 'metadata'),
           ('package_images', 'alt_text'),
+          ('package_reviews', 'order_id'),
+          ('package_reviews', 'rating'),
+          ('package_reviews', 'status'),
           ('email_verification_tokens', 'token_hash')
         )
     `;
@@ -57,6 +61,9 @@ describe('PostgreSQL schema integration', () => {
         'order_files.file_category',
         'order_files.metadata',
         'package_images.alt_text',
+        'package_reviews.order_id',
+        'package_reviews.rating',
+        'package_reviews.status',
         'email_verification_tokens.token_hash',
       ]),
     );
@@ -94,5 +101,18 @@ describe('PostgreSQL schema integration', () => {
       SELECT to_regclass('public.rate_limit_buckets')::text AS table_name
     `;
     expect(rows[0]?.table_name).toBe('rate_limit_buckets');
+  });
+
+  it('enforces one verified review per completed order at the database layer', async () => {
+    const rows = await prisma.$queryRaw<Array<{ index_name: string }>>`
+      SELECT indexname AS index_name
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND tablename = 'package_reviews'
+        AND indexdef ILIKE '%UNIQUE%'
+        AND indexdef ILIKE '%order_id%'
+    `;
+
+    expect(rows.length).toBeGreaterThan(0);
   });
 });

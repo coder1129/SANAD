@@ -145,7 +145,7 @@ export class OrdersService {
             original_amount: pricing.original_price,
             discount_amount:
               pricing.offer_discount_amount + pricing.coupon_discount_amount,
-            vat_amount: pricing.vat_amount,
+            vat_amount: 0,
             total_amount: pricing.total_amount,
             final_amount: pricing.final_amount,
             coupon_code: pricing.coupon_code,
@@ -259,7 +259,7 @@ export class OrdersService {
               package_images: { where: { is_primary: true }, take: 1 },
             },
           },
-          offer: {
+          offers: {
             select: {
               id: true,
               name_ar: true,
@@ -298,7 +298,7 @@ export class OrdersService {
             package_images: true,
           },
         },
-        offer: true,
+        offers: true,
         payments: {
           orderBy: { created_at: 'desc' },
         },
@@ -329,6 +329,45 @@ export class OrdersService {
       });
     }
 
+    return order;
+  }
+
+  async findByNumberCustomer(orderNumber: string, userId: number) {
+    const normalized = orderNumber.trim().toUpperCase();
+    const order = await this.prisma.orders.findUnique({
+      where: { order_number: normalized },
+      include: {
+        package: { include: { package_images: true } },
+        offers: true,
+        payments: { orderBy: { created_at: 'desc' } },
+        order_status_history: { orderBy: { created_at: 'asc' } },
+        package_review: true,
+      },
+    });
+    if (!order) {
+      throw new NotFoundException({
+        message: 'Order not found',
+        code: 'ORDER_NOT_FOUND',
+      });
+    }
+    if (order.user_id !== userId) {
+      throw new ForbiddenException({
+        message: 'Access denied to this order',
+        code: 'ORDER_FORBIDDEN',
+      });
+    }
+    const paymentConfirmed = order.payments.some((payment) =>
+      ['paid', 'success'].includes(payment.status),
+    );
+    if (
+      !paymentConfirmed ||
+      ['pending', 'pending_payment', 'cancelled'].includes(order.status)
+    ) {
+      throw new BadRequestException({
+        message: 'This order has not been confirmed yet',
+        code: 'ORDER_NOT_CONFIRMED',
+      });
+    }
     return order;
   }
 
@@ -439,7 +478,7 @@ export class OrdersService {
           package: {
             select: { id: true, name_ar: true, name_en: true, price: true },
           },
-          offer: {
+          offers: {
             select: {
               id: true,
               name_ar: true,

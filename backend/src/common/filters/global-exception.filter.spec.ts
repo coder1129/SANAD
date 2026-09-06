@@ -201,7 +201,10 @@ describe('GlobalExceptionFilter', () => {
     it('does not report client errors', () => {
       filter.catch(new HttpException('Nope', HttpStatus.BAD_REQUEST), host);
       filter.catch(new HttpException('Nope', HttpStatus.UNAUTHORIZED), host);
-      filter.catch(new HttpException('Nope', HttpStatus.TOO_MANY_REQUESTS), host);
+      filter.catch(
+        new HttpException('Nope', HttpStatus.TOO_MANY_REQUESTS),
+        host,
+      );
 
       expect(sentry.captureException).not.toHaveBeenCalled();
     });

@@ -20,8 +20,23 @@ export class TransformResponseInterceptor<T> implements NestInterceptor<
     return next.handle().pipe(
       map((data) => {
         // If the data already has a 'success' property, pass through (e.g. paginated)
+        // or normalize to ensure data and message fields are present.
         if (data && typeof data === 'object' && 'success' in data) {
-          return data;
+          if (data.success === false) {
+            return data;
+          }
+          if ('data' in data && 'message' in data) {
+            return data;
+          }
+          return {
+            success: true,
+            data: 'data' in data ? (data as Record<string, unknown>).data : null,
+            message:
+              'message' in data &&
+              typeof (data as Record<string, unknown>).message === 'string'
+                ? ((data as Record<string, unknown>).message as string)
+                : null,
+          } as ApiResponse<T>;
         }
         return {
           success: true,

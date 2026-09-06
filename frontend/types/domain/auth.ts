@@ -37,16 +37,15 @@ export interface ChangePasswordInput {
 }
 
 /**
- * Token pair issued by login, register (when verification is not required) and
- * refresh.
+ * Browser-visible authentication result. The refresh credential is issued only
+ * as an HttpOnly cookie by the backend and is deliberately absent here.
  *
  * Confined to the auth API module and the session engine: tokens never reach
  * React state, the query cache, component props, or persistent storage other
- * than the refresh token's `sessionStorage` slot.
+ * than the access token's in-memory slot.
  */
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
 }
 
 /** Payload of `POST /auth/login`, with the user already mapped to {@link User}. */
@@ -84,4 +83,24 @@ export type RegisterResult =
  */
 export interface AuthMessageResult {
   message: string | null;
+}
+
+/** Payload of POST /auth/passwordless/request */
+export interface PasswordlessRequestResult {
+  message: string;
+  email: string;
+}
+
+/** Result of POST /auth/passwordless/verify */
+export type PasswordlessVerifyResult =
+  | { status: 'authenticated'; user: User; tokens: AuthTokens }
+  | { status: 'profile_required'; registrationToken: string };
+
+/** Payload of POST /auth/passwordless/complete-profile */
+export interface PasswordlessCompleteProfileInput {
+  registrationToken: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  gender: 'male' | 'female';
 }

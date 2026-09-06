@@ -38,8 +38,6 @@ export interface PricingBreakdown {
   coupon_code: string | null;
   coupon_discount_amount: number;
   subtotal_after_discounts: number;
-  vat_percentage: number;
-  vat_amount: number;
   total_amount: number;
   final_amount: number;
   currency: string;

@@ -22,7 +22,9 @@ export const DialogOverlay = forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     className={cn(
-      'fixed inset-0 z-50 bg-primary/45 backdrop-blur-[1px] data-[state=closed]:opacity-0 data-[state=open]:opacity-100 motion-reduce:transition-none',
+      'fixed inset-0 z-50 bg-primary/45 backdrop-blur-[1px]',
+      'transition-opacity data-[state=open]:duration-450 data-[state=closed]:duration-200 ease-[var(--ease-standard)] motion-reduce:transition-none',
+      'data-[state=closed]:opacity-0 data-[state=open]:opacity-100',
       className,
     )}
     ref={ref}
@@ -40,7 +42,10 @@ export const DialogContent = forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       className={cn(
-        'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-5 overflow-y-auto rounded-lg border border-border bg-surface p-5 text-foreground shadow-lg outline-none sm:p-6',
+        'fixed top-1/2 left-1/2 z-50 grid max-h-[calc(100svh-2rem)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 gap-5 overflow-y-auto rounded-lg border border-border bg-surface p-5 text-foreground shadow-lg outline-none sm:p-6',
+        'transition-[opacity,transform] data-[state=open]:duration-[450ms] data-[state=closed]:duration-200 ease-[var(--ease-standard)] motion-reduce:transition-none',
+        'data-[state=open]:opacity-100 data-[state=open]:-translate-y-1/2',
+        'data-[state=closed]:opacity-0 data-[state=closed]:translate-y-[-40%]',
         className,
       )}
       ref={ref}

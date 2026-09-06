@@ -67,3 +67,16 @@ export function getPackageCurrentPrice(packageItem: CareerPackage): number {
 
   return packageItem.price * (1 - offer.discountPercentage / 100);
 }
+
+// Use the published name and description, so admin edits stay consistent
+// between the catalog, comparison and detail pages.
+export function getPackageShortTitle(packageItem: CareerPackage): string {
+  return packageItem.name;
+}
+
+export function getPackageShortDescription(packageItem: CareerPackage): string {
+  return (
+    packageItem.description?.replace(/\s+/g, ' ').trim() ||
+    'Review the included deliverables, delivery estimate and revisions.'
+  );
+}

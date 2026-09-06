@@ -15,8 +15,6 @@ export interface CheckoutPricing {
   couponCode: string | null;
   couponDiscountAmount: number;
   subtotalAfterDiscounts: number;
-  vatPercentage: number;
-  vatAmount: number;
   totalAmount: number;
   finalAmount: number;
   currency: string;

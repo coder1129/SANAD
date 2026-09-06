@@ -25,4 +25,7 @@ export interface CareerPackage {
   sortOrder: number;
   images: PackageImage[];
   offers: PackageOffer[];
+  buyerCount: number;
+  ratingAverage: number | null;
+  ratingCount: number;
 }

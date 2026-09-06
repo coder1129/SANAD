@@ -89,7 +89,6 @@ export class RateLimitGuard implements CanActivate, OnModuleDestroy {
     const record = rows[0];
     const resetTime = record.reset_at.getTime();
 
-
     if (record.count > limit) {
       this.setHeaders(response, limit, 0, resetTime);
       response.setHeader(

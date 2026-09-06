@@ -25,7 +25,6 @@ describe('SettingsService', () => {
       const keys = prisma.settings.findMany.mock.calls[0][0].where.setting_key
         .in as string[];
       expect(keys).toContain('site_name');
-      expect(keys).toContain('vat_percentage');
       expect(keys).not.toContain('payment_secret_key');
       expect(keys).not.toContain('smtp_password');
     });
@@ -34,7 +33,6 @@ describe('SettingsService', () => {
       const result = await service.getPublicSettings();
 
       expect(result.currency).toBe('AED');
-      expect(result.vat_percentage).toBe('5');
       expect(result.site_name).toBeTruthy();
     });
 
@@ -58,9 +56,9 @@ describe('SettingsService', () => {
         settings[`key_${index}`] = 'value';
       }
 
-      await expect(service.bulkUpdate({ settings } as never)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.bulkUpdate({ settings } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
@@ -85,11 +83,6 @@ describe('SettingsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
-    it('rejects a VAT percentage outside 0-100', async () => {
-      await expect(
-        service.bulkUpdate({ settings: { vat_percentage: '150' } } as never),
-      ).rejects.toBeInstanceOf(BadRequestException);
-    });
 
     it('rejects a currency that is not a 3-letter uppercase code', async () => {
       await expect(
@@ -97,9 +90,33 @@ describe('SettingsService', () => {
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
+    it('rejects an invalid central WhatsApp number', async () => {
+      await expect(
+        service.bulkUpdate({
+          settings: { whatsapp_number: 'not-a-number' },
+        } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('accepts a formatted international WhatsApp number', async () => {
+      await service.bulkUpdate({
+        settings: { whatsapp_number: '+971 50 000 0000' },
+      } as never);
+
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a social link with an unsafe protocol', async () => {
+      await expect(
+        service.bulkUpdate({
+          settings: { instagram_url: 'javascript:alert(1)' },
+        } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
     it('upserts every valid entry inside one transaction', async () => {
       await service.bulkUpdate({
-        settings: { site_name: 'SANAD', vat_percentage: '5' },
+        settings: { site_name: 'SANAD', currency: 'AED' },
       } as never);
 
       expect(prisma.settings.upsert).toHaveBeenCalledTimes(2);
@@ -110,7 +127,7 @@ describe('SettingsService', () => {
     it('validates every entry before writing any of them', async () => {
       await expect(
         service.bulkUpdate({
-          settings: { site_name: 'SANAD', vat_percentage: '-1' },
+          settings: { site_name: 'SANAD', currency: 'invalid' },
         } as never),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.$transaction).not.toHaveBeenCalled();

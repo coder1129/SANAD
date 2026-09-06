@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Delete,
+  Patch,
   Param,
   Body,
   UseInterceptors,
@@ -18,7 +19,12 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MediaService } from './media.service';
-import { UploadSiteMediaDto, UploadPackageImageDto } from './dto';
+import {
+  UpdatePackageImageDto,
+  UpdateSiteMediaDto,
+  UploadSiteMediaDto,
+  UploadPackageImageDto,
+} from './dto';
 import { Public, Roles, CurrentUser } from '../common/decorators';
 import { UserRole } from '../common/enums';
 import { MulterFile } from '../common/interfaces';
@@ -43,6 +49,12 @@ export class MediaController {
 @Controller('admin')
 export class AdminMediaController {
   constructor(private readonly mediaService: MediaService) {}
+
+  @Get('media')
+  @ApiOperation({ summary: 'List all site media assets (Admin)' })
+  async getAllSiteMedia() {
+    return this.mediaService.getAllAdmin();
+  }
 
   @Post('media')
   @ApiOperation({ summary: 'Upload site media asset (Admin)' })
@@ -76,6 +88,16 @@ export class AdminMediaController {
     return this.mediaService.deleteSiteMedia(id, adminId);
   }
 
+  @Patch('media/:id')
+  @ApiOperation({ summary: 'Update site media metadata (Admin)' })
+  async updateSiteMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSiteMediaDto,
+    @CurrentUser('id') adminId: number,
+  ) {
+    return this.mediaService.updateSiteMedia(id, dto, adminId);
+  }
+
   @Post('packages/:id/images')
   @ApiOperation({ summary: 'Upload image for package (Admin)' })
   @ApiConsumes('multipart/form-data')
@@ -107,5 +129,21 @@ export class AdminMediaController {
     @CurrentUser('id') adminId: number,
   ) {
     return this.mediaService.deletePackageImage(packageId, imageId, adminId);
+  }
+
+  @Patch('packages/:packageId/images/:imageId')
+  @ApiOperation({ summary: 'Update package image metadata (Admin)' })
+  async updatePackageImage(
+    @Param('packageId', ParseIntPipe) packageId: number,
+    @Param('imageId', ParseIntPipe) imageId: number,
+    @Body() dto: UpdatePackageImageDto,
+    @CurrentUser('id') adminId: number,
+  ) {
+    return this.mediaService.updatePackageImage(
+      packageId,
+      imageId,
+      dto,
+      adminId,
+    );
   }
 }

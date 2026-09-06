@@ -57,7 +57,7 @@ export function HowItWorks() {
         <MotionTimeline className="mt-12 grid border-y border-border pl-6 lg:mt-14 lg:grid-cols-3 lg:pl-0">
           {steps.map(({ description, number, title }) => (
             <MotionStaggerItem
-              className="border-b border-border py-8 last:border-b-0 sm:py-10 lg:border-r lg:border-b-0 lg:px-8 lg:first:pl-0 lg:last:border-r-0 lg:last:pr-0"
+              className="border-b border-border py-8 transition-colors duration-200 hover:bg-surface-muted/55 last:border-b-0 sm:py-10 lg:border-r lg:border-b-0 lg:px-8 lg:first:pl-0 lg:last:border-r-0 lg:last:pr-0"
               key={number}
             >
               <div className="flex items-center gap-5">

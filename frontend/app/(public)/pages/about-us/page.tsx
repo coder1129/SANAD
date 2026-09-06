@@ -2,15 +2,31 @@ import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { CmsRichText } from '@/components/pages/cms-rich-text';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { PUBLIC_SERVICES_HREF } from '@/constants/public-navigation';
+import { getPublishedCmsPage } from '@/lib/pages/cms';
 
-export const metadata: Metadata = {
+export const dynamic = 'force-dynamic';
+
+const fallbackMetadata: Metadata = {
   title: 'About Us | SANAD',
   description:
     'SANAD helps professionals present their experience with clarity across CVs, LinkedIn profiles, and career documents for the UAE and Gulf market.',
+  alternates: { canonical: '/pages/about-us' },
 };
+
+export async function generateMetadata(): Promise<Metadata> {
+  const page = await getPublishedCmsPage('about-us');
+  if (!page) return fallbackMetadata;
+
+  return {
+    title: `${page.title_en} | SANAD`,
+    description: page.meta_description_en ?? fallbackMetadata.description,
+    alternates: fallbackMetadata.alternates,
+  };
+}
 
 const principles = [
   {
@@ -39,12 +55,14 @@ const principles = [
   },
 ] as const;
 
-export default function AboutUsPage() {
+export default async function AboutUsPage() {
+  const cmsPage = await getPublishedCmsPage('about-us');
+
   return (
     <div className="bg-background">
       {/* Header */}
       <div className="border-b border-border bg-surface-muted">
-        <div className="layout-container py-14 sm:py-20">
+        <div className="layout-container py-16 sm:py-20">
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-sm text-muted-foreground">
               <li>
@@ -64,12 +82,11 @@ export default function AboutUsPage() {
             Company
           </p>
           <h1 className="type-h2 mt-5 max-w-[20ch]">
-            Career Documents, Refined
+            {cmsPage?.title_en ?? 'Career Documents, Refined'}
           </h1>
           <p className="mt-6 max-w-[42rem] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            SANAD helps professionals present their experience with clarity
-            across a CV, LinkedIn profile, and supporting career documents
-            shaped for the UAE and Gulf job market.
+            {cmsPage?.meta_description_en ??
+              'SANAD helps professionals present their experience with clarity across a CV, LinkedIn profile, and supporting career documents shaped for the UAE and Gulf job market.'}
           </p>
         </div>
       </div>
@@ -78,23 +95,29 @@ export default function AboutUsPage() {
       <div className="layout-container layout-section">
         <div className="grid gap-14 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,0.45fr)] lg:items-start lg:gap-20">
           <div className="space-y-6 text-sm leading-7 text-foreground/80 sm:text-base sm:leading-8">
-            <h2 className="type-h4 text-primary">What we do</h2>
-            <p>
-              We write and optimise professional CVs, LinkedIn profiles, cover
-              letters, and related career documents. Each piece of work is
-              handled by a writer with direct experience in Gulf-market hiring
-              standards and ATS screening requirements.
-            </p>
-            <p>
-              The process is straightforward: choose a service, share your
-              career context, and receive polished deliverables within 48–72
-              business hours. Unlimited revisions are included within 14 days of
-              the first draft so the final result reflects your voice and goals
-              accurately.
-            </p>
+            {cmsPage?.content_en ? (
+              <CmsRichText content={cmsPage.content_en} />
+            ) : (
+              <>
+                <h2 className="type-h4 text-primary">What we do</h2>
+                <p>
+                  We write and optimise professional CVs, LinkedIn profiles,
+                  cover letters, and related career documents. Each piece of
+                  work is handled by a writer with direct experience in
+                  Gulf-market hiring standards and ATS screening requirements.
+                </p>
+                <p>
+                  The process is straightforward: choose a service, share your
+                  career context, and receive polished deliverables within 48–72
+                  business hours. Unlimited revisions are included within 14
+                  days of the first draft so the final result reflects your
+                  voice and goals accurately.
+                </p>
+              </>
+            )}
           </div>
 
-          <div className="rounded-lg border border-border bg-surface-muted p-7 sm:p-8">
+          <div className="rounded-lg border border-border bg-surface-muted p-7 shadow-xs sm:p-8">
             <h3 className="type-h4 text-primary">Quick facts</h3>
             <dl className="mt-6 space-y-5 text-sm">
               <div>

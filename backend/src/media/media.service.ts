@@ -6,7 +6,12 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../files/storage.service';
-import { UploadSiteMediaDto, UploadPackageImageDto } from './dto';
+import {
+  UpdatePackageImageDto,
+  UpdateSiteMediaDto,
+  UploadSiteMediaDto,
+  UploadPackageImageDto,
+} from './dto';
 import { MulterFile } from '../common/interfaces';
 import { v4 as uuidv4 } from 'uuid';
 import * as path from 'path';
@@ -55,6 +60,18 @@ export class MediaService {
       media.map(async (m) => ({
         ...m,
         url: await this.storageService.getSignedUrl(m.media_path, 86400),
+      })),
+    );
+  }
+
+  async getAllAdmin() {
+    const media = await this.prisma.site_media.findMany({
+      orderBy: { created_at: 'desc' },
+    });
+    return Promise.all(
+      media.map(async (item) => ({
+        ...item,
+        url: await this.storageService.getSignedUrl(item.media_path, 86400),
       })),
     );
   }
@@ -155,7 +172,39 @@ export class MediaService {
     ]);
     await this.deleteUploadedObject(media.media_path);
 
-    return { success: true, message: 'Media deleted' };
+    return { success: true, data: null, message: 'Media deleted' };
+  }
+
+  async updateSiteMedia(id: number, dto: UpdateSiteMediaDto, adminId: number) {
+    const media = await this.prisma.site_media.findUnique({ where: { id } });
+    if (!media) throw new NotFoundException('Site media not found');
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.site_media.update({
+        where: { id },
+        data: {
+          ...(dto.alt_text_en !== undefined && {
+            alt_text_en: dto.alt_text_en,
+          }),
+          ...(dto.is_active !== undefined && { is_active: dto.is_active }),
+          updated_at: new Date(),
+        },
+      });
+      await tx.admin_activity_log.create({
+        data: {
+          admin_id: adminId,
+          action: 'update_site_media',
+          table_name: 'site_media',
+          record_id: id,
+          description: `Updated site media: ${media.media_key}`,
+          changes: { ...dto },
+        },
+      });
+      return result;
+    });
+    return {
+      ...updated,
+      url: await this.storageService.getSignedUrl(updated.media_path, 86400),
+    };
   }
 
   // Admin: upload image for package
@@ -253,7 +302,54 @@ export class MediaService {
     ]);
     await this.deleteUploadedObject(image.image_path);
 
-    return { success: true, message: 'Package image deleted' };
+    return { success: true, data: null, message: 'Package image deleted' };
+  }
+
+  async updatePackageImage(
+    packageId: number,
+    imageId: number,
+    dto: UpdatePackageImageDto,
+    adminId: number,
+  ) {
+    const image = await this.prisma.package_images.findUnique({
+      where: { id: imageId },
+    });
+    if (!image || image.package_id !== packageId) {
+      throw new NotFoundException('Image not found for this package');
+    }
+    const updated = await this.prisma.$transaction(async (tx) => {
+      if (dto.is_primary) {
+        await tx.package_images.updateMany({
+          where: { package_id: packageId },
+          data: { is_primary: false },
+        });
+      }
+      const result = await tx.package_images.update({
+        where: { id: imageId },
+        data: {
+          ...(dto.alt_text !== undefined && { alt_text: dto.alt_text }),
+          ...(dto.is_primary !== undefined && { is_primary: dto.is_primary }),
+          ...(dto.display_order !== undefined && {
+            display_order: dto.display_order,
+          }),
+        },
+      });
+      await tx.admin_activity_log.create({
+        data: {
+          admin_id: adminId,
+          action: 'update_package_image',
+          table_name: 'package_images',
+          record_id: imageId,
+          description: `Updated image #${imageId} for package #${packageId}`,
+          changes: { ...dto },
+        },
+      });
+      return result;
+    });
+    return {
+      ...updated,
+      url: await this.storageService.getSignedUrl(updated.image_path, 86400),
+    };
   }
 
   private async deleteUploadedObject(key: string): Promise<void> {

@@ -1,5 +1,10 @@
-import Link from 'next/link';
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 import type { SVGProps } from 'react';
+
+import { settingsApi, settingsKeys } from '@/lib/api';
+import { whatsappHref } from '@/lib/orders/presentation';
 
 function WhatsAppIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -17,24 +22,32 @@ function WhatsAppIcon(props: SVGProps<SVGSVGElement>) {
 }
 
 interface WhatsAppFloatingButtonProps {
-  phoneNumber?: string;
   defaultMessage?: string;
   className?: string;
 }
 
 export function WhatsAppFloatingButton({
-  phoneNumber = '966500000000',
   defaultMessage = 'Hello, I would like to ask about SANAD career services.',
   className = '',
 }: WhatsAppFloatingButtonProps) {
-  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(defaultMessage)}`;
+  const settings = useQuery({
+    queryKey: settingsKeys.public,
+    queryFn: ({ signal }) => settingsApi.getPublic({ signal }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const whatsappUrl = whatsappHref(
+    settings.data?.whatsapp_number,
+    defaultMessage,
+  );
+
+  if (!whatsappUrl) return null;
 
   return (
     <div
       className={`fixed right-6 bottom-6 z-50 ${className}`}
       data-whatsapp-floating
     >
-      <Link
+      <a
         aria-label="Chat on WhatsApp"
         className="flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-[#20bd5a] hover:shadow-xl active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
         href={whatsappUrl}
@@ -42,7 +55,7 @@ export function WhatsAppFloatingButton({
         target="_blank"
       >
         <WhatsAppIcon className="size-7" />
-      </Link>
+      </a>
     </div>
   );
 }

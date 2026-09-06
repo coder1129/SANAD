@@ -47,6 +47,9 @@ export function PackagePrice({
           </p>
         ) : null}
       </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Final total shown at checkout
+      </p>
     </div>
   );
 }

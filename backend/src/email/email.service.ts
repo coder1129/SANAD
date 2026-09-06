@@ -187,6 +187,35 @@ export class EmailService {
     });
   }
 
+  async sendOtpEmail(email: string, otp: string) {
+    const safeOtp = this.escapeHtml(otp);
+    const subject = 'Your SANAD verification code';
+    const bodyHtml = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 540px; margin: 0 auto; padding: 32px 24px; color: #1e293b; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px;">
+        <h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 700; color: #0f172a;">Your SANAD verification code</h2>
+        <p style="font-size: 15px; line-height: 1.6; margin: 16px 0;">Your verification code is:</p>
+        <div style="margin: 24px 0; padding: 16px; background-color: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center;">
+          <span style="font-family: monospace, Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 6px; color: #0f172a;">${safeOtp}</span>
+        </div>
+        <p style="font-size: 14px; color: #475569; margin: 16px 0;">This code expires in 10 minutes.</p>
+        <p style="font-size: 13px; color: #94a3b8; margin: 24px 0 0 0;">If you did not request this code, you can ignore this email.</p>
+      </div>
+    `;
+    const bodyText = `Your verification code is:\n\n${otp}\n\nThis code expires in 10 minutes.\n\nIf you did not request this code, you can ignore this email.`;
+
+    await this.queueEmail({
+      to: email,
+      subject,
+      bodyHtml,
+      bodyText,
+      templateName: 'otp_verification',
+      templateData: { otp },
+      priority: 1,
+    });
+
+    await this.sendDirect({ to: email, subject, bodyHtml, bodyText });
+  }
+
   private escapeHtml(value: string): string {
     return value.replace(
       /[&<>'"]/g,

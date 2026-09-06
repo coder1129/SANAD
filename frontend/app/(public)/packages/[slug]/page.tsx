@@ -5,7 +5,6 @@ import {
   ChevronRight,
   CircleCheckBig,
   Clock3,
-  FileCheck2,
   ListChecks,
   MessageCircle,
   RefreshCcw,
@@ -19,6 +18,12 @@ import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
 
 import { PackageGallery } from '@/components/packages/package-gallery';
+import { PackageFeedbackUnavailable } from '@/components/packages/package-feedback-unavailable';
+import { getServiceCategory } from '@/lib/packages/categories';
+import { getScopeQuestions } from '@/lib/packages/scope-questions';
+import { whatsappHref } from '@/lib/orders/presentation';
+import { VerifiedReviewCard } from '@/components/feedback/verified-review-card';
+import { FeedbackSummary } from '@/components/feedback/feedback-summary';
 import {
   getOrderDisplayPrice,
   PackageOrderCard,
@@ -32,8 +37,13 @@ import {
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PUBLIC_WHATSAPP_HREF } from '@/constants/public-navigation';
-import { checkoutApi, isApiError, packagesApi } from '@/lib/api';
+import {
+  checkoutApi,
+  isApiError,
+  packagesApi,
+  reviewsApi,
+  settingsApi,
+} from '@/lib/api';
 import { getPackageDetailContent } from '@/lib/packages/detail-content';
 import {
   getBestPackageOffer,
@@ -55,6 +65,9 @@ const getPackage = cache((id: number) => packagesApi.getById(id));
 const getPackageCatalog = cache(() => packagesApi.list({ limit: 100 }));
 const getPricing = cache((packageId: number, offerId?: number) =>
   checkoutApi.preview({ packageId, offerId }),
+);
+const getFeedback = cache((packageId: number) =>
+  reviewsApi.listPublic({ packageId, limit: 100 }),
 );
 
 async function resolvePackage(slug: string): Promise<CareerPackage> {
@@ -83,19 +96,29 @@ function toAbsoluteUrl(value: string): string | null {
 }
 
 async function getOptionalPageData(packageItem: CareerPackage): Promise<{
+  feedback: Awaited<ReturnType<typeof reviewsApi.listPublic>> | null;
   pricing: CheckoutPricing | null;
   relatedPackages: CareerPackage[];
+  contactNumber: string | null;
 }> {
   const bestOffer = getBestPackageOffer(packageItem);
-  const [pricingResult, catalogResult] = await Promise.allSettled([
-    getPricing(packageItem.id, bestOffer?.id),
-    getPackageCatalog(),
-  ]);
+  const [pricingResult, catalogResult, feedbackResult, settingsResult] =
+    await Promise.allSettled([
+      getPricing(packageItem.id, bestOffer?.id),
+      getPackageCatalog(),
+      getFeedback(packageItem.id),
+      settingsApi.getPublic(),
+    ]);
   const catalog =
     catalogResult.status === 'fulfilled' ? catalogResult.value.items : [];
   const relatedPackages = catalog
     .filter((candidate) => candidate.id !== packageItem.id)
     .sort((first, second) => {
+      const firstMatch =
+        getServiceCategory(first) === getServiceCategory(packageItem);
+      const secondMatch =
+        getServiceCategory(second) === getServiceCategory(packageItem);
+      if (firstMatch !== secondMatch) return firstMatch ? -1 : 1;
       const firstDistance = Math.abs(first.sortOrder - packageItem.sortOrder);
       const secondDistance = Math.abs(second.sortOrder - packageItem.sortOrder);
 
@@ -106,8 +129,14 @@ async function getOptionalPageData(packageItem: CareerPackage): Promise<{
     .slice(0, 3);
 
   return {
+    feedback:
+      feedbackResult.status === 'fulfilled' ? feedbackResult.value : null,
     pricing: pricingResult.status === 'fulfilled' ? pricingResult.value : null,
     relatedPackages,
+    contactNumber:
+      settingsResult.status === 'fulfilled'
+        ? (settingsResult.value.whatsapp_number ?? null)
+        : null,
   };
 }
 
@@ -176,21 +205,22 @@ export default async function PackageDetailPage({
     redirect(getPackageHref(packageItem));
   }
 
-  const { pricing, relatedPackages } = await getOptionalPageData(packageItem);
+  const { feedback, pricing, relatedPackages, contactNumber } =
+    await getOptionalPageData(packageItem);
+  const feedbackItems = feedback?.items ?? [];
+  const feedbackRating = feedback?.summary.averageRating ?? 0;
   const content = getPackageDetailContent(packageItem);
+  const scopeQuestions = getScopeQuestions(packageItem);
+  const contactHref = whatsappHref(
+    contactNumber,
+    `Hello, I would like to confirm the scope, delivery timing and revisions for ${packageItem.name} before ordering.`,
+  );
   const bestOffer = getBestPackageOffer(packageItem);
   const revisionLabel = `${packageItem.maxRevisions} ${
     packageItem.maxRevisions === 1 ? 'revision' : 'revisions'
   }`;
   const displayPrice = getOrderDisplayPrice(packageItem, pricing);
-  const orderMessage = encodeURIComponent(
-    `Hello, I am ready to start the ${packageItem.name} (service #${packageItem.id}). The current displayed total is ${displayPrice}. Please confirm the next steps.`,
-  );
-  const questionMessage = encodeURIComponent(
-    `Hello, I have a question about the scope of ${packageItem.name} (service #${packageItem.id}).`,
-  );
-  const orderHref = `${PUBLIC_WHATSAPP_HREF}?text=${orderMessage}`;
-  const askHref = `${PUBLIC_WHATSAPP_HREF}?text=${questionMessage}`;
+  const checkoutHref = `/checkout/${getPackageSlug(packageItem)}`;
   const packageHref = getPackageHref(packageItem);
   const canonicalUrl = toAbsoluteUrl(packageHref) ?? packageHref;
   const primaryImage = getPackagePrimaryImage(packageItem);
@@ -220,7 +250,7 @@ export default async function PackageDetailPage({
   };
 
   return (
-    <div className="package-detail-page pb-24 lg:pb-0">
+    <div className="package-detail-page pb-[calc(7rem+env(safe-area-inset-bottom))] lg:pb-0">
       <script
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
@@ -272,7 +302,7 @@ export default async function PackageDetailPage({
             </ol>
           </nav>
 
-          <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(24rem,1.08fr)] lg:items-center lg:gap-16 xl:gap-20">
+          <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-16 xl:gap-20">
             <div className="sanad-detail-enter sanad-detail-enter-delay-1">
               <div className="flex flex-wrap gap-2">
                 <Badge className="border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground">
@@ -288,7 +318,7 @@ export default async function PackageDetailPage({
                   </Badge>
                 ) : null}
               </div>
-              <h1 className="type-h1 mt-5 max-w-[16ch] text-primary-foreground">
+              <h1 className="type-h2 mt-5 max-w-[22ch] text-primary-foreground">
                 {packageItem.name}
               </h1>
               <p className="mt-6 max-w-[42rem] text-base leading-7 text-primary-foreground/80 sm:text-lg sm:leading-8">
@@ -303,7 +333,7 @@ export default async function PackageDetailPage({
                     Delivery
                   </dt>
                   <dd className="mt-2 font-semibold">
-                    {packageItem.deliveryDays} days
+                    {packageItem.deliveryDays} days estimated
                   </dd>
                 </div>
                 <div className="rounded-lg border border-primary-foreground/15 bg-primary-foreground/5 p-4 backdrop-blur-sm">
@@ -320,15 +350,38 @@ export default async function PackageDetailPage({
             </div>
 
             <div className="sanad-detail-enter sanad-detail-enter-delay-2">
-              <PackageGallery
-                images={packageItem.images}
-                packageName={packageItem.name}
+              <PackageOrderCard
+                checkoutHref={checkoutHref}
+                packageItem={packageItem}
+                pricing={pricing}
               />
             </div>
           </div>
         </div>
       </section>
 
+      <nav
+        aria-label="On this service page"
+        className="border-b border-border bg-surface"
+      >
+        <div className="layout-container flex flex-wrap gap-x-5 gap-y-1 py-3 text-sm font-semibold text-primary">
+          {[
+            ['included-heading', 'What is included'],
+            ['service-preview', 'Preview'],
+            ['preparation-heading', 'What to prepare'],
+            ['service-feedback', 'Reviews'],
+            ['service-faq', 'FAQ'],
+          ].map(([id, label]) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
+      </nav>
       <section className="bg-background" id="service-details">
         <div className="layout-container layout-section">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-16 xl:gap-20">
@@ -368,7 +421,11 @@ export default async function PackageDetailPage({
                 <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
                   Deliverables
                 </p>
-                <h2 className="type-h2 mt-3 text-primary" id="included-heading">
+                <h2
+                  className="type-h2 mt-3 text-primary"
+                  id="included-heading"
+                  style={{ scrollMarginTop: '6rem' }}
+                >
                   What&rsquo;s Included
                 </h2>
                 <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
@@ -404,6 +461,54 @@ export default async function PackageDetailPage({
               </section>
 
               <section
+                className="mt-10 rounded-lg border border-border bg-surface-muted p-6"
+                aria-labelledby="scope-heading"
+              >
+                <h2
+                  id="scope-heading"
+                  className="text-lg font-semibold text-primary"
+                >
+                  Confirm the details before ordering
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  The published scope is listed above. Ask SANAD about these
+                  details if they matter to your decision.
+                </p>
+                <ul className="mt-4 grid gap-3 text-sm leading-6">
+                  {scopeQuestions.map((question) => (
+                    <li key={question} className="flex gap-2">
+                      <MessageCircle
+                        className="mt-1 size-4 shrink-0 text-secondary"
+                        aria-hidden="true"
+                      />
+                      <span>{question}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Confirm whether the delivery estimate uses working or calendar
+                  days, when the timeline starts, and the deadline for
+                  requesting revisions.
+                </p>
+                {contactHref ? (
+                  <Button asChild className="mt-5" variant="outline">
+                    <a
+                      href={contactHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Ask SANAD before ordering
+                      <ArrowRight className="size-4" aria-hidden="true" />
+                    </a>
+                  </Button>
+                ) : (
+                  <Button asChild className="mt-5" variant="outline">
+                    <Link href="/faq">Read the FAQ</Link>
+                  </Button>
+                )}
+              </section>
+
+              <section
                 aria-labelledby="preparation-heading"
                 className="mt-14 border-t border-border pt-14"
               >
@@ -418,6 +523,7 @@ export default async function PackageDetailPage({
                     <h2
                       className="type-h3 text-primary"
                       id="preparation-heading"
+                      style={{ scrollMarginTop: '6rem' }}
                     >
                       What to prepare
                     </h2>
@@ -473,6 +579,49 @@ export default async function PackageDetailPage({
                 </ol>
               </section>
 
+              <section
+                aria-labelledby="service-feedback-heading"
+                className="mt-14 border-t border-border pt-14 scroll-mt-24"
+                id="service-feedback"
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
+                      Client feedback
+                    </p>
+                    <h2
+                      className="type-h2 mt-3 text-primary"
+                      id="service-feedback-heading"
+                    >
+                      What clients say about this service
+                    </h2>
+                  </div>
+                  {feedbackItems.length > 0 ? (
+                    <FeedbackSummary
+                      count={
+                        feedback?.summary.totalReviews ?? feedbackItems.length
+                      }
+                      rating={feedbackRating}
+                    />
+                  ) : null}
+                </div>
+                {feedback === null ? (
+                  <PackageFeedbackUnavailable />
+                ) : feedbackItems.length > 0 ? (
+                  <div className="mt-8 grid gap-5 md:grid-cols-2">
+                    {feedbackItems.map((review) => (
+                      <VerifiedReviewCard key={review.id} review={review} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-8 border border-dashed border-border bg-surface-muted p-6 sm:p-8">
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      No published reviews for this service yet.
+                    </p>
+                  </div>
+                )}
+              </section>
+
               {content.importantNote ? (
                 <div className="mt-10 flex items-start gap-4 rounded-lg border border-warning/30 bg-warning/5 p-5">
                   <ShieldCheck
@@ -491,19 +640,32 @@ export default async function PackageDetailPage({
               ) : null}
             </div>
 
-            <div className="lg:sticky lg:top-6">
-              <PackageOrderCard
-                askHref={askHref}
-                orderHref={orderHref}
-                packageItem={packageItem}
-                pricing={pricing}
+            <aside
+              className="scroll-mt-24 lg:sticky lg:top-24"
+              id="service-preview"
+              aria-label="Service illustration"
+            >
+              <h2 className="type-h3 mb-4 text-primary">Service preview</h2>
+              <PackageGallery
+                images={packageItem.images}
+                packageName={packageItem.name}
               />
-            </div>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Service illustration. Confirm the deliverables and available
+                work samples with SANAD.
+              </p>
+              <Button asChild variant="outline" className="mt-5 w-full">
+                <Link href="/packages#compare-packages">Compare packages</Link>
+              </Button>
+            </aside>
           </div>
         </div>
       </section>
 
-      <section className="border-y border-border bg-surface-muted">
+      <section
+        className="scroll-mt-24 border-y border-border bg-surface-muted"
+        id="service-faq"
+      >
         <div className="layout-container py-14 sm:py-18">
           <div className="grid gap-10 lg:grid-cols-[minmax(18rem,0.72fr)_minmax(0,1.28fr)] lg:gap-16">
             <div>
@@ -598,59 +760,7 @@ export default async function PackageDetailPage({
         </div>
       </section>
 
-      <section className="bg-background">
-        <div className="layout-container py-12 sm:py-16">
-          <div className="relative overflow-hidden rounded-xl border border-border bg-primary px-6 py-9 text-primary-foreground sm:px-9 lg:flex lg:items-center lg:justify-between lg:gap-10">
-            <div
-              aria-hidden="true"
-              className="sanad-cta-glow absolute -top-20 -right-16 size-64 rounded-full bg-accent/15 blur-3xl"
-            />
-            <div className="relative flex items-start gap-4">
-              <MessageCircle
-                aria-hidden="true"
-                className="mt-1 size-6 shrink-0 text-accent"
-              />
-              <div>
-                <h2 className="type-h3 text-primary-foreground">
-                  Ready to discuss {packageItem.name}?
-                </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-primary-foreground/75 sm:text-base">
-                  Start the order or ask a focused question about the scope
-                  before you continue.
-                </p>
-              </div>
-            </div>
-            <div className="relative mt-7 flex flex-col gap-3 sm:flex-row lg:mt-0 lg:shrink-0">
-              <Button
-                asChild
-                className="border-accent bg-accent text-accent-foreground hover:bg-[color:var(--sanad-champagne)]"
-                size="lg"
-              >
-                <Link
-                  href={orderHref}
-                  rel="noreferrer noopener"
-                  target="_blank"
-                >
-                  Start Your Order
-                  <FileCheck2 aria-hidden="true" className="size-4" />
-                </Link>
-              </Button>
-              <Button
-                asChild
-                className="border-primary-foreground/25 bg-transparent text-primary-foreground hover:border-accent hover:bg-primary-foreground/10"
-                size="lg"
-                variant="outline"
-              >
-                <Link href={askHref} rel="noreferrer noopener" target="_blank">
-                  Ask a Question
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-8px_24px_rgb(11_39_68_/_0.1)] backdrop-blur-md lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgb(11_39_68_/_0.1)] backdrop-blur-md lg:hidden">
         <div className="mx-auto flex max-w-xl items-center gap-4">
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-muted-foreground">
@@ -659,10 +769,13 @@ export default async function PackageDetailPage({
             <p className="mt-0.5 font-display text-xl leading-none text-primary">
               {displayPrice}
             </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Final total shown at checkout
+            </p>
           </div>
-          <Button asChild className="group shrink-0" size="lg">
-            <Link href={orderHref} rel="noreferrer noopener" target="_blank">
-              Start Order
+          <Button asChild className="group min-w-0 shrink-0" size="lg">
+            <Link href={checkoutHref}>
+              Continue
               <ArrowRight
                 aria-hidden="true"
                 className="size-4 transition-transform motion-safe:group-hover:translate-x-0.5"

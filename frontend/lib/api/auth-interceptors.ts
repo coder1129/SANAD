@@ -7,9 +7,8 @@ import { apiClient } from './client';
  *
  * - `session` (default): attach the bearer token, and on a 401 refresh the
  *   session once and replay the request. Correct for every protected endpoint.
- * - `bearer`: attach the bearer token but never auto-refresh. Used by
- *   `POST /auth/logout`, where a refresh would resurrect the session that is
- *   being destroyed.
+ * - `bearer`: attach the bearer token but never auto-refresh. Reserved for
+ *   operations that must fail immediately when their access token has expired.
  * - `none`: send no token and never auto-refresh. Used by the public auth
  *   lifecycle endpoints — login, register, refresh, and the email/password
  *   flows — where a refresh attempt would be recursive or meaningless.

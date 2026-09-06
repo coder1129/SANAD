@@ -1,12 +1,12 @@
 import Link from 'next/link';
 
 import { MobileNavigation } from '@/components/layouts/mobile-navigation';
+import { AccountNavigation } from '@/components/auth/account-navigation';
 import { BrandLogo } from '@/components/shared/brand-logo';
 import { Button } from '@/components/ui/button';
 import {
   PUBLIC_NAVIGATION_LINKS,
   PUBLIC_PRIMARY_ACTION,
-  PUBLIC_SIGN_IN_LINK,
 } from '@/constants/public-navigation';
 
 const desktopLinkClassName =
@@ -14,8 +14,8 @@ const desktopLinkClassName =
 
 export function PublicNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-surface shadow-xs">
-      <div className="layout-container flex min-h-[5.25rem] items-center gap-4">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-surface/95 shadow-xs backdrop-blur-md">
+      <div className="layout-container flex min-h-20 items-center gap-4 sm:min-h-[5.25rem]">
         <Link aria-label="SANAD home" className="shrink-0 rounded-md" href="/">
           <BrandLogo loading="eager" size="sm" />
         </Link>
@@ -36,11 +36,7 @@ export function PublicNavbar() {
         </nav>
 
         <div className="ml-auto hidden items-center gap-2 lg:flex">
-          <Button asChild variant="ghost">
-            <Link href={PUBLIC_SIGN_IN_LINK.href}>
-              {PUBLIC_SIGN_IN_LINK.label}
-            </Link>
-          </Button>
+          <AccountNavigation />
           <Button asChild variant="primary">
             <Link href={PUBLIC_PRIMARY_ACTION.href}>
               {PUBLIC_PRIMARY_ACTION.label}

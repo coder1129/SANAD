@@ -40,6 +40,17 @@ export class OrdersController {
     return this.ordersService.findAllCustomer(userId, query);
   }
 
+  @Get('number/:orderNumber')
+  @ApiOperation({
+    summary: 'Get a paid customer order by its public order number',
+  })
+  async findByNumberCustomer(
+    @Param('orderNumber') orderNumber: string,
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.ordersService.findByNumberCustomer(orderNumber, userId);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get customer order details with status history',

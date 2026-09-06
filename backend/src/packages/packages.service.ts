@@ -3,6 +3,17 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePackageDto, UpdatePackageDto } from './dto';
 import { PaginationDto, createPaginatedResponse } from '../common/utils';
 import { StorageService } from '../files/storage.service';
+import { OrderStatus } from '../common/enums';
+
+const PURCHASED_ORDER_STATUSES = [
+  OrderStatus.PAID,
+  OrderStatus.AWAITING_INFORMATION,
+  OrderStatus.RECEIVED,
+  OrderStatus.IN_PROGRESS,
+  OrderStatus.UNDER_REVIEW,
+  OrderStatus.READY,
+  OrderStatus.COMPLETED,
+];
 
 @Injectable()
 export class PackagesService {
@@ -31,6 +42,38 @@ export class PackagesService {
     };
   }
 
+  private async toPublicPackage<
+    T extends {
+      package_images?: any[];
+      _count?: { orders: number };
+      package_reviews?: Array<{ rating: number }>;
+    },
+  >(packageItem: T) {
+    const withImages = await this.withPublicImageUrls(packageItem);
+    const { _count, package_reviews, ...publicPackage } = withImages;
+    const ratings = (package_reviews ?? [])
+      .map((review) => review.rating)
+      .filter(
+        (rating): rating is number =>
+          rating !== null && rating >= 1 && rating <= 5,
+      );
+    const ratingAverage =
+      ratings.length > 0
+        ? Math.round(
+            (ratings.reduce((total, rating) => total + rating, 0) /
+              ratings.length) *
+              10,
+          ) / 10
+        : null;
+
+    return {
+      ...publicPackage,
+      buyer_count: _count?.orders ?? 0,
+      rating_average: ratingAverage,
+      rating_count: ratings.length,
+    };
+  }
+
   // PUBLIC: Get active packages with offers
   async findAllPublic(query: PaginationDto) {
     const where: Record<string, unknown> = { is_active: true };
@@ -54,6 +97,17 @@ export class PackagesService {
               end_date: { gte: new Date() },
             },
           },
+          package_reviews: {
+            where: { status: 'published' },
+            select: { rating: true },
+          },
+          _count: {
+            select: {
+              orders: {
+                where: { status: { in: PURCHASED_ORDER_STATUSES } },
+              },
+            },
+          },
         },
         orderBy: { sort_order: 'asc' },
         skip: query.skip,
@@ -63,7 +117,7 @@ export class PackagesService {
     ]);
 
     const publicItems = await Promise.all(
-      items.map((item) => this.withPublicImageUrls(item)),
+      items.map((item) => this.toPublicPackage(item)),
     );
 
     return createPaginatedResponse(publicItems, total, query.page, query.limit);
@@ -81,13 +135,24 @@ export class PackagesService {
             end_date: { gte: new Date() },
           },
         },
+        package_reviews: {
+          where: { status: 'published' },
+          select: { rating: true },
+        },
+        _count: {
+          select: {
+            orders: {
+              where: { status: { in: PURCHASED_ORDER_STATUSES } },
+            },
+          },
+        },
       },
     });
 
     if (!pkg) {
       throw new NotFoundException('Package not found');
     }
-    return this.withPublicImageUrls(pkg);
+    return this.toPublicPackage(pkg);
   }
 
   // ADMIN: Full CRUD
@@ -131,7 +196,15 @@ export class PackagesService {
       this.prisma.packages.count({ where }),
     ]);
 
-    return createPaginatedResponse(items, total, query.page, query.limit);
+    const itemsWithUrls = await Promise.all(
+      items.map((item) => this.withPublicImageUrls(item)),
+    );
+    return createPaginatedResponse(
+      itemsWithUrls,
+      total,
+      query.page,
+      query.limit,
+    );
   }
 
   async findOneAdmin(id: number) {
@@ -147,7 +220,7 @@ export class PackagesService {
     if (!pkg) {
       throw new NotFoundException('Package not found');
     }
-    return pkg;
+    return this.withPublicImageUrls(pkg);
   }
 
   async create(dto: CreatePackageDto) {

@@ -17,7 +17,6 @@ const pricing = (overrides: Record<string, unknown> = {}) => ({
   offer_discount_amount: 0,
   coupon_code: null,
   coupon_discount_amount: 0,
-  vat_amount: 30,
   total_amount: 630,
   final_amount: 630,
   delivery_days: 5,
@@ -83,7 +82,9 @@ describe('OrdersService', () => {
       __transactionOptions: undefined,
     };
 
-    checkoutService = { calculatePricing: vi.fn().mockResolvedValue(pricing()) };
+    checkoutService = {
+      calculatePricing: vi.fn().mockResolvedValue(pricing()),
+    };
     configService = { get: vi.fn().mockReturnValue('mock') };
 
     service = new OrdersService(
@@ -182,7 +183,7 @@ describe('OrdersService', () => {
         expect.objectContaining({
           original_amount: 600,
           discount_amount: 100,
-          vat_amount: 25,
+          vat_amount: 0,
           total_amount: 525,
           final_amount: 525,
         }),
@@ -269,13 +270,17 @@ describe('OrdersService', () => {
 
       await service.create(1, { package_id: 1 });
 
-      expect(prisma.orders.create.mock.calls[0][0].data.customer_phone).toBe('');
+      expect(prisma.orders.create.mock.calls[0][0].data.customer_phone).toBe(
+        '',
+      );
     });
 
     it('defaults the requirements payload to an empty object', async () => {
       await service.create(1, { package_id: 1 });
 
-      expect(prisma.orders.create.mock.calls[0][0].data.requirements).toEqual({});
+      expect(prisma.orders.create.mock.calls[0][0].data.requirements).toEqual(
+        {},
+      );
     });
 
     it('records the opening status history entry', async () => {
@@ -406,9 +411,9 @@ describe('OrdersService', () => {
 
       await service.create(1, { package_id: 1 });
 
-      expect(prisma.order_status_history.create.mock.calls[0][0].data.note).toContain(
-        'bypass',
-      );
+      expect(
+        prisma.order_status_history.create.mock.calls[0][0].data.note,
+      ).toContain('bypass');
     });
 
     it('writes no payment row in normal mode', async () => {
@@ -427,7 +432,11 @@ describe('OrdersService', () => {
 
   describe('findAllCustomer', () => {
     it('scopes the list to the requesting customer', async () => {
-      await service.findAllCustomer(7, { page: 1, limit: 20, skip: 0 } as never);
+      await service.findAllCustomer(7, {
+        page: 1,
+        limit: 20,
+        skip: 0,
+      } as never);
 
       expect(prisma.orders.findMany.mock.calls[0][0].where).toEqual({
         user_id: 7,
@@ -487,6 +496,63 @@ describe('OrdersService', () => {
       await expect(service.findOneCustomer(200, 1)).resolves.toEqual(
         expect.objectContaining({ id: 200 }),
       );
+    });
+  });
+
+  describe('findByNumberCustomer', () => {
+    it('normalizes the public order number before lookup', async () => {
+      prisma.orders.findUnique.mockResolvedValue(
+        storedOrder({
+          status: OrderStatus.PAID,
+          payments: [{ status: 'paid' }],
+        }),
+      );
+
+      await service.findByNumberCustomer('  sanad-2026-abc-def  ', 1);
+
+      expect(prisma.orders.findUnique.mock.calls[0][0].where).toEqual({
+        order_number: 'SANAD-2026-ABC-DEF',
+      });
+    });
+
+    it("refuses to disclose another customer's success page", async () => {
+      prisma.orders.findUnique.mockResolvedValue(
+        storedOrder({
+          user_id: 99,
+          status: OrderStatus.PAID,
+          payments: [{ status: 'paid' }],
+        }),
+      );
+
+      expect(
+        await errorCode(service.findByNumberCustomer('SANAD-2026-ABC-DEF', 1)),
+      ).toBe('ORDER_FORBIDDEN');
+    });
+
+    it('does not expose a success page for an unpaid order', async () => {
+      prisma.orders.findUnique.mockResolvedValue(
+        storedOrder({
+          status: OrderStatus.PENDING_PAYMENT,
+          payments: [{ status: 'pending' }],
+        }),
+      );
+
+      expect(
+        await errorCode(service.findByNumberCustomer('SANAD-2026-ABC-DEF', 1)),
+      ).toBe('ORDER_NOT_CONFIRMED');
+    });
+
+    it('returns a confirmed paid order to its owner', async () => {
+      prisma.orders.findUnique.mockResolvedValue(
+        storedOrder({
+          status: OrderStatus.IN_PROGRESS,
+          payments: [{ status: 'success' }],
+        }),
+      );
+
+      await expect(
+        service.findByNumberCustomer('SANAD-2026-ABC-DEF', 1),
+      ).resolves.toEqual(expect.objectContaining({ id: 101, user_id: 1 }));
     });
   });
 
@@ -826,15 +892,18 @@ describe('OrdersService', () => {
       prisma.orders.findUnique.mockReset();
       prisma.orders.findUnique
         .mockResolvedValueOnce({ ...paid, status: OrderStatus.RECEIVED })
-        .mockResolvedValue({ ...paid, status: OrderStatus.AWAITING_INFORMATION });
+        .mockResolvedValue({
+          ...paid,
+          status: OrderStatus.AWAITING_INFORMATION,
+        });
 
       await service.updateStatusAdmin(300, 42, {
         status: OrderStatus.AWAITING_INFORMATION,
       } as never);
 
-      expect(prisma.notifications.create.mock.calls[0][0].data.title_ar).toContain(
-        'تحديث حالة الطلب',
-      );
+      expect(
+        prisma.notifications.create.mock.calls[0][0].data.title_ar,
+      ).toContain('تحديث حالة الطلب');
     });
 
     it('skips the notification for a guest order', async () => {

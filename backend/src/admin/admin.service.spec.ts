@@ -96,7 +96,11 @@ describe('AdminService', () => {
 
     it('ranks top packages only by orders that were actually paid', async () => {
       prisma.orders.groupBy.mockResolvedValue([
-        { package_id: 1, _count: { package_id: 4 }, _sum: { final_amount: 2000 } },
+        {
+          package_id: 1,
+          _count: { package_id: 4 },
+          _sum: { final_amount: 2000 },
+        },
       ]);
       prisma.packages.findMany.mockResolvedValue([
         { id: 1, name_ar: 'باقة', name_en: 'Package', price: 500 },
@@ -118,7 +122,11 @@ describe('AdminService', () => {
 
     it('falls back to Unknown when the ranked package was deleted', async () => {
       prisma.orders.groupBy.mockResolvedValue([
-        { package_id: 7, _count: { package_id: 1 }, _sum: { final_amount: 100 } },
+        {
+          package_id: 7,
+          _count: { package_id: 1 },
+          _sum: { final_amount: 100 },
+        },
       ]);
       prisma.packages.findMany.mockResolvedValue([]);
 
@@ -132,7 +140,9 @@ describe('AdminService', () => {
     it('never returns staff accounts', async () => {
       await service.getCustomers({ page: 1, limit: 20, skip: 0 } as never);
 
-      expect(prisma.users.findMany.mock.calls[0][0].where.role).toBe('customer');
+      expect(prisma.users.findMany.mock.calls[0][0].where.role).toBe(
+        'customer',
+      );
     });
 
     it('never selects credential columns', async () => {
@@ -157,9 +167,24 @@ describe('AdminService', () => {
           created_at: new Date('2026-01-01'),
           _count: { orders: 3 },
           orders: [
-            { id: 3, status: 'completed', created_at: new Date('2026-03-01'), payments: [{ amount: 500 }] },
-            { id: 2, status: 'completed', created_at: new Date('2026-02-01'), payments: [{ amount: 300 }] },
-            { id: 1, status: 'cancelled', created_at: new Date('2026-01-05'), payments: [] },
+            {
+              id: 3,
+              status: 'completed',
+              created_at: new Date('2026-03-01'),
+              payments: [{ amount: 500 }],
+            },
+            {
+              id: 2,
+              status: 'completed',
+              created_at: new Date('2026-02-01'),
+              payments: [{ amount: 300 }],
+            },
+            {
+              id: 1,
+              status: 'cancelled',
+              created_at: new Date('2026-01-05'),
+              payments: [],
+            },
           ],
         },
       ]);
@@ -340,10 +365,12 @@ describe('AdminService', () => {
         table_name: 'orders',
       } as never);
 
-      expect(prisma.admin_activity_log.findMany.mock.calls[0][0].where).toEqual({
-        action: 'update_order_status',
-        table_name: 'orders',
-      });
+      expect(prisma.admin_activity_log.findMany.mock.calls[0][0].where).toEqual(
+        {
+          action: 'update_order_status',
+          table_name: 'orders',
+        },
+      );
     });
 
     it('searches descriptions and the acting admin', async () => {
