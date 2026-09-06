@@ -5,6 +5,11 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
+# Prisma needs a syntactically valid DATABASE_URL at generate time. Railway
+# may not expose runtime secrets to the image build, so provide a harmless
+# placeholder here; the real value is injected at runtime.
+ENV DATABASE_URL=postgresql://localhost:5432/sanad_db?schema=public
+
 # openssl is required by Prisma's query engine; the toolchain builds argon2.
 RUN apk add --no-cache openssl python3 make g++
 
@@ -17,6 +22,8 @@ RUN npm ci
 FROM node:22-alpine AS builder
 
 WORKDIR /app
+
+ENV DATABASE_URL=postgresql://localhost:5432/sanad_db?schema=public
 
 RUN apk add --no-cache openssl
 
@@ -31,6 +38,8 @@ RUN npx prisma generate && npm run build
 FROM node:22-alpine AS prod-deps
 
 WORKDIR /app
+
+ENV DATABASE_URL=postgresql://localhost:5432/sanad_db?schema=public
 
 RUN apk add --no-cache openssl python3 make g++
 
@@ -74,6 +83,6 @@ EXPOSE 3000
 ENV NODE_ENV=production
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:3000/api/v1/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+  CMD node -e "const port=process.env.PORT||3000;require('http').get('http://127.0.0.1:'+port+'/api/v1/health/live',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]

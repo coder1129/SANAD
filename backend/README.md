@@ -50,6 +50,8 @@ npm run start:dev
 
 في الإنتاج يجب إعداد R2/S3 ومزوّد بريد (`RESEND_API_KEY` أو SMTP)، وتحديد CORS صراحةً. التطبيق يرفض الأسرار القصيرة أو الافتراضية عند الإقلاع.
 
+للنشر على Railway مع واجهة Vercel راجع [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
+
 ## إنشاء أول مدير
 
 ضع قيمًا قوية في `ADMIN_EMAIL` و`ADMIN_PASSWORD`، ثم:

@@ -29,6 +29,8 @@
 
 الخادم يعمل افتراضيًا على `http://localhost:3001/api/v1`، وSwagger متاح في بيئة التطوير عند ضبط `SWAGGER_ENABLED=true`.
 
+للنشر على Railway وVercel راجع [دليل النشر](DEPLOYMENT.md).
+
 ## إنشاء أول مدير
 
 لا توجد بيانات دخول افتراضية. ضع `ADMIN_EMAIL` و`ADMIN_PASSWORD` في `backend/.env`، ويجب أن تكون كلمة المرور قوية وفريدة، ثم شغّل:

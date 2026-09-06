@@ -2,6 +2,9 @@
 
 Next.js frontend for the SANAD career-services platform.
 
+For the full Railway + Vercel deployment flow, see
+[`../DEPLOYMENT.md`](../DEPLOYMENT.md).
+
 ## Local development
 
 Keep the existing `.env.local` values pointed at the local backend, then run:
