@@ -2,6 +2,7 @@ export interface CreateOrderInput {
   packageId: number;
   offerId?: number;
   couponCode?: string;
+  secondaryPackageId?: number;
   customerPhone: string;
   notes?: string;
   requirements?: {
@@ -16,6 +17,7 @@ export interface CustomerOrder {
   orderNumber: string;
   packageId: number | null;
   packageName: string | null;
+  packageNameAr?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -30,6 +32,7 @@ export interface CustomerOrder {
   paymentStatus: string;
   currency: string;
   offerName: string | null;
+  offerNameAr?: string | null;
   payments: OrderPayment[];
   statusHistory: OrderStatusHistory[];
 }

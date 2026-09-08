@@ -65,6 +65,11 @@ export class EmailService {
       this.providerType = 'resend';
       this.logger.log('Resend email provider initialized successfully');
     } else {
+      if (this.configService.get<string>('NODE_ENV') === 'production') {
+        throw new Error(
+          'Production requires a working email provider configuration',
+        );
+      }
       // 3. Mock fallback in Development
       this.providerType = 'mock';
       this.logger.warn(
@@ -124,7 +129,14 @@ export class EmailService {
           text: options.bodyText,
         });
 
-        return { success: true, id: data.data?.id };
+        if (data.error || !data.data?.id) {
+          return {
+            success: false,
+            error:
+              data.error?.message || 'Email provider returned no message ID',
+          };
+        }
+        return { success: true, id: data.data.id };
       } catch (err: any) {
         this.logger.error(`Resend send failed: ${err.message}`, err.stack);
         return { success: false, error: err.message };

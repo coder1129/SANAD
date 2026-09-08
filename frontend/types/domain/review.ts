@@ -13,6 +13,7 @@ export interface PackageReview {
   customerDisplayName?: string;
   verifiedCustomer?: boolean;
   packageName?: string;
+  packageNameAr?: string | null;
   orderNumber?: string;
   customerName?: string;
   customerEmail?: string;

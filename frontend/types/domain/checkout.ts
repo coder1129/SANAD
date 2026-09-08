@@ -2,6 +2,7 @@ export interface CheckoutPreviewInput {
   packageId: number;
   offerId?: number;
   couponCode?: string;
+  secondaryPackageId?: number;
 }
 
 export interface CheckoutPricing {
@@ -9,6 +10,11 @@ export interface CheckoutPricing {
   packageName: string;
   deliveryDays: number;
   originalPrice: number;
+  secondaryPackageId: number | null;
+  secondaryPackageName: string | null;
+  secondaryPackageNameAr?: string | null;
+  secondaryOriginalPrice: number;
+  secondaryDiscountAmount: number;
   offerId: number | null;
   offerDiscountPercentage: number;
   offerDiscountAmount: number;

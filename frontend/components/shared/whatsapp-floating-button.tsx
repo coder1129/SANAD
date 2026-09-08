@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useQuery } from '@tanstack/react-query';
 import type { SVGProps } from 'react';
@@ -26,21 +27,25 @@ interface WhatsAppFloatingButtonProps {
   className?: string;
 }
 
+const DEFAULT_WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_DEFAULT_WHATSAPP_NUMBER || '971500000000';
+
 export function WhatsAppFloatingButton({
   defaultMessage = 'Hello, I would like to ask about SANAD career services.',
   className = '',
 }: WhatsAppFloatingButtonProps) {
+  const _copy = useCopy();
+
   const settings = useQuery({
     queryKey: settingsKeys.public,
     queryFn: ({ signal }) => settingsApi.getPublic({ signal }),
     staleTime: 5 * 60 * 1000,
   });
-  const whatsappUrl = whatsappHref(
-    settings.data?.whatsapp_number,
-    defaultMessage,
-  );
-
-  if (!whatsappUrl) return null;
+  const phoneNumber =
+    settings.data?.whatsapp_number?.trim() || DEFAULT_WHATSAPP_NUMBER;
+  const whatsappUrl =
+    whatsappHref(phoneNumber, defaultMessage) ??
+    `https://wa.me/${DEFAULT_WHATSAPP_NUMBER}?text=${encodeURIComponent(defaultMessage)}`;
 
   return (
     <div
@@ -48,7 +53,7 @@ export function WhatsAppFloatingButton({
       data-whatsapp-floating
     >
       <a
-        aria-label="Chat on WhatsApp"
+        aria-label={_copy('Chat on WhatsApp')}
         className="flex size-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-200 hover:scale-105 hover:bg-[#20bd5a] hover:shadow-xl active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#25D366] focus-visible:ring-offset-2"
         href={whatsappUrl}
         rel="noreferrer noopener"

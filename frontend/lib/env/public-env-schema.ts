@@ -1,11 +1,13 @@
 export interface PublicEnvironment {
   apiBaseUrl?: string;
+  googleClientId?: string;
   mediaBaseUrl?: string;
   siteUrl?: string;
 }
 
 interface RawPublicEnvironment {
   NEXT_PUBLIC_API_BASE_URL?: string;
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID?: string;
   NEXT_PUBLIC_MEDIA_BASE_URL?: string;
   NEXT_PUBLIC_SITE_URL?: string;
 }
@@ -54,6 +56,16 @@ export function validatePublicEnvironment(
     );
   }
 
+  const googleClientId = raw.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
+  if (
+    googleClientId &&
+    !/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/i.test(googleClientId)
+  ) {
+    throw new Error(
+      'NEXT_PUBLIC_GOOGLE_CLIENT_ID must be a valid Google OAuth web client ID.',
+    );
+  }
+
   return {
     apiBaseUrl: raw.NEXT_PUBLIC_API_BASE_URL?.trim()
       ? parseUrl(
@@ -61,6 +73,7 @@ export function validatePublicEnvironment(
           raw.NEXT_PUBLIC_API_BASE_URL.trim(),
         )
       : undefined,
+    ...(googleClientId ? { googleClientId } : {}),
     siteUrl: raw.NEXT_PUBLIC_SITE_URL?.trim()
       ? parseUrl('NEXT_PUBLIC_SITE_URL', raw.NEXT_PUBLIC_SITE_URL.trim())
       : undefined,

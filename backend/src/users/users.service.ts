@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { UpdateProfileDto } from './dto';
+import { CreateAdministratorDto, ResetAdministratorPasswordDto, UpdateAdministratorDto, UpdateProfileDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -71,5 +72,35 @@ export class UsersService {
         updated_at: true,
       },
     });
+  }
+
+  async listAdministrators() {
+    return this.prisma.users.findMany({
+      where: { role: { in: ['admin', 'super_admin'] } },
+      select: { id: true, name: true, email: true, role: true, email_verified: true, account_locked: true, last_login: true, created_at: true },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async createAdministrator(dto: CreateAdministratorDto) {
+    const email = dto.email.trim().toLowerCase();
+    if (await this.prisma.users.findUnique({ where: { email } })) throw new BadRequestException('Email is already in use');
+    return this.prisma.users.create({
+      data: { name: dto.name.trim(), email, password_hash: await argon2.hash(dto.password, { type: argon2.argon2id }), role: dto.role, email_verified: true },
+      select: { id: true, name: true, email: true, role: true, email_verified: true, account_locked: true, created_at: true },
+    });
+  }
+
+  async updateAdministrator(id: number, dto: UpdateAdministratorDto) {
+    const user = await this.prisma.users.findUnique({ where: { id } });
+    if (!user || !['admin', 'super_admin'].includes(user.role)) throw new NotFoundException('Administrator not found');
+    return this.prisma.users.update({ where: { id }, data: { ...(dto.role && { role: dto.role }), ...(dto.active !== undefined && { account_locked: !dto.active, token_version: { increment: 1 } }) }, select: { id: true, name: true, email: true, role: true, account_locked: true } });
+  }
+
+  async resetAdministratorPassword(id: number, dto: ResetAdministratorPasswordDto) {
+    const user = await this.prisma.users.findUnique({ where: { id } });
+    if (!user || !['admin', 'super_admin'].includes(user.role)) throw new NotFoundException('Administrator not found');
+    await this.prisma.users.update({ where: { id }, data: { password_hash: await argon2.hash(dto.password, { type: argon2.argon2id }), token_version: { increment: 1 } } });
+    return { message: 'Administrator password reset successfully' };
   }
 }

@@ -26,6 +26,7 @@ import {
   PasswordlessRequestDto,
   PasswordlessVerifyDto,
   PasswordlessCompleteProfileDto,
+  GoogleAuthDto,
 } from './dto';
 
 interface EmailVerificationTokenRow {
@@ -35,6 +36,25 @@ interface EmailVerificationTokenRow {
   expires_at: Date;
   email_verified: boolean | null;
 }
+
+interface GoogleIdTokenHeader {
+  alg?: string;
+  kid?: string;
+}
+
+interface GoogleIdTokenPayload {
+  aud?: string | string[];
+  email?: string;
+  email_verified?: boolean;
+  exp?: number;
+  family_name?: string;
+  given_name?: string;
+  iss?: string;
+  name?: string;
+  sub?: string;
+}
+
+type GoogleJwk = crypto.JsonWebKey & { kid?: string };
 
 /**
  * Fields that may leave the API in a user payload. This is an allowlist, not a
@@ -59,6 +79,8 @@ const PUBLIC_USER_FIELDS = [
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private googleJwksCache: { expiresAt: number; keys: GoogleJwk[] } | null =
+    null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -761,10 +783,35 @@ export class AuthService {
 
   /**
    * Initiates passwordless authentication by issuing a 6-digit OTP to the provided email.
-   * Returns a generic response to prevent account enumeration.
+   * Explicit sign-in/sign-up flows fail early when the account state does not
+   * match; legacy callers retain the generic response during migration.
    */
   async requestPasswordlessOtp(dto: PasswordlessRequestDto) {
     const email = dto.email.toLowerCase().trim();
+
+    // Explicit sign-in and sign-up are separate products. Legacy callers that
+    // omit `flow` retain the old non-enumerating behaviour during migration.
+    if (dto.flow) {
+      const user = await this.prisma.users.findUnique({ where: { email } });
+      if (dto.flow === 'sign_in' && !user) {
+        throw new UnauthorizedException({
+          message: 'No customer account exists for this email.',
+          code: 'ACCOUNT_NOT_FOUND',
+        });
+      }
+      if (dto.flow === 'sign_up' && user) {
+        throw new ConflictException({
+          message: 'An account already exists for this email.',
+          code: 'EMAIL_EXISTS',
+        });
+      }
+      if (dto.flow === 'sign_in' && user?.role !== 'customer') {
+        throw new UnauthorizedException({
+          message: 'This account must use the administrator sign-in.',
+          code: 'ADMIN_SIGN_IN_REQUIRED',
+        });
+      }
+    }
 
     // 1. Rate-limiting: Enforce 60-second cooldown per email
     const latestChallenge = await this.prisma.email_otp_challenges.findFirst({
@@ -867,68 +914,95 @@ export class AuthService {
 
   /**
    * Verifies the 6-digit OTP.
-   * If customer exists -> returns session + tokens.
-   * If new customer -> returns a 15-minute signed registration token.
+   * Sign-in can authenticate only an existing customer; sign-up can issue a
+   * registration token only for a new customer.
    * If admin account -> informs user to use administrator sign-in.
    */
   async verifyPasswordlessOtp(dto: PasswordlessVerifyDto) {
     const email = dto.email.toLowerCase().trim();
     const otp = dto.otp.trim();
 
-    // 1. Locate active challenge
-    const challenge = await this.prisma.email_otp_challenges.findFirst({
-      where: {
-        email,
-        consumed_at: null,
-        expires_at: { gt: new Date() },
-      },
-      orderBy: { created_at: 'desc' },
-    });
+    // Compare-and-swap retries serialize attempts across API instances. A stale
+    // reader must never consume an already used code or overwrite an attempt.
+    let consumed = false;
+    for (let retry = 0; retry < 6; retry += 1) {
+      const challenge = await this.prisma.email_otp_challenges.findFirst({
+        where: {
+          email,
+          consumed_at: null,
+          expires_at: { gt: new Date() },
+        },
+        orderBy: { created_at: 'desc' },
+      });
 
-    if (!challenge || challenge.attempt_count >= 5) {
+      if (!challenge || challenge.attempt_count >= 5) {
+        throw new BadRequestException({
+          message: 'This verification code has expired.',
+          code: 'OTP_EXPIRED',
+        });
+      }
+
+      // 2. Compare SHA-256 hash using timingSafeEqual
+      const candidateHash = crypto
+        .createHash('sha256')
+        .update(otp)
+        .digest('hex');
+      const hashBuffer = Buffer.from(challenge.otp_hash, 'hex');
+      const candidateBuffer = Buffer.from(candidateHash, 'hex');
+      const isValid =
+        hashBuffer.length === candidateBuffer.length &&
+        crypto.timingSafeEqual(hashBuffer, candidateBuffer);
+
+      if (!isValid) {
+        const newAttempts = challenge.attempt_count + 1;
+        const updated = await this.prisma.email_otp_challenges.updateMany({
+          where: {
+            id: challenge.id,
+            consumed_at: null,
+            expires_at: { gt: new Date() },
+            attempt_count: challenge.attempt_count,
+          },
+          data: {
+            attempt_count: newAttempts,
+            ...(newAttempts >= 5 ? { consumed_at: new Date() } : {}),
+          },
+        });
+        if (updated.count === 0) continue;
+
+        if (newAttempts >= 5) {
+          throw new BadRequestException({
+            message:
+              'Too many incorrect attempts. This verification code has expired.',
+            code: 'OTP_MAX_ATTEMPTS',
+          });
+        }
+
+        throw new BadRequestException({
+          message: 'Incorrect verification code.',
+          code: 'OTP_INVALID',
+        });
+      }
+
+      // 3. Mark challenge consumed immediately
+      const updated = await this.prisma.email_otp_challenges.updateMany({
+        where: {
+          id: challenge.id,
+          consumed_at: null,
+          expires_at: { gt: new Date() },
+          attempt_count: challenge.attempt_count,
+        },
+        data: { consumed_at: new Date() },
+      });
+      if (updated.count === 0) continue;
+      consumed = true;
+      break;
+    }
+    if (!consumed) {
       throw new BadRequestException({
         message: 'This verification code has expired.',
         code: 'OTP_EXPIRED',
       });
     }
-
-    // 2. Compare SHA-256 hash using timingSafeEqual
-    const candidateHash = crypto.createHash('sha256').update(otp).digest('hex');
-    const hashBuffer = Buffer.from(challenge.otp_hash, 'hex');
-    const candidateBuffer = Buffer.from(candidateHash, 'hex');
-    const isValid =
-      hashBuffer.length === candidateBuffer.length &&
-      crypto.timingSafeEqual(hashBuffer, candidateBuffer);
-
-    if (!isValid) {
-      const newAttempts = challenge.attempt_count + 1;
-      await this.prisma.email_otp_challenges.update({
-        where: { id: challenge.id },
-        data: {
-          attempt_count: newAttempts,
-          ...(newAttempts >= 5 ? { consumed_at: new Date() } : {}),
-        },
-      });
-
-      if (newAttempts >= 5) {
-        throw new BadRequestException({
-          message:
-            'Too many incorrect attempts. This verification code has expired.',
-          code: 'OTP_MAX_ATTEMPTS',
-        });
-      }
-
-      throw new BadRequestException({
-        message: 'Incorrect verification code.',
-        code: 'OTP_INVALID',
-      });
-    }
-
-    // 3. Mark challenge consumed immediately
-    await this.prisma.email_otp_challenges.update({
-      where: { id: challenge.id },
-      data: { consumed_at: new Date() },
-    });
 
     // 4. Check if account already exists
     const user = await this.prisma.users.findUnique({
@@ -936,6 +1010,13 @@ export class AuthService {
     });
 
     if (user) {
+      if (dto.flow === 'sign_up') {
+        throw new ConflictException({
+          message: 'An account already exists for this email.',
+          code: 'EMAIL_EXISTS',
+        });
+      }
+
       // Check if user is an admin
       if (user.role !== 'customer') {
         throw new UnauthorizedException({
@@ -983,6 +1064,13 @@ export class AuthService {
       };
     }
 
+    if (dto.flow === 'sign_in') {
+      throw new UnauthorizedException({
+        message: 'No customer account exists for this email.',
+        code: 'ACCOUNT_NOT_FOUND',
+      });
+    }
+
     // 5. New customer -> issue short-lived, purpose-bound registration token
     const registrationToken = await this.jwtService.signAsync(
       {
@@ -999,6 +1087,225 @@ export class AuthService {
       status: 'profile_required' as const,
       registrationToken,
     };
+  }
+
+  /**
+   * Signs in an existing customer or starts a new Google-backed registration.
+   * The browser credential is verified against Google's rotating JWKS before
+   * any account lookup, token issue, or profile data is trusted.
+   */
+  async authenticateWithGoogle(dto: GoogleAuthDto) {
+    const googleProfile = await this.verifyGoogleIdToken(dto.credential);
+    const email = googleProfile.email.toLowerCase().trim();
+    const googleLinkedUser = await this.prisma.users.findUnique({
+      where: { google_subject: googleProfile.subject },
+    });
+    const user =
+      googleLinkedUser ??
+      (await this.prisma.users.findUnique({ where: { email } }));
+
+    if (user) {
+      if (user.role !== 'customer') {
+        throw new UnauthorizedException({
+          message: 'This account must use the administrator sign-in.',
+          code: 'ADMIN_SIGN_IN_REQUIRED',
+        });
+      }
+      if (dto.flow === 'sign_up') {
+        throw new ConflictException({
+          message: 'An account already exists for this Google email.',
+          code: 'EMAIL_EXISTS',
+        });
+      }
+      if (
+        user.google_subject &&
+        user.google_subject !== googleProfile.subject
+      ) {
+        throw new UnauthorizedException({
+          message: 'This email is linked to a different Google account.',
+          code: 'GOOGLE_ACCOUNT_MISMATCH',
+        });
+      }
+      if (
+        user.account_locked &&
+        user.locked_until &&
+        new Date() < user.locked_until
+      ) {
+        throw new UnauthorizedException({
+          message: 'Account is temporarily locked. Please try again later.',
+          code: 'ACCOUNT_LOCKED',
+        });
+      }
+
+      await this.prisma.users.update({
+        where: { id: user.id },
+        data: {
+          failed_login_attempts: 0,
+          account_locked: false,
+          locked_until: null,
+          last_login: new Date(),
+          email_verified: true,
+          google_subject: user.google_subject ?? googleProfile.subject,
+        },
+      });
+
+      const tokens = await this.generateTokens(
+        user.id,
+        user.email,
+        user.role,
+        user.token_version,
+      );
+      await this.createSession(user.id, tokens.refreshToken);
+
+      return {
+        status: 'authenticated' as const,
+        user: this.sanitizeUser(user),
+        ...tokens,
+      };
+    }
+
+    if (dto.flow === 'sign_in') {
+      throw new UnauthorizedException({
+        message: 'No customer account exists for this Google email.',
+        code: 'ACCOUNT_NOT_FOUND',
+      });
+    }
+
+    const registrationToken = await this.jwtService.signAsync(
+      {
+        email,
+        purpose: 'google_registration',
+        googleSubject: googleProfile.subject,
+      },
+      {
+        secret: this.configService.get<string>('JWT_ACCESS_SECRET'),
+        expiresIn: '15m',
+      },
+    );
+
+    return {
+      status: 'profile_required' as const,
+      registrationToken,
+      profile: {
+        email,
+        firstName: googleProfile.firstName,
+        lastName: googleProfile.lastName,
+      },
+    };
+  }
+
+  private async verifyGoogleIdToken(credential: string): Promise<{
+    email: string;
+    firstName: string;
+    lastName: string;
+    subject: string;
+  }> {
+    const clientId = this.configService.get<string>('google.clientId')?.trim();
+    if (!clientId) {
+      throw new HttpException(
+        {
+          message: 'Google authentication is not configured.',
+          code: 'GOOGLE_AUTH_NOT_CONFIGURED',
+        },
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
+    try {
+      const parts = credential.split('.');
+      if (parts.length !== 3) throw new Error('Malformed credential');
+
+      const header = JSON.parse(
+        Buffer.from(parts[0], 'base64url').toString('utf8'),
+      ) as GoogleIdTokenHeader;
+      const payload = JSON.parse(
+        Buffer.from(parts[1], 'base64url').toString('utf8'),
+      ) as GoogleIdTokenPayload;
+
+      if (header.alg !== 'RS256' || !header.kid) {
+        throw new Error('Unsupported Google token header');
+      }
+
+      const keys = await this.getGoogleJwks();
+      const jwk = keys.find((candidate) => candidate.kid === header.kid);
+      if (!jwk) throw new Error('Unknown Google signing key');
+
+      const signingInput = Buffer.from(`${parts[0]}.${parts[1]}`);
+      const signature = Buffer.from(parts[2], 'base64url');
+      const publicKey = crypto.createPublicKey({ key: jwk, format: 'jwk' });
+      if (!crypto.verify('RSA-SHA256', signingInput, publicKey, signature)) {
+        throw new Error('Invalid Google token signature');
+      }
+
+      const audienceMatches = Array.isArray(payload.aud)
+        ? payload.aud.includes(clientId)
+        : payload.aud === clientId;
+      const issuerMatches =
+        payload.iss === 'accounts.google.com' ||
+        payload.iss === 'https://accounts.google.com';
+      const nowInSeconds = Math.floor(Date.now() / 1000);
+      if (
+        !audienceMatches ||
+        !issuerMatches ||
+        typeof payload.exp !== 'number' ||
+        payload.exp <= nowInSeconds ||
+        payload.email_verified !== true ||
+        typeof payload.email !== 'string' ||
+        typeof payload.sub !== 'string'
+      ) {
+        throw new Error('Invalid Google token claims');
+      }
+
+      const displayName = payload.name?.trim() ?? '';
+      const [fallbackFirst = '', ...fallbackLastParts] =
+        displayName.split(/\s+/);
+      return {
+        email: payload.email,
+        firstName: payload.given_name?.trim() || fallbackFirst,
+        lastName:
+          payload.family_name?.trim() || fallbackLastParts.join(' ').trim(),
+        subject: payload.sub,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `Rejected Google identity credential: ${
+          error instanceof Error ? error.message : 'unknown error'
+        }`,
+      );
+      throw new UnauthorizedException({
+        message: 'Google authentication failed. Please try again.',
+        code: 'INVALID_GOOGLE_CREDENTIAL',
+      });
+    }
+  }
+
+  private async getGoogleJwks(): Promise<GoogleJwk[]> {
+    if (this.googleJwksCache && this.googleJwksCache.expiresAt > Date.now()) {
+      return this.googleJwksCache.keys;
+    }
+
+    const response = await fetch('https://www.googleapis.com/oauth2/v3/certs', {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Google JWKS request failed with ${response.status}`);
+    }
+
+    const body = (await response.json()) as { keys?: GoogleJwk[] };
+    if (!Array.isArray(body.keys) || body.keys.length === 0) {
+      throw new Error('Google JWKS response did not contain keys');
+    }
+
+    const maxAgeMatch = response.headers
+      .get('cache-control')
+      ?.match(/max-age=(\d+)/i);
+    const maxAgeSeconds = maxAgeMatch ? Number(maxAgeMatch[1]) : 3600;
+    this.googleJwksCache = {
+      expiresAt: Date.now() + Math.max(60, maxAgeSeconds) * 1000,
+      keys: body.keys,
+    };
+    return body.keys;
   }
 
   /**
@@ -1020,7 +1327,9 @@ export class AuthService {
     }
 
     if (
-      payload.purpose !== 'customer_registration' ||
+      !['customer_registration', 'google_registration'].includes(
+        String(payload.purpose),
+      ) ||
       typeof payload.email !== 'string'
     ) {
       throw new BadRequestException({
@@ -1030,6 +1339,11 @@ export class AuthService {
     }
 
     const email = payload.email.toLowerCase().trim();
+    const googleSubject =
+      payload.purpose === 'google_registration' &&
+      typeof payload.googleSubject === 'string'
+        ? payload.googleSubject
+        : null;
     const firstName = dto.firstName.trim();
     const lastName = dto.lastName.trim();
     const phone = dto.phone.trim();
@@ -1037,9 +1351,13 @@ export class AuthService {
     const fullName = `${firstName} ${lastName}`.trim();
 
     // 2. Handle duplicate race condition safely
-    const existingUser = await this.prisma.users.findUnique({
-      where: { email },
-    });
+    const existingUser = googleSubject
+      ? await this.prisma.users.findFirst({
+          where: {
+            OR: [{ email }, { google_subject: googleSubject }],
+          },
+        })
+      : await this.prisma.users.findUnique({ where: { email } });
 
     if (existingUser) {
       if (existingUser.role !== 'customer') {
@@ -1048,18 +1366,10 @@ export class AuthService {
           code: 'ADMIN_SIGN_IN_REQUIRED',
         });
       }
-      const tokens = await this.generateTokens(
-        existingUser.id,
-        existingUser.email,
-        existingUser.role,
-        existingUser.token_version,
-      );
-      await this.createSession(existingUser.id, tokens.refreshToken);
-      return {
-        status: 'authenticated' as const,
-        user: this.sanitizeUser(existingUser),
-        ...tokens,
-      };
+      throw new ConflictException({
+        message: 'An account already exists for this email.',
+        code: 'EMAIL_EXISTS',
+      });
     }
 
     // 3. Create new customer user with role strictly customer
@@ -1071,6 +1381,7 @@ export class AuthService {
         last_name: lastName,
         phone,
         gender,
+        ...(googleSubject ? { google_subject: googleSubject } : {}),
         role: 'customer',
         email_verified: true,
         password_hash: null,

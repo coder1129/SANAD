@@ -185,6 +185,9 @@ export class MediaService {
           ...(dto.alt_text_en !== undefined && {
             alt_text_en: dto.alt_text_en,
           }),
+          ...(dto.alt_text_ar !== undefined && {
+            alt_text_ar: dto.alt_text_ar,
+          }),
           ...(dto.is_active !== undefined && { is_active: dto.is_active }),
           updated_at: new Date(),
         },

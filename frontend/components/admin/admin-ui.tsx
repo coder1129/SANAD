@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import type { ReactNode } from 'react';
 import { Alert } from '@/components/ui/alert';
@@ -21,23 +22,27 @@ export function AdminPageHeader({
   description: string;
   action?: ReactNode;
 }) {
+  const _copy = useCopy();
+
   return (
     <div className="mb-7 flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h2 className="type-h2 text-primary">{title}</h2>
+        <h2 className="type-h2 text-primary">{_copy(title)}</h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          {description}
+          {_copy(description)}
         </p>
       </div>
-      {action}
+      {_copy(action)}
     </div>
   );
 }
 
 export function AdminTable({ children }: { children: ReactNode }) {
+  const _copy = useCopy();
+
   return (
     <div className="overflow-x-auto border border-border bg-surface shadow-xs">
-      {children}
+      {_copy(children)}
     </div>
   );
 }
@@ -53,13 +58,15 @@ export function DataState({
   empty?: boolean;
   children: ReactNode;
 }) {
+  const _copy = useCopy();
+
   if (loading)
     return (
       <div
         className="border border-border bg-surface p-10 text-center text-sm text-muted-foreground"
         role="status"
       >
-        Loading data...
+        {_copy('Loading data...')}
       </div>
     );
   if (error)
@@ -68,16 +75,16 @@ export function DataState({
         className="border border-error/30 bg-error/5 p-6 text-sm text-error"
         role="alert"
       >
-        {error}
+        {_copy(error)}
       </div>
     );
   if (empty)
     return (
       <div className="border border-dashed border-border bg-surface p-10 text-center text-sm text-muted-foreground">
-        No records found.
+        {_copy('No records found.')}
       </div>
     );
-  return <>{children}</>;
+  return <>{_copy(children)}</>;
 }
 
 export function Pager({
@@ -89,6 +96,8 @@ export function Pager({
   totalPages: number;
   onPage: (page: number) => void;
 }) {
+  const _copy = useCopy();
+
   if (totalPages <= 1) return null;
   return (
     <div className="mt-5 flex items-center justify-between gap-3">
@@ -97,17 +106,19 @@ export function Pager({
         onClick={() => onPage(page - 1)}
         variant="outline"
       >
-        Previous
+        {_copy('Previous')}
       </Button>
       <p className="text-sm text-muted-foreground">
-        Page {page} of {totalPages}
+        {_copy('Page')}
+        {_copy(page)} {_copy('of')}
+        {_copy(totalPages)}
       </p>
       <Button
         disabled={page >= totalPages}
         onClick={() => onPage(page + 1)}
         variant="outline"
       >
-        Next
+        {_copy('Next')}
       </Button>
     </div>
   );
@@ -134,27 +145,33 @@ export function ConfirmDialog({
   destructive?: boolean;
   error?: string | null;
 }) {
+  const _copy = useCopy();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogTitle>{_copy(title)}</DialogTitle>
+          <DialogDescription>{_copy(description)}</DialogDescription>
         </DialogHeader>
         {error ? (
-          <Alert description={error} title="Action failed" variant="error" />
+          <Alert
+            description={_copy(error)}
+            title={_copy('Action failed')}
+            variant="error"
+          />
         ) : null}
         <DialogFooter>
           <Button onClick={() => onOpenChange(false)} variant="outline">
-            Cancel
+            {_copy('Cancel')}
           </Button>
           <Button
             loading={loading}
-            loadingLabel={confirmLabel}
+            loadingLabel={_copy(confirmLabel)}
             onClick={onConfirm}
             variant={destructive ? 'destructive' : 'primary'}
           >
-            {confirmLabel}
+            {_copy(confirmLabel)}
           </Button>
         </DialogFooter>
       </DialogContent>

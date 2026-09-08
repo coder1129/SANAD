@@ -1,4 +1,6 @@
 'use client';
+import { useLocale } from 'next-intl';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { Check, ChevronRight, Circle } from 'lucide-react';
@@ -11,7 +13,17 @@ import {
 
 import { cn } from '@/lib/utils/cn';
 
-export const DropdownMenu = DropdownMenuPrimitive.Root;
+export function DropdownMenu(
+  props: ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.Root>,
+) {
+  const locale = useLocale();
+  return (
+    <DropdownMenuPrimitive.Root
+      dir={locale === 'ar' ? 'rtl' : 'ltr'}
+      {...props}
+    />
+  );
+}
 export const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 export const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 export const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
@@ -27,20 +39,23 @@ export interface DropdownMenuSubTriggerProps extends ComponentPropsWithoutRef<
 export const DropdownMenuSubTrigger = forwardRef<
   ComponentRef<typeof DropdownMenuPrimitive.SubTrigger>,
   DropdownMenuSubTriggerProps
->(({ children, className, inset, ...props }, ref) => (
-  <DropdownMenuPrimitive.SubTrigger
-    className={cn(
-      'flex min-h-10 cursor-default select-none items-center rounded-sm px-2 py-2 text-sm outline-none focus:bg-surface-muted data-[state=open]:bg-surface-muted',
-      inset && 'pl-8',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  >
-    {children}
-    <ChevronRight aria-hidden="true" className="ml-auto size-4" />
-  </DropdownMenuPrimitive.SubTrigger>
-));
+>(({ children, className, inset, ...props }, ref) => {
+  const _copy = useCopy();
+  return (
+    <DropdownMenuPrimitive.SubTrigger
+      className={cn(
+        'flex min-h-10 cursor-default select-none items-center rounded-sm px-2 py-2 text-sm outline-none focus:bg-surface-muted data-[state=open]:bg-surface-muted',
+        inset && 'ps-8',
+        className,
+      )}
+      ref={ref}
+      {...props}
+    >
+      {_copy(children)}
+      <ChevronRight aria-hidden="true" className="ms-auto size-4" />
+    </DropdownMenuPrimitive.SubTrigger>
+  );
+});
 
 DropdownMenuSubTrigger.displayName =
   DropdownMenuPrimitive.SubTrigger.displayName;
@@ -95,7 +110,7 @@ export const DropdownMenuItem = forwardRef<
   <DropdownMenuPrimitive.Item
     className={cn(
       'relative flex min-h-10 cursor-default select-none items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none transition-colors focus:bg-surface-muted focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0',
-      inset && 'pl-8',
+      inset && 'ps-8',
       destructive && 'text-error focus:bg-error/10 focus:text-error',
       className,
     )}
@@ -109,23 +124,26 @@ DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName;
 export const DropdownMenuCheckboxItem = forwardRef<
   ComponentRef<typeof DropdownMenuPrimitive.CheckboxItem>,
   ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
->(({ children, className, ...props }, ref) => (
-  <DropdownMenuPrimitive.CheckboxItem
-    className={cn(
-      'relative flex min-h-10 cursor-default select-none items-center rounded-sm py-2 pr-2 pl-8 text-sm outline-none focus:bg-surface-muted focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  >
-    <span className="absolute left-2 flex size-4 items-center justify-center">
-      <DropdownMenuPrimitive.ItemIndicator>
-        <Check aria-hidden="true" className="size-4" />
-      </DropdownMenuPrimitive.ItemIndicator>
-    </span>
-    {children}
-  </DropdownMenuPrimitive.CheckboxItem>
-));
+>(({ children, className, ...props }, ref) => {
+  const _copy = useCopy();
+  return (
+    <DropdownMenuPrimitive.CheckboxItem
+      className={cn(
+        'relative flex min-h-10 cursor-default select-none items-center rounded-sm py-2 pe-2 ps-8 text-sm outline-none focus:bg-surface-muted focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        className,
+      )}
+      ref={ref}
+      {...props}
+    >
+      <span className="absolute start-2 flex size-4 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Check aria-hidden="true" className="size-4" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {_copy(children)}
+    </DropdownMenuPrimitive.CheckboxItem>
+  );
+});
 
 DropdownMenuCheckboxItem.displayName =
   DropdownMenuPrimitive.CheckboxItem.displayName;
@@ -133,23 +151,26 @@ DropdownMenuCheckboxItem.displayName =
 export const DropdownMenuRadioItem = forwardRef<
   ComponentRef<typeof DropdownMenuPrimitive.RadioItem>,
   ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
->(({ children, className, ...props }, ref) => (
-  <DropdownMenuPrimitive.RadioItem
-    className={cn(
-      'relative flex min-h-10 cursor-default select-none items-center rounded-sm py-2 pr-2 pl-8 text-sm outline-none focus:bg-surface-muted focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
-      className,
-    )}
-    ref={ref}
-    {...props}
-  >
-    <span className="absolute left-2 flex size-4 items-center justify-center">
-      <DropdownMenuPrimitive.ItemIndicator>
-        <Circle aria-hidden="true" className="size-2 fill-current" />
-      </DropdownMenuPrimitive.ItemIndicator>
-    </span>
-    {children}
-  </DropdownMenuPrimitive.RadioItem>
-));
+>(({ children, className, ...props }, ref) => {
+  const _copy = useCopy();
+  return (
+    <DropdownMenuPrimitive.RadioItem
+      className={cn(
+        'relative flex min-h-10 cursor-default select-none items-center rounded-sm py-2 pe-2 ps-8 text-sm outline-none focus:bg-surface-muted focus:text-primary data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        className,
+      )}
+      ref={ref}
+      {...props}
+    >
+      <span className="absolute start-2 flex size-4 items-center justify-center">
+        <DropdownMenuPrimitive.ItemIndicator>
+          <Circle aria-hidden="true" className="size-2 fill-current" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
+      {_copy(children)}
+    </DropdownMenuPrimitive.RadioItem>
+  );
+});
 
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;
 
@@ -166,7 +187,7 @@ export const DropdownMenuLabel = forwardRef<
   <DropdownMenuPrimitive.Label
     className={cn(
       'px-2 py-1.5 text-xs font-semibold text-muted-foreground',
-      inset && 'pl-8',
+      inset && 'ps-8',
       className,
     )}
     ref={ref}
@@ -196,7 +217,7 @@ export function DropdownMenuShortcut({
   return (
     <span
       className={cn(
-        'ml-auto pl-4 text-xs tracking-wider opacity-60',
+        'ms-auto ps-4 text-xs tracking-wider opacity-60',
         className,
       )}
       {...props}

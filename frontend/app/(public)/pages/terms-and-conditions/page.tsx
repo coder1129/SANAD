@@ -1,3 +1,6 @@
+import { getLocalizedMetadata } from '@/lib/i18n/metadata';
+
+import { getCopy } from '@/lib/i18n/server-copy';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -15,14 +18,32 @@ const fallbackMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
+  const _copy = await getCopy();
   const page = await getPublishedCmsPage('terms-and-conditions');
-  if (!page) return fallbackMetadata;
+  if (!page) {
+    return await getLocalizedMetadata({
+      title: _copy('Terms & Conditions | SANAD', 'الشروط والأحكام | سند'),
+      description: _copy(
+        'Service terms, revision policies, delivery timelines, and client agreements for SANAD career services.',
+        'شروط الخدمة وسياسة التعديلات ومواعيد التسليم واتفاقيات العملاء لخدمات سند المهنية.',
+      ),
+      alternates: fallbackMetadata.alternates,
+    });
+  }
 
-  return {
-    title: `${page.title_en} | SANAD`,
-    description: page.meta_description_en ?? fallbackMetadata.description,
+  const title = _copy(page.title_en, page.title_ar);
+  const description =
+    _copy(page.meta_description_en, page.meta_description_ar) ??
+    _copy(
+      fallbackMetadata.description as string,
+      'شروط الخدمة وسياسة التعديلات ومواعيد التسليم واتفاقيات العملاء لخدمات سند المهنية.',
+    );
+
+  return await getLocalizedMetadata({
+    title: `${title} | ${_copy('SANAD', 'سند')}`,
+    description,
     alternates: fallbackMetadata.alternates,
-  };
+  });
 }
 
 const sections = [
@@ -93,42 +114,46 @@ const sections = [
 ] as const;
 
 export default async function TermsAndConditionsPage() {
+  const _copy = await getCopy();
+
   const cmsPage = await getPublishedCmsPage('terms-and-conditions');
 
   return (
     <div className="bg-background">
       <div className="border-b border-border bg-surface-muted">
         <div className="layout-container py-16 sm:py-20">
-          <nav aria-label="Breadcrumb" className="mb-8">
+          <nav aria-label={_copy('Breadcrumb')} className="mb-8">
             <ol className="flex items-center gap-2 text-sm text-muted-foreground">
               <li>
                 <Link className="transition-colors hover:text-primary" href="/">
-                  Home
+                  {_copy('Home')}
                 </Link>
               </li>
               <li aria-hidden="true" className="text-border">
-                /
+                {_copy('/')}
               </li>
               <li className="font-medium text-primary">
-                Terms &amp; Conditions
+                {_copy('Terms & Conditions')}
               </li>
             </ol>
           </nav>
 
           <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
             <span aria-hidden="true" className="h-px w-8 bg-accent" />
-            Legal
+            {_copy('Legal')}
           </p>
           <h1 className="type-h2 mt-5 max-w-[22ch]">
-            {cmsPage?.title_en ?? 'Terms & Conditions'}
+            {_copy(cmsPage?.title_en ?? 'Terms & Conditions')}
           </h1>
           <p className="mt-6 max-w-[42rem] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            {cmsPage?.meta_description_en ??
-              'The terms that govern the use of SANAD career-document and consulting services.'}
+            {_copy(
+              cmsPage?.meta_description_en ??
+                'The terms that govern the use of SANAD career-document and consulting services.',
+            )}
           </p>
           {!cmsPage ? (
             <p className="mt-4 text-sm text-muted-foreground">
-              Last updated January 2026
+              {_copy('Last updated January 2026')}
             </p>
           ) : null}
         </div>
@@ -143,7 +168,9 @@ export default async function TermsAndConditionsPage() {
               {sections.map(({ content, id, title }, index) => (
                 <section id={id} key={id}>
                   <h2 className="type-h4 text-primary">
-                    {index + 1}. {title}
+                    {_copy(index + 1)}
+                    {_copy('.')}
+                    {_copy(title)}
                   </h2>
                   <div className="mt-4 space-y-4">
                     {content.map((paragraph) => (
@@ -151,7 +178,7 @@ export default async function TermsAndConditionsPage() {
                         className="text-sm leading-7 text-foreground/80 sm:text-base sm:leading-8"
                         key={paragraph.slice(0, 40)}
                       >
-                        {paragraph}
+                        {_copy(paragraph)}
                       </p>
                     ))}
                   </div>

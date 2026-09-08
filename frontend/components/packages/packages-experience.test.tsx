@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@/test/render';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CareerPackage } from '@/types/domain';
@@ -100,9 +100,7 @@ describe('Package selection experience', () => {
       '/packages?source=manual#services-catalog',
     );
     render(<ServicesCatalog packages={packages} />);
-    await user.click(
-      screen.getByRole('button', { name: 'LinkedIn' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'LinkedIn' }));
     expect(new URLSearchParams(window.location.search).get('category')).toBe(
       'profile',
     );

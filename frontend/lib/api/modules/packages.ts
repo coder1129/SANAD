@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { PaginatedData, PaginationParams } from '@/types/api';
-import type { CareerPackage, PackageImage, PackageOffer } from '@/types/domain';
+import type { CareerPackage, CompanionOffer, PackageImage, PackageOffer } from '@/types/domain';
 import { getApiBaseUrl } from '@/lib/env/public-env';
 
 import { ApiError } from '../errors';
@@ -24,13 +24,21 @@ const packageImagePayloadSchema = z.object({
 const packageOfferPayloadSchema = z.object({
   id: z.number().int().positive(),
   name_en: z.string().min(1),
+  name_ar: z.string().nullish(),
   description_en: z.string().nullish(),
   discount_percentage: decimalSchema.pipe(z.number().max(100)),
+});
+const companionOfferPayloadSchema = packageOfferPayloadSchema.extend({
+  offer_type: z.enum(['cross_service_any', 'cross_service_specific']),
+  package: z.object({ id: z.number().int().positive(), name_en: z.string(), name_ar: z.string().nullish() }).nullish(),
 });
 
 const packagePayloadSchema = z.object({
   id: z.number().int().positive(),
   name_en: z.string().min(1),
+  name_ar: z.string().nullish(),
+  description_ar: z.string().nullish(),
+  features_ar: z.array(z.string()).nullish(),
   description_en: z.string().nullish(),
   price: decimalSchema,
   features_en: z.array(z.string().min(1)).nullish(),
@@ -42,6 +50,7 @@ const packagePayloadSchema = z.object({
   rating_count: z.number().int().nonnegative().nullish(),
   package_images: z.array(packageImagePayloadSchema).nullish(),
   offers: z.array(packageOfferPayloadSchema).nullish(),
+  triggered_offers: z.array(companionOfferPayloadSchema).nullish(),
 });
 
 const packageListPayloadSchema = z.object({
@@ -57,6 +66,7 @@ const packageListPayloadSchema = z.object({
 type PackagePayload = z.infer<typeof packagePayloadSchema>;
 type PackageImagePayload = z.infer<typeof packageImagePayloadSchema>;
 type PackageOfferPayload = z.infer<typeof packageOfferPayloadSchema>;
+type CompanionOfferPayload = z.infer<typeof companionOfferPayloadSchema>;
 
 function toPackageImage(payload: PackageImagePayload): PackageImage {
   const imageUrl = payload.image_url ?? null;
@@ -87,15 +97,22 @@ function toPackageOffer(payload: PackageOfferPayload): PackageOffer {
   return {
     id: payload.id,
     name: payload.name_en,
+    nameAr: payload.name_ar,
     description: payload.description_en ?? null,
     discountPercentage: payload.discount_percentage,
   };
+}
+function toCompanionOffer(payload: CompanionOfferPayload): CompanionOffer {
+  return { ...toPackageOffer(payload), type: payload.offer_type, packageId: payload.package?.id ?? null };
 }
 
 function toCareerPackage(payload: PackagePayload): CareerPackage {
   return {
     id: payload.id,
     name: payload.name_en,
+    nameAr: payload.name_ar,
+    descriptionAr: payload.description_ar,
+    featuresAr: payload.features_ar ?? [],
     description: payload.description_en ?? null,
     price: payload.price,
     features: payload.features_en ?? [],
@@ -104,6 +121,7 @@ function toCareerPackage(payload: PackagePayload): CareerPackage {
     sortOrder: payload.sort_order ?? 0,
     images: (payload.package_images ?? []).map(toPackageImage),
     offers: (payload.offers ?? []).map(toPackageOffer),
+    companionOffers: (payload.triggered_offers ?? []).map(toCompanionOffer),
     buyerCount: payload.buyer_count ?? 0,
     ratingAverage: payload.rating_average ?? null,
     ratingCount: payload.rating_count ?? 0,

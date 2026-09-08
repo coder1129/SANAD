@@ -97,6 +97,10 @@ export class PackagesService {
               end_date: { gte: new Date() },
             },
           },
+          triggered_offers: {
+            where: { is_active: true, start_date: { lte: new Date() }, end_date: { gte: new Date() }, offer_type: { in: ['cross_service_any', 'cross_service_specific'] } },
+            include: { package: { select: { id: true, name_en: true, name_ar: true, price: true } } },
+          },
           package_reviews: {
             where: { status: 'published' },
             select: { rating: true },
@@ -134,6 +138,10 @@ export class PackagesService {
             start_date: { lte: new Date() },
             end_date: { gte: new Date() },
           },
+        },
+        triggered_offers: {
+          where: { is_active: true, start_date: { lte: new Date() }, end_date: { gte: new Date() }, offer_type: { in: ['cross_service_any', 'cross_service_specific'] } },
+          include: { package: { select: { id: true, name_en: true, name_ar: true, price: true } } },
         },
         package_reviews: {
           where: { status: 'published' },

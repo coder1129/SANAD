@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { LockKeyhole } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -7,6 +8,8 @@ import { AuthModalTrigger, RequireAuth } from '@/components/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function AccountGuard({ children }: { children: ReactNode }) {
+  const _copy = useCopy();
+
   const pathname = usePathname();
   return (
     <RequireAuth
@@ -23,20 +26,21 @@ export function AccountGuard({ children }: { children: ReactNode }) {
               className="mx-auto size-8 text-accent"
             />
             <h1 className="type-h3 mt-5 text-primary">
-              Sign in to your account
+              {_copy('Sign in to your account')}
             </h1>
             <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              Use your email verification code to view your profile and orders
-              securely.
+              {_copy(
+                'Use your email verification code to view your profile and orders securely.',
+              )}
             </p>
             <AuthModalTrigger className="mt-7" nextTarget={pathname} size="lg">
-              Continue with email
+              {_copy('Continue with email')}
             </AuthModalTrigger>
           </div>
         </section>
       }
     >
-      {children}
+      {_copy(children)}
     </RequireAuth>
   );
 }

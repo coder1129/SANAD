@@ -53,6 +53,12 @@ export class UpdateSiteMediaDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  alt_text_ar?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsBoolean()
   is_active?: boolean;
 }

@@ -46,4 +46,27 @@ describe('validatePublicEnvironment', () => {
       ).siteUrl,
     ).toBe('http://localhost:3000');
   });
+
+  it('accepts a Google web client ID and rejects malformed values', () => {
+    expect(
+      validatePublicEnvironment(
+        {
+          ...validEnvironment,
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID:
+            '123456789-example.apps.googleusercontent.com',
+        },
+        { requireAll: true },
+      ).googleClientId,
+    ).toBe('123456789-example.apps.googleusercontent.com');
+
+    expect(() =>
+      validatePublicEnvironment(
+        {
+          ...validEnvironment,
+          NEXT_PUBLIC_GOOGLE_CLIENT_ID: 'not-a-google-client-id',
+        },
+        { requireAll: true },
+      ),
+    ).toThrow(/GOOGLE_CLIENT_ID/);
+  });
 });

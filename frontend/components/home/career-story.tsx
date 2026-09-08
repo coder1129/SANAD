@@ -1,5 +1,7 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import { Check } from 'lucide-react';
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 
 import {
   MotionAccentLine,
@@ -11,13 +13,13 @@ import {
 } from '@/components/motion/motion-reveal';
 import careerStoryImage from '@/public/images/home/career-story.png';
 
-const storyPoints = [
-  'Clarify the experience that matters most',
-  'Connect achievements to a consistent career direction',
-  'Carry one professional story across every document',
-] as const;
+export async function CareerStory() {
+  const _copy = await getCopy();
 
-export function CareerStory() {
+  const t = await getTranslations('home.careerStory');
+
+  const storyPoints = [t('point1'), t('point2'), t('point3')];
+
   return (
     <section
       aria-labelledby="career-story-heading"
@@ -30,10 +32,10 @@ export function CareerStory() {
             parallax
           >
             <Image
-              alt="Professional reviewing a CV and career notes at an elegant workspace"
+              alt={_copy(t('imageAlt'))}
               className="scale-[1.06] object-cover"
               fill
-              placeholder="blur"
+              placeholder={_copy('blur')}
               sizes="(max-width: 1023px) calc(100vw - 2rem), 50vw"
               src={careerStoryImage}
             />
@@ -47,19 +49,17 @@ export function CareerStory() {
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-                Your experience, brought into focus
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[16ch] text-primary"
               id="career-story-heading"
-              text="Turn Your Experience Into a Stronger Professional Story"
+              text={_copy(t('heading'))}
             />
             <MotionReveal delay={0.12} distance={14}>
               <p className="mt-6 max-w-[38rem] text-base leading-7 text-foreground/75 sm:text-lg sm:leading-8">
-                A strong professional profile is more than visual design. SANAD
-                helps transform experience, achievements, and career goals into
-                clear, consistent professional documents.
+                {_copy(t('body'))}
               </p>
             </MotionReveal>
             <MotionStaggerList
@@ -75,7 +75,7 @@ export function CareerStory() {
                   <span className="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-surface text-secondary shadow-xs">
                     <Check aria-hidden="true" className="size-3.5" />
                   </span>
-                  <span>{point}</span>
+                  <span>{_copy(point)}</span>
                 </MotionStaggerItem>
               ))}
             </MotionStaggerList>

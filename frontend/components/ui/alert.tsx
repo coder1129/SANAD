@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes, ReactNode } from 'react';
 
@@ -37,6 +38,8 @@ export function Alert({
   variant = 'info',
   ...props
 }: AlertProps) {
+  const _copy = useCopy();
+
   return (
     <div
       className={cn(alertVariants({ variant }), className)}
@@ -45,17 +48,17 @@ export function Alert({
     >
       {icon ? (
         <span aria-hidden="true" className="mt-0.5 [&_svg]:size-5">
-          {icon}
+          {_copy(icon)}
         </span>
       ) : (
         <span aria-hidden="true" />
       )}
       <div className="min-w-0">
         {title ? (
-          <p className="font-semibold text-foreground">{title}</p>
+          <p className="font-semibold text-foreground">{_copy(title)}</p>
         ) : null}
         <div className="text-sm leading-6 text-foreground/80">
-          {description}
+          {_copy(description)}
         </div>
       </div>
     </div>

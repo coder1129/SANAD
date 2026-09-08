@@ -1,10 +1,13 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { BadgeCheck, Quote } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { StarRating } from './star-rating';
 import type { PackageReview } from '@/types/domain';
 
 export function VerifiedReviewCard({ review }: { review: PackageReview }) {
-  const name = review.customerDisplayName ?? 'SANAD Customer';
+  const _copy = useCopy();
+
+  const name = review.customerDisplayName ?? _copy('SANAD Customer');
   const initials = name
     .split(/\s+/)
     .slice(0, 2)
@@ -16,7 +19,7 @@ export function VerifiedReviewCard({ review }: { review: PackageReview }) {
       <CardHeader className="gap-4 border-b border-border/70">
         <div className="flex items-start justify-between gap-4">
           <span className="grid size-10 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
-            {initials}
+            {_copy(initials)}
           </span>
           <Quote aria-hidden="true" className="size-6 text-accent/70" />
         </div>
@@ -24,7 +27,7 @@ export function VerifiedReviewCard({ review }: { review: PackageReview }) {
           <StarRating rating={review.rating} />
           {review.packageName ? (
             <span className="text-xs font-semibold text-secondary">
-              {review.packageName}
+              {_copy(review.packageName, review.packageNameAr)}
             </span>
           ) : null}
         </div>
@@ -36,7 +39,7 @@ export function VerifiedReviewCard({ review }: { review: PackageReview }) {
           {review.verifiedCustomer ? (
             <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-success">
               <BadgeCheck className="size-4" aria-hidden="true" />
-              Verified Customer
+              {_copy('Verified Customer')}
             </p>
           ) : null}
         </div>

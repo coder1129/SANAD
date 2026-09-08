@@ -91,6 +91,12 @@ export class CreateOrderDto {
   @Type(() => Number)
   offer_id?: number;
 
+  @ApiPropertyOptional({ description: 'Second package unlocked by a cross-service offer' })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  secondary_package_id?: number;
+
   @ApiPropertyOptional({
     description: 'Optional Coupon Code',
     example: 'SAVE10',

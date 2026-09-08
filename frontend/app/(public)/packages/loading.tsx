@@ -1,14 +1,17 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PackagesLoading() {
+  const _copy = useCopy();
+
   return (
     <div
       className="layout-container layout-section"
       role="status"
-      aria-label="Loading service information"
+      aria-label={_copy('Loading service information')}
     >
       <p className="mb-6 text-sm text-muted-foreground">
-        Loading service information…
+        {_copy('Loading service information…')}
       </p>
       <Skeleton className="h-10 w-3/4 max-w-xl" />
       <Skeleton className="mt-4 h-6 w-full max-w-2xl" />

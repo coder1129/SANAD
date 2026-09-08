@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -61,7 +62,7 @@ const schema = z
   });
 type Values = z.infer<typeof schema>;
 const labels: Record<string, string> = {
-  site_name: 'Site Name',
+  site_name: 'Site Name (Arabic)',
   site_name_en: 'Site Name (English)',
   support_email: 'Support Email',
   support_phone: 'Support Phone',
@@ -93,6 +94,8 @@ function settingsFields(existing: SiteSetting[]): SiteSetting[] {
 }
 
 export function SettingsForm() {
+  const _copy = useCopy();
+
   const client = useQueryClient();
   const query = useQuery({
     queryKey: adminKeys.settings,
@@ -128,10 +131,15 @@ export function SettingsForm() {
   return (
     <>
       <AdminPageHeader
-        title="Settings"
-        description="Edit the system settings that already exist. WhatsApp handoff reads the central whatsapp_number value here."
+        title={_copy('Settings')}
+        description={_copy(
+          'Edit the system settings that already exist. WhatsApp handoff reads the central whatsapp_number value here.',
+        )}
       />
-      <DataState loading={query.isPending} error={query.error?.userMessage}>
+      <DataState
+        loading={query.isPending}
+        error={_copy(query.error?.userMessage)}
+      >
         {query.data ? (
           <form
             className="max-w-3xl border border-border bg-surface p-6 sm:p-8"
@@ -140,16 +148,18 @@ export function SettingsForm() {
             {save.isSuccess ? (
               <Alert
                 className="mb-5"
-                title="Settings saved"
-                description="Public contact and checkout configuration has been refreshed."
+                title={_copy('Settings saved')}
+                description={_copy(
+                  'Public contact and checkout configuration has been refreshed.',
+                )}
                 variant="success"
               />
             ) : null}
             {save.error ? (
               <Alert
                 className="mb-5"
-                title="Could not save settings"
-                description={save.error.userMessage}
+                title={_copy('Could not save settings')}
+                description={_copy(save.error.userMessage)}
                 variant="error"
               />
             ) : null}
@@ -159,25 +169,32 @@ export function SettingsForm() {
                   className="grid gap-2 text-sm font-semibold"
                   key={item.setting_key}
                 >
-                  {labels[item.setting_key] ??
-                    item.setting_key
-                      .replaceAll('_', ' ')
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
-                  <Input {...register(item.setting_key)} />
+                  {_copy(
+                    labels[item.setting_key] ??
+                      item.setting_key
+                        .replaceAll('_', ' ')
+                        .replace(/\b\w/g, (c) => c.toUpperCase()),
+                  )}
+                  <Input
+                    dir={item.setting_key === 'site_name' ? 'rtl' : undefined}
+                    {...register(item.setting_key)}
+                  />
                   {errors[item.setting_key]?.message ? (
                     <span className="font-normal text-xs text-error">
-                      {String(errors[item.setting_key]?.message)}
+                      {_copy(String(errors[item.setting_key]?.message))}
                     </span>
                   ) : null}
                   <span className="font-normal text-xs text-muted-foreground">
-                    {item.description ?? item.setting_type ?? 'Setting value'}
+                    {_copy(
+                      item.description ?? item.setting_type ?? 'Setting value',
+                    )}
                   </span>
                 </label>
               ))}
             </div>
             <div className="mt-7 border-t border-border pt-6">
               <Button loading={save.isPending} type="submit">
-                {save.isPending ? 'Saving...' : 'Save Settings'}
+                {_copy(save.isPending ? 'Saving...' : 'Save Settings')}
               </Button>
             </div>
           </form>

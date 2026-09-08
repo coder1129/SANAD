@@ -1,3 +1,4 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import {
   MotionAccentLine,
   MotionHeading,
@@ -8,11 +9,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { testimonialsApi } from '@/lib/api';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 import { FeedbackCard } from '../feedback/feedback-card';
 import { FeedbackSummary } from '../feedback/feedback-summary';
 
 export async function Testimonials() {
+  const _copy = await getCopy();
+
+  const t = await getTranslations('home.testimonials');
   let testimonials: Awaited<ReturnType<typeof testimonialsApi.list>> = [];
   try {
     testimonials = await testimonialsApi.list();
@@ -39,27 +44,26 @@ export async function Testimonials() {
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-                Client feedback
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[16ch]"
               id="testimonials-heading"
-              text="Feedback, Shared Responsibly"
+              text={_copy(t('heading'))}
             />
             <p className="mt-5 max-w-md text-base leading-7 text-muted-foreground">
-              Real words from clients who used SANAD to present their experience
-              with more clarity.
+              {_copy(t('body'))}
             </p>
           </div>
 
           <MotionReveal
-            className="relative border-t border-border pt-7 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12"
+            className="relative border-t border-border pt-7 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-12"
             delay={0.13}
             direction="right"
           >
             <p className="type-label text-secondary">
-              Published client feedback
+              {_copy(t('publishedFeedback'))}
             </p>
             {testimonials.length > 0 ? (
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -69,18 +73,16 @@ export async function Testimonials() {
                 />
                 <div className="rounded-lg border border-border bg-surface p-4">
                   <p className="text-sm font-semibold text-primary">
-                    Service-specific reviews
+                    {_copy(t('serviceSpecific'))}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                    Browse feedback by service and see what each experience
-                    helped clients improve.
+                    {_copy(t('serviceSpecificBody'))}
                   </p>
                 </div>
               </div>
             ) : (
               <p className="mt-4 max-w-[32rem] text-base leading-7 text-muted-foreground">
-                Published feedback will appear here as clients approve their
-                reviews for sharing.
+                {_copy(t('noFeedback'))}
               </p>
             )}
             <span
@@ -102,7 +104,7 @@ export async function Testimonials() {
 
         <div className="mt-8 flex justify-start">
           <Button asChild variant="outline">
-            <Link href="/feedback">View all client feedback</Link>
+            <Link href="/feedback">{_copy(t('viewAll'))}</Link>
           </Button>
         </div>
       </div>

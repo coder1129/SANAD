@@ -6,6 +6,9 @@ import { api, type ApiRequestOptions } from '../request';
 const publicPageSchema = z.object({
   id: z.number().int().positive(),
   title_en: z.string(),
+  title_ar: z.string().nullish(),
+  content_ar: z.string().nullish(),
+  meta_description_ar: z.string().nullish(),
   slug: z.string(),
   content_en: z.string().nullable(),
   meta_description_en: z.string().nullable(),

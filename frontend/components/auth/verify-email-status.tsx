@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import Link from 'next/link';
 import { CheckCircle2, LoaderCircle, XCircle } from 'lucide-react';
@@ -12,6 +13,8 @@ import { AuthModalTrigger } from './auth-modal-trigger';
 type VerificationState = 'error' | 'loading' | 'success';
 
 export function VerifyEmailStatus({ token }: { token?: string }) {
+  const _copy = useCopy();
+
   const startedRef = useRef(false);
   const [state, setState] = useState<VerificationState>(
     token ? 'loading' : 'error',
@@ -61,16 +64,20 @@ export function VerifyEmailStatus({ token }: { token?: string }) {
           className="mx-auto size-10 text-destructive"
         />
       )}
-      <h1 className="type-h2 mt-5 text-primary">Email verification</h1>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{message}</p>
+      <h1 className="type-h2 mt-5 text-primary">
+        {_copy('Email verification')}
+      </h1>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">
+        {_copy(message)}
+      </p>
       {state !== 'loading' ? (
         state === 'success' ? (
           <AuthModalTrigger className="mt-7">
-            Continue to sign in
+            {_copy('Continue to sign in')}
           </AuthModalTrigger>
         ) : (
           <Button asChild className="mt-7">
-            <Link href="/">Back to home</Link>
+            <Link href="/">{_copy('Back to home')}</Link>
           </Button>
         )
       ) : null}

@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { ShieldX } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -8,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/use-auth';
 
 export function AdminGuard({ children }: { children: ReactNode }) {
+  const _copy = useCopy();
+
   const router = useRouter();
   const { isAdmin, isAnonymous, isInitializing, logout } = useAuth();
   useEffect(() => {
@@ -25,11 +28,12 @@ export function AdminGuard({ children }: { children: ReactNode }) {
         <div className="max-w-md border border-border bg-surface p-8 text-center">
           <ShieldX className="mx-auto size-9 text-error" aria-hidden="true" />
           <h1 className="type-h3 mt-5 text-primary">
-            Administrator access required
+            {_copy('Administrator access required')}
           </h1>
           <p className="mt-3 text-sm text-muted-foreground">
-            This signed-in account does not have permission to open SANAD
-            administration.
+            {_copy(
+              'This signed-in account does not have permission to open SANAD administration.',
+            )}
           </p>
           <Button
             className="mt-6"
@@ -37,10 +41,10 @@ export function AdminGuard({ children }: { children: ReactNode }) {
               void logout().then(() => router.replace('/admin/sign-in'))
             }
           >
-            Sign out
+            {_copy('Sign out')}
           </Button>
         </div>
       </main>
     );
-  return <>{children}</>;
+  return <>{_copy(children)}</>;
 }

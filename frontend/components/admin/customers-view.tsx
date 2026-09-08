@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import {
   keepPreviousData,
@@ -18,11 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { adminApi, adminKeys, type AdminCustomer } from '@/lib/api';
-import {
-  formatDate,
-  formatMoney,
-  whatsappHref,
-} from '@/lib/orders/presentation';
+import { whatsappHref } from '@/lib/orders/presentation';
 import {
   AdminPageHeader,
   AdminTable,
@@ -32,6 +29,8 @@ import {
 } from './admin-ui';
 
 export function CustomersView() {
+  const _copy = useCopy();
+
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -71,52 +70,58 @@ export function CustomersView() {
   return (
     <>
       <AdminPageHeader
-        title="Customers"
-        description="Search customer profiles, purchasing history, spend, and contact details."
+        title={_copy('Customers')}
+        description={_copy(
+          'Search customer profiles, purchasing history, spend, and contact details.',
+        )}
       />
       <div className="mb-5 max-w-xl">
         <Input
-          aria-label="Search customers"
+          aria-label={_copy('Search customers')}
           onChange={(e) => {
             setSearch(e.target.value);
             setPage(1);
           }}
-          placeholder="Search name, email or phone"
+          placeholder={_copy('Search name, email or phone')}
           value={search}
         />
       </div>
       <DataState
         loading={query.isPending}
-        error={query.error?.userMessage}
+        error={_copy(query.error?.userMessage)}
         empty={query.data?.items.length === 0}
       >
         <AdminTable>
-          <table className="w-full min-w-[850px] text-left text-sm">
+          <table className="w-full min-w-[850px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Phone</th>
-                <th className="px-4 py-3">Gender</th>
-                <th className="px-4 py-3">Orders</th>
-                <th className="px-4 py-3">Total Spend</th>
-                <th className="px-4 py-3">Registered</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{_copy('Name')}</th>
+                <th className="px-4 py-3">{_copy('Email')}</th>
+                <th className="px-4 py-3">{_copy('Phone')}</th>
+                <th className="px-4 py-3">{_copy('Gender')}</th>
+                <th className="px-4 py-3">{_copy('Orders')}</th>
+                <th className="px-4 py-3">{_copy('Total Spend')}</th>
+                <th className="px-4 py-3">{_copy('Registered')}</th>
+                <th className="px-4 py-3">{_copy('Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {query.data?.items.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-4 font-semibold text-primary">
-                    {c.name}
+                    {_copy(c.name)}
                   </td>
-                  <td className="px-4 py-4">{c.email}</td>
-                  <td className="px-4 py-4">{c.phone ?? '—'}</td>
-                  <td className="px-4 py-4 capitalize">{c.gender ?? '—'}</td>
-                  <td className="px-4 py-4">{c.total_orders}</td>
-                  <td className="px-4 py-4">{formatMoney(c.total_spent)}</td>
+                  <td className="px-4 py-4">{_copy(c.email)}</td>
+                  <td className="px-4 py-4">{_copy(c.phone ?? '—')}</td>
+                  <td className="px-4 py-4 capitalize">
+                    {_copy(c.gender ?? '—')}
+                  </td>
+                  <td className="px-4 py-4">{_copy(c.total_orders)}</td>
+                  <td className="px-4 py-4">
+                    {_copy(_copy.money(c.total_spent))}
+                  </td>
                   <td className="px-4 py-4 text-muted-foreground">
-                    {formatDate(c.created_at)}
+                    {_copy(_copy.date(c.created_at))}
                   </td>
                   <td className="px-4 py-4">
                     <Button
@@ -124,7 +129,7 @@ export function CustomersView() {
                       size="sm"
                       variant="outline"
                     >
-                      View
+                      {_copy('View')}
                     </Button>
                   </td>
                 </tr>
@@ -148,50 +153,61 @@ export function CustomersView() {
           <DialogHeader>
             <DialogTitle>{customer?.name ?? 'Customer Details'}</DialogTitle>
             <DialogDescription>
-              Customer profile and purchase summary.
+              {_copy('Customer profile and purchase summary.')}
             </DialogDescription>
           </DialogHeader>
           {details.isPending ? (
-            <p className="text-sm text-muted-foreground">Loading customer...</p>
+            <p className="text-sm text-muted-foreground">
+              {_copy('Loading customer...')}
+            </p>
           ) : customer ? (
             <>
               <dl className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs uppercase text-muted-foreground">
-                    Email
+                    {_copy('Email')}
                   </dt>
                   <dd className="mt-1 break-all">{customer.email}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase text-muted-foreground">
-                    Phone
+                    {_copy('Phone')}
                   </dt>
                   <dd className="mt-1">{customer.phone ?? '—'}</dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase text-muted-foreground">
-                    Gender
+                    {_copy('Gender')}
                   </dt>
-                  <dd className="mt-1 capitalize">{customer.gender ?? '—'}</dd>
+                  <dd className="mt-1 capitalize">
+                    {_copy(customer.gender ?? '—')}
+                  </dd>
                 </div>
                 <div>
                   <dt className="text-xs uppercase text-muted-foreground">
-                    Total purchases
+                    {_copy('Total purchases')}
                   </dt>
-                  <dd className="mt-1">{formatMoney(customer.total_spent)}</dd>
+                  <dd className="mt-1">
+                    {_copy(_copy.money(customer.total_spent))}
+                  </dd>
                 </div>
               </dl>
               {customer.orders?.length ? (
                 <div className="mt-5 border-t border-border pt-5">
-                  <h3 className="font-semibold text-primary">Orders</h3>
+                  <h3 className="font-semibold text-primary">
+                    {_copy('Orders')}
+                  </h3>
                   <div className="mt-3 max-h-56 overflow-auto divide-y divide-border">
                     {customer.orders.map((order) => (
                       <div
                         className="flex justify-between gap-4 py-3 text-sm"
                         key={order.id}
                       >
-                        <span>#{order.order_number}</span>
-                        <span>{formatMoney(order.final_amount)}</span>
+                        <span>
+                          {_copy('#')}
+                          {_copy(order.order_number)}
+                        </span>
+                        <span>{_copy(_copy.money(order.final_amount))}</span>
                       </div>
                     ))}
                   </div>
@@ -202,7 +218,7 @@ export function CustomersView() {
                   <Button asChild variant="outline">
                     <a href={wa} rel="noreferrer noopener" target="_blank">
                       <MessageCircle className="size-4" />
-                      Open WhatsApp
+                      {_copy('Open WhatsApp')}
                     </a>
                   </Button>
                 ) : null}
@@ -210,9 +226,11 @@ export function CustomersView() {
                   onClick={() => setConfirming(customer)}
                   variant={customer.account_locked ? 'primary' : 'destructive'}
                 >
-                  {customer.account_locked
-                    ? 'Unlock Customer'
-                    : 'Lock Customer'}
+                  {_copy(
+                    customer.account_locked
+                      ? 'Unlock Customer'
+                      : 'Lock Customer',
+                  )}
                 </Button>
               </div>
             </>
@@ -224,11 +242,17 @@ export function CustomersView() {
         onOpenChange={(open) => {
           if (!open) setConfirming(null);
         }}
-        title={`${confirming?.account_locked ? 'Unlock' : 'Lock'} customer account?`}
-        description="This changes account access and invalidates active sessions. The action is recorded."
-        confirmLabel={
-          confirming?.account_locked ? 'Unlock account' : 'Lock account'
-        }
+        title={_copy(
+          confirming?.account_locked
+            ? 'Unlock customer account?'
+            : 'Lock customer account?',
+        )}
+        description={_copy(
+          'This changes account access and invalidates active sessions. The action is recorded.',
+        )}
+        confirmLabel={_copy(
+          confirming?.account_locked ? 'Unlock account' : 'Lock account',
+        )}
         destructive={!confirming?.account_locked}
         loading={status.isPending}
         onConfirm={() => confirming && status.mutate(confirming)}

@@ -1,0 +1,468 @@
+% off|خصم %
+(required)|(مطلوب)
+48–72 business hours, standard delivery|التسليم المعتاد خلال ٤٨–٧٢ ساعة عمل
+70% of employer screenings|٧٠٪ من عمليات فرز المرشحين
+A clear, honest scope|نطاق خدمة واضح وصريح
+A current operational snapshot based on SANAD orders, payments, and customers.|نظرة محدثة على طلبات سند ومدفوعاتها وعملائها.
+A few details help the service owner start with the right context.|تساعدنا بعض التفاصيل على بدء الخدمة وفق احتياجاتك.
+Access denied|الوصول غير مسموح
+Account email|البريد الإلكتروني للحساب
+Action|الإجراء
+Action failed|تعذّر تنفيذ الإجراء
+Actions|الإجراءات
+Active|نشط
+Activity Logs|سجل الأنشطة
+Add Coupon|إضافة قسيمة
+Add Offer|إضافة عرض
+Add Package|إضافة باقة
+Add Page|إضافة صفحة
+Add the context we need, review the final total, and continue to secure payment.|أضف تفاصيل طلبك، وراجع الإجمالي، ثم تابع للدفع الآمن.
+Additional notes|ملاحظات إضافية
+Admin|المدير
+Admin navigation|قائمة الإدارة
+Administrator access|دخول الإدارة
+Administrator access required|يتطلب صلاحية مدير
+All statuses|كل الحالات
+Alt Text|النص البديل
+Amount|المبلغ
+Announcement|الإعلان
+Answer 3 quick questions to evaluate your CV’s competitive readiness for UAE & GCC employers.|أجب عن ٣ أسئلة لتقييم جاهزية سيرتك الذاتية لسوق العمل الإماراتي والخليجي.
+Answers Before You Choose Your Service|إجابات تساعدك على اختيار خدمتك
+Answers to the questions visitors most often ask before choosing a career service.|إجابات عن الأسئلة الشائعة قبل اختيار الخدمة المهنية.
+Anything else the service owner should know?|هل هناك تفاصيل أخرى تود مشاركتها معنا؟
+Ask SANAD before ordering|اسأل سند قبل الطلب
+Ask about a service|استفسر عن خدمة
+Assessment Completed!|اكتمل التقييم!
+Authorized SANAD staff only|لموظفي سند المصرح لهم فقط
+Back to Home|العودة للرئيسية
+Back to My Orders|العودة لطلباتي
+Back to Orders|العودة للطلبات
+Back to home|العودة للرئيسية
+Based on|بناءً على
+Before you order|قبل تقديم الطلب
+Breadcrumb|مسار الصفحة
+CV, LinkedIn, and career-document services|خدمات السيرة الذاتية ولينكدإن والمستندات المهنية
+Cancel|إلغاء
+Career goals|الأهداف المهنية
+Career service|خدمة مهنية
+Career service document preview|معاينة مستندات الخدمة المهنية
+Career services operations, clearly managed.|إدارة واضحة لجميع الخدمات المهنية.
+Change email address|تغيير البريد الإلكتروني
+Chat on WhatsApp|تواصل عبر واتساب
+Check Your ATS & Market Readiness|اختبر جاهزيتك لأنظمة ATS وسوق العمل
+Checking review eligibility...|جارٍ التحقق من إمكانية التقييم...
+Checkout|إتمام الطلب
+Choose by what is included, the delivery estimate and revision allowance.|قارن المحتوى وموعد التسليم وعدد التعديلات المتاحة.
+Choose the support you need.|اختر الدعم الذي تحتاجه.
+Choose your next career step.|اختر خطوتك المهنية التالية.
+Clear answers about starting the service, revisions, and the outcome you can expect.|إجابات واضحة عن بدء الخدمة والتعديلات والنتائج المتوقعة.
+Clear service search|مسح البحث عن الخدمات
+Client feedback|آراء العملاء
+Close dialog|إغلاق النافذة
+Close panel|إغلاق اللوحة
+Code|الرمز
+Comment|التعليق
+Common Questions|الأسئلة الشائعة
+Compare All Services|مقارنة كل الخدمات
+Compare complete packages|مقارنة الباقات المتكاملة
+Compare focused services and complete packages. See what you receive, the price and the delivery estimate before you choose.|قارن الخدمات المتخصصة والباقات المتكاملة، وتعرّف على المحتوى والسعر وموعد التسليم قبل الاختيار.
+Compare packages|مقارنة الباقات
+Compare standalone services too. A higher package price does not necessarily mean a saving. Confirm any differences in scope before choosing.|قارن أيضًا الخدمات المنفردة؛ سعر الباقة الأعلى لا يعني بالضرورة توفيرًا. تأكد من اختلاف نطاق الخدمات قبل الاختيار.
+Compare the available services and select the support that fits your current career-document needs.|قارن الخدمات المتاحة واختر ما يناسب احتياجاتك المهنية الحالية.
+Compare your options|قارن الخيارات
+Complete Account & Continue|إكمال الحساب والمتابعة
+Complete purchase, customer, payment, and fulfilment information.|تفاصيل الطلب والعميل والدفع وتنفيذ الخدمة.
+Complete your|أكمل
+Confirm the details before ordering|تأكد من التفاصيل قبل الطلب
+Confirm the scope and timeline with SANAD before ordering.|تأكد من نطاق الخدمة وموعد التسليم مع سند قبل الطلب.
+Confirm whether the delivery estimate uses working or calendar days, when the timeline starts, and the deadline for requesting revisions.|تأكد مما إذا كان التسليم يُحسب بأيام العمل أو الأيام التقويمية، وموعد بدء التنفيذ وآخر موعد لطلب التعديلات.
+Content|المحتوى
+Content is stored as CMS text and sanitized by the existing public rendering layer.|يُحفظ المحتوى ويُعرض بأمان على الموقع.
+Continue|متابعة
+Continue on WhatsApp|المتابعة عبر واتساب
+Continue to checkout|المتابعة لإتمام الطلب
+Continue to payment|المتابعة للدفع
+Continue to secure payment|المتابعة للدفع الآمن
+Continue to sign in|المتابعة لتسجيل الدخول
+Continue with Email|المتابعة بالبريد الإلكتروني
+Continue with email|المتابعة بالبريد الإلكتروني
+Continue with the SANAD team on WhatsApp to send your documents, requirements, and career information.|تابع مع فريق سند عبر واتساب لإرسال مستنداتك ومتطلباتك ومعلوماتك المهنية.
+Control discount codes, limits, minimum amounts, and availability.|إدارة أكواد الخصم وحدود الاستخدام والحد الأدنى والتوفر.
+Could not save coupon|تعذّر حفظ القسيمة
+Could not save offer|تعذّر حفظ العرض
+Could not save package|تعذّر حفظ الباقة
+Could not save page|تعذّر حفظ الصفحة
+Could not save profile|تعذّر حفظ الملف الشخصي
+Could not save review|تعذّر حفظ التقييم
+Could not save settings|تعذّر حفظ الإعدادات
+Coupon|قسيمة خصم
+Coupon rules are validated again by the server during checkout.|تُراجع شروط القسيمة مرة أخرى عند إتمام الطلب.
+Coupons|قسائم الخصم
+Created|تاريخ الإنشاء
+Creating account...|جارٍ إنشاء الحساب...
+Current price:|السعر الحالي:
+Customer|العميل
+Customer account|حساب العميل
+Customer profile and purchase summary.|ملف العميل وملخص مشترياته.
+Customer, order or comment|عميل أو طلب أو تعليق
+Customers|العملاء
+Date|التاريخ
+Dates|التواريخ
+Delete|حذف
+Delete coupon|حذف القسيمة
+Delete coupon?|حذف القسيمة؟
+Delete media|حذف الوسائط
+Delete media asset?|حذف ملف الوسائط؟
+Delete offer|حذف العرض
+Delete offer?|حذف العرض؟
+Delete package image?|حذف صورة الباقة؟
+Deliverables|المخرجات
+Delivered in|التسليم خلال
+Delivery|التسليم
+Delivery Days|أيام التسليم
+Description|الوصف
+Didn&apos;t receive code? Resend|لم يصلك الرمز؟ أعد الإرسال
+Didn't receive code? Resend|لم يصلك الرمز؟ أعد الإرسال
+Discount|الخصم
+Discount %|نسبة الخصم %
+Edit coupon|تعديل القسيمة
+Edit offer|تعديل العرض
+Edit page|تعديل الصفحة
+Edit the English content and publication state of SANAD’s CMS pages.|إدارة محتوى صفحات سند وحالة نشرها.
+Edit the system settings that already exist. WhatsApp handoff reads the central whatsapp_number value here.|إدارة إعدادات الموقع ورقم واتساب المستخدم للتواصل بشأن الطلبات.
+Email|البريد الإلكتروني
+Email address|البريد الإلكتروني
+Email is your passwordless identity and cannot be changed here.|البريد الإلكتروني هو هويتك لتسجيل الدخول ولا يمكن تغييره هنا.
+Email verification|تأكيد البريد الإلكتروني
+End Date|تاريخ الانتهاء
+English content is mirrored internally to required Arabic fields until localized editing is introduced.|أدخل محتوى الخدمة بكل لغة ليظهر للزائر حسب اختياره.
+Enlarge|تكبير
+Enter your email and verification code to continue.|أدخل بريدك الإلكتروني ورمز التحقق للمتابعة.
+Enter your email to sign in or create your account without a password.|أدخل بريدك الإلكتروني للدخول أو إنشاء حساب بدون كلمة مرور.
+Entity|العنصر
+Estimated Current Market Score:|تقييم الجاهزية الحالي التقديري:
+Estimated delivery|التسليم المتوقع
+Every item below is part of the published scope for this service.|كل بند أدناه مشمول في نطاق الخدمة المنشور.
+Existing order records remain preserved. Deactivated packages are removed from the public catalog.|تُحفظ الطلبات السابقة، وتُخفى الباقات المعطلة من الكتالوج العام.
+Experiences that make the next step clearer.|تجارب تساعدك على تحديد خطوتك التالية.
+Expiration|الانتهاء
+Explore SANAD services and choose the support that fits your next step.|استكشف خدمات سند واختر الدعم المناسب لخطوتك التالية.
+Explore SANAD services and information.|استكشف خدمات سند ومعلوماتها.
+Explore Services|استكشف الخدمات
+Explore service|استكشف الخدمة
+Explore services|استكشف الخدمات
+Explore the scope|تعرّف على نطاق الخدمة
+Features (one per line)|المميزات (ميزة في كل سطر)
+Feedback is being collected.|نستقبل آراء العملاء حاليًا.
+Female|أنثى
+Filter services by category|تصفية الخدمات حسب الفئة
+Final amount|المبلغ النهائي
+Final total shown at checkout|يظهر الإجمالي النهائي عند إتمام الطلب
+Find clear information about SANAD services, the order process, delivery, revisions, and what to expect from your documents.|تعرّف على خدمات سند وخطوات الطلب والتسليم والتعديلات والنتائج المتوقعة.
+Find your fit|اختر ما يناسبك
+First Name|الاسم الأول
+First name|الاسم الأول
+Fixed amount|مبلغ ثابت
+Focus|التركيز
+Frequently asked questions|الأسئلة الشائعة
+From choosing a service to receiving your work|من اختيار الخدمة حتى استلام العمل
+Gender|النوع
+Gender selection|اختيار النوع
+Go to next page|الانتقال للصفحة التالية
+Go to previous page|الانتقال للصفحة السابقة
+Having these details ready helps SANAD confirm the scope and begin efficiently.|تجهيز هذه التفاصيل يساعد فريق سند على تأكيد نطاق الخدمة والبدء بكفاءة.
+Help us prepare your order|ساعدنا في تجهيز طلبك
+Hide|إخفاء
+How the service works|كيف تتم الخدمة
+Image|الصورة
+Image alt text|النص البديل للصورة
+Important before you continue|معلومات مهمة قبل المتابعة
+Included|مشمول
+Included service|الخدمة المشمولة
+Interactive ATS Assessment|تقييم تفاعلي للتوافق مع ATS
+Interactive Career Tool|أداة مهنية تفاعلية
+Keep your contact details current so the SANAD team can reach you about your orders.|حدّث بيانات التواصل ليتمكن فريق سند من التواصل معك بشأن طلباتك.
+Last Name|اسم العائلة
+Last name|اسم العائلة
+Last updated January 2026|آخر تحديث: يناير ٢٠٢٦
+Latest purchases across all services.|أحدث الطلبات لجميع الخدمات.
+Legal|المعلومات القانونية
+Loading customer...|جارٍ تحميل العميل...
+Loading data...|جارٍ تحميل البيانات...
+Loading order details...|جارٍ تحميل تفاصيل الطلب...
+Loading service information|جارٍ تحميل معلومات الخدمة
+Loading service information…|جارٍ تحميل معلومات الخدمة…
+Loading your orders...|جارٍ تحميل طلباتك...
+Loading your profile...|جارٍ تحميل ملفك الشخصي...
+Maintain service pricing, scope, delivery details, availability, and images.|إدارة أسعار الخدمات ونطاقها ومواعيد التسليم والتوفر والصور.
+Male|ذكر
+Market|السوق
+Max Discount (optional)|الحد الأقصى للخصم (اختياري)
+Max Revisions|الحد الأقصى للتعديلات
+Media|الوسائط
+Media Key|مفتاح الوسائط
+Meta Description|وصف محركات البحث
+Method|الطريقة
+Minimum|الحد الأدنى
+Minimum Amount|الحد الأدنى للمبلغ
+Moderate verified-purchase feedback without changing the customer’s words.|مراجعة تقييمات المشترين الموثقة دون تغيير كلمات العميل.
+More pages|صفحات أخرى
+Move image down|نقل الصورة لأسفل
+Move image up|نقل الصورة لأعلى
+My Orders|طلباتي
+My Profile|ملفي الشخصي
+Name|الاسم
+Next|التالي
+Next status|الحالة التالية
+No published reviews for this service yet.|لا توجد تقييمات منشورة لهذه الخدمة حتى الآن.
+No records found.|لا توجد سجلات.
+No reviews yet|لا توجد تقييمات بعد
+Not listed|غير مدرج
+Not sure which service fits?|هل تحتاج مساعدة في اختيار الخدمة؟
+Offer|العرض
+Offer Name|اسم العرض
+Offer saving|توفير العرض
+Offers|العروض
+Offers used by orders are safely deactivated by the backend; other offers may be removed.|تُعطّل العروض المرتبطة بطلبات سابقة للحفاظ على السجل، ويمكن حذف العروض الأخرى.
+On smaller screens, scroll the table sideways to compare every package.|على الشاشات الصغيرة، مرّر الجدول أفقيًا لمقارنة جميع الباقات.
+On this service page|في صفحة هذه الخدمة
+Only valid next states are available.|تظهر فقط الحالات التالية المسموح بها.
+Open WhatsApp|فتح واتساب
+Open navigation|فتح القائمة
+Open secure payment|فتح الدفع الآمن
+Open sign in|فتح تسجيل الدخول
+Order|الطلب
+Order #|طلب رقم
+Order Confirmed|تم تأكيد الطلب
+Order Number|رقم الطلب
+Order Status|حالة الطلب
+Order summary|ملخص الطلب
+Order, customer, email or phone|طلب أو عميل أو بريد أو هاتف
+Orders|الطلبات
+Orders unavailable|تعذّر تحميل الطلبات
+Original price|السعر الأصلي
+Original price:|السعر الأصلي:
+Our approach|منهجنا
+Overview|نظرة عامة
+Package|الباقة
+Package Images|صور الباقة
+Package comparison|مقارنة الباقات
+Package fit|الباقة المناسبة
+Package image|صورة الباقة
+Packages|الباقات
+Page|الصفحة
+Page not found|الصفحة غير موجودة
+Pages|الصفحات
+Pagination|التنقل بين الصفحات
+Password|كلمة المرور
+Payment|الدفع
+Payment Information|معلومات الدفع
+Payment Status|حالة الدفع
+Payment confirmed|تم تأكيد الدفع
+Payment is processed securely. WhatsApp appears only after payment confirmation.|تتم معالجة الدفع بأمان. يظهر واتساب بعد تأكيد الدفع.
+Payment method|طريقة الدفع
+Payment status|حالة الدفع
+Payment summary|ملخص الدفع
+Payments|المدفوعات
+Percentage|نسبة مئوية
+Phone|الهاتف
+Phone Number|رقم الهاتف
+Phone number|رقم الهاتف
+Previous|السابق
+Price|السعر
+Principles That Shape Every Document|مبادئ نلتزم بها في كل مستند
+Private administration|الإدارة الخاصة
+Profile unavailable|تعذّر تحميل الملف الشخصي
+Profile updated|تم تحديث الملف الشخصي
+Public contact and checkout configuration has been refreshed.|تم تحديث بيانات التواصل وإعدادات إتمام الطلب.
+Publish|نشر
+Published|منشور
+Published client reviews will appear here once they are approved for sharing.|تظهر تقييمات العملاء هنا بعد الموافقة على نشرها.
+Published deliverables, delivery estimates and revisions|المخرجات المنشورة ومواعيد التسليم والتعديلات
+Purchase Date|تاريخ الشراء
+Purchased|تم الشراء
+Question|السؤال
+Quick facts|معلومات سريعة
+Rate Your Experience|قيّم تجربتك
+Rating|التقييم
+Rating from 1 to 5|تقييم من ١ إلى ٥
+Raw metadata|البيانات الإضافية
+Read published reviews from clients who used SANAD to strengthen the documents and profiles behind their next opportunity.|اطّلع على تقييمات عملاء استعانوا بسند لتطوير مستنداتهم وملفاتهم المهنية.
+Read the FAQ|اقرأ الأسئلة الشائعة
+Read-only audit history for administrative changes across SANAD.|سجل للقراءة فقط يوثّق التغييرات الإدارية في سند.
+Read-only visibility into payment transactions and the orders they belong to.|عرض معاملات الدفع والطلبات المرتبطة بها للقراءة فقط.
+Ready to choose your next step?|مستعد لاختيار خطوتك التالية؟
+Ready to get started?|مستعد للبدء؟
+Recent Orders|أحدث الطلبات
+Record|السجل
+Registered|تاريخ التسجيل
+Required Arabic fields mirror the English label internally.|أدخل الاسم باللغتين لعرضه حسب لغة الزائر.
+Resend code in:|إعادة إرسال الرمز خلال:
+Reset filters|إعادة ضبط الفلاتر
+Restoring your secure session...|جارٍ استعادة جلستك الآمنة...
+Retake Assessment|إعادة التقييم
+Retry reviews|إعادة تحميل التقييمات
+Review orders, customers, payments, content, and settings from one secure workspace.|راجع الطلبات والعملاء والمدفوعات والمحتوى والإعدادات من مكان آمن واحد.
+Review saved|تم حفظ التقييم
+Review status|حالة التقييم
+Review the available services and choose the support that fits your next career move.|راجع الخدمات المتاحة واختر الدعم المناسب لخطوتك المهنية التالية.
+Review the purchase and continue your service conversation.|راجع الطلب وتابع التواصل بشأن خدمتك.
+Review the service scope|راجع نطاق الخدمة
+Review unavailable|التقييم غير متاح
+Review your order before confirming. After confirmation, continue on WhatsApp to share your requirements with SANAD.|راجع طلبك قبل تأكيده، ثم تابع عبر واتساب لمشاركة متطلباتك مع سند.
+Reviews|التقييمات
+Reviews are published after approval and stay connected to the service where the feedback was collected.|تُنشر التقييمات بعد الموافقة وتظل مرتبطة بالخدمة التي تم تقييمها.
+Reviews could not be loaded. You can still explore this service.|تعذّر تحميل التقييمات. يمكنك متابعة استكشاف الخدمة.
+Revision rounds|جولات التعديل
+Revisions|التعديلات
+SANAD Admin|إدارة سند
+SANAD Administration|إدارة سند
+SANAD career services|سند للخدمات المهنية
+SANAD home|الصفحة الرئيسية لسند
+SANAD provides professional career-document services. These services can strengthen how your experience is presented, but they cannot guarantee interviews, offers, or employment.|تقدم سند خدمات احترافية للمستندات المهنية لتحسين عرض خبراتك، لكنها لا تضمن الحصول على مقابلات أو عروض أو وظائف.
+Save|حفظ
+Saving package|جارٍ حفظ الباقة
+Saving profile|جارٍ حفظ الملف الشخصي
+Saving review|جارٍ حفظ التقييم
+Schedule package-specific percentage discounts with clear start and end dates.|جدولة خصومات نسبية للباقات مع تحديد تواريخ البداية والنهاية.
+Search|بحث
+Search activity logs|البحث في سجل الأنشطة
+Search admin or description|ابحث بالمدير أو الوصف
+Search by service, document, or outcome|ابحث بالخدمة أو المستند أو النتيجة
+Search customer profiles, purchasing history, spend, and contact details.|ابحث في ملفات العملاء ومشترياتهم وإنفاقهم وبيانات التواصل.
+Search customers|البحث عن العملاء
+Search name, email or phone|ابحث بالاسم أو البريد أو الهاتف
+Search payments|البحث في المدفوعات
+Search purchases, inspect payment state, and move work through the approved order lifecycle.|ابحث عن الطلبات وراجع حالة الدفع وتابع مراحل تنفيذ العمل.
+Search reviews|البحث في التقييمات
+Search services|البحث عن الخدمات
+Secure checkout|إتمام طلب آمن
+Select package|اختر الباقة
+Select status|اختر الحالة
+Sending code...|جارٍ إرسال الرمز...
+Service|الخدمة
+Service illustration|صورة توضيحية للخدمة
+Service illustration. Confirm the deliverables and available work samples with SANAD.|صورة توضيحية للخدمة. تأكد من المخرجات ونماذج الأعمال المتاحة مع سند.
+Service illustration. Use Escape or the close button to return to the service.|صورة توضيحية للخدمة. اضغط Escape أو زر الإغلاق للعودة.
+Service not found|الخدمة غير موجودة
+Service preview|معاينة الخدمة
+Service price|سعر الخدمة
+Services are temporarily unavailable|الخدمات غير متاحة مؤقتًا
+Settings|الإعدادات
+Settings saved|تم حفظ الإعدادات
+Share what SANAD helped you accomplish.|شاركنا ما ساعدتك سند على تحقيقه.
+Show all services|عرض كل الخدمات
+Showing|عرض
+Sign Out|تسجيل الخروج
+Sign in to SANAD|تسجيل الدخول إلى سند
+Sign in to continue|سجّل الدخول للمتابعة
+Sign in to your account|سجّل الدخول إلى حسابك
+Sign out|تسجيل الخروج
+Signed in as|تم الدخول باسم
+Signing in|جارٍ تسجيل الدخول
+Similar career services|خدمات مهنية مشابهة
+Simple process|خطوات بسيطة
+Skip to main content|الانتقال للمحتوى الرئيسي
+Slug|معرّف الرابط
+Social media and contact channels|حسابات التواصل وقنوات الاتصال
+Something went wrong.|حدث خطأ ما.
+Sort|ترتيب
+Sort Order|ترتيب العرض
+Sort services|ترتيب الخدمات
+Start Date|تاريخ البداية
+Start with the outcome you need, then compare scope, delivery, and investment at a glance.|حدّد النتيجة المطلوبة، ثم قارن نطاق الخدمة وموعد التسليم والتكلفة.
+Starting secure checkout|جارٍ بدء الدفع الآمن
+Status|الحالة
+Status History|سجل الحالات
+Subtotal|المجموع الفرعي
+Summary|الملخص
+Target industry|القطاع المستهدف
+Target job title|المسمى الوظيفي المستهدف
+Tell us a little about yourself to finish setting up your consultation profile.|أخبرنا قليلًا عن نفسك لإكمال إعداد ملفك.
+Thank you. Your review is now pending moderation.|شكرًا لك. تقييمك الآن قيد المراجعة.
+The detailed deliverables for this service are confirmed with SANAD before the order begins.|يتم تأكيد مخرجات الخدمة بالتفصيل مع سند قبل بدء الطلب.
+The file and its database record will be removed. Confirm it is not in active use.|سيُحذف الملف وسجله. تأكد من أنه غير مستخدم حاليًا.
+The final tax and total are confirmed when your order is started.|تُؤكد الضريبة والإجمالي النهائي عند بدء الطلب.
+The image file and its package reference will be removed permanently.|ستُحذف الصورة وارتباطها بالباقة نهائيًا.
+The page may have moved or the address may be incorrect.|ربما نُقلت الصفحة أو أن الرابط غير صحيح.
+The process is straightforward: choose a service, share your career context, and receive polished deliverables within 48–72 business hours. Unlimited revisions are included within 14 days of the first draft so the final result reflects your voice and goals accurately.|الخطوات بسيطة: اختر الخدمة وشارك معلوماتك المهنية، واستلم العمل خلال ٤٨–٧٢ ساعة عمل. تتاح تعديلات غير محدودة خلال ١٤ يومًا من المسودة الأولى لتعكس النتيجة النهائية أهدافك بدقة.
+The published scope is listed above. Ask SANAD about these details if they matter to your decision.|نطاق الخدمة المنشور موضح أعلاه. اسأل سند عن التفاصيل التي تهمك قبل الاختيار.
+The service may no longer be available, or the link may be incorrect.|قد تكون الخدمة غير متاحة أو الرابط غير صحيح.
+The sign-in form opens in a centered modal on this page.|يفتح نموذج تسجيل الدخول في نافذة وسط الصفحة.
+This changes account access and invalidates active sessions. The action is recorded.|سيغير هذا الإجراء صلاحيات الحساب وينهي الجلسات النشطة، وسيُسجل في سجل الأنشطة.
+This signed-in account does not have permission to open SANAD administration.|هذا الحساب لا يملك صلاحية الدخول إلى إدارة سند.
+Title|العنوان
+Total|الإجمالي
+Total Spend|إجمالي الإنفاق
+Total purchases|إجمالي المشتريات
+Track every service you purchased and continue the conversation with SANAD.|تابع الخدمات التي اشتريتها وواصل التواصل مع سند.
+Transaction ID|معرّف المعاملة
+Transaction, order or customer|معاملة أو طلب أو عميل
+Try Again|حاول مجددًا
+Turnaround|مدة التنفيذ
+Type|النوع
+UAE, Saudi Arabia, and the wider GCC|الإمارات والسعودية ودول مجلس التعاون الخليجي
+Unlimited within 14 days of first draft|غير محدودة خلال ١٤ يومًا من المسودة الأولى
+Update Order|تحديث الطلب
+Update Status|تحديث الحالة
+Update failed|تعذّر التحديث
+Update order status?|تحديث حالة الطلب؟
+Updated|آخر تحديث
+Upgrade to a 98% ATS-Optimized CV|طوّر سيرتك الذاتية لتوافق ATS بنسبة ٩٨٪
+Upload|رفع
+Upload and maintain site imagery, filenames, types, alt text, and publication state.|رفع صور الموقع وإدارة أسمائها وأنواعها والنص البديل وحالة النشر.
+Upload failed|تعذّر رفع الملف
+Usage|الاستخدام
+Usage Limit (optional)|حد الاستخدام (اختياري)
+Use a different email|استخدام بريد إلكتروني آخر
+Use the administrator email and password assigned to your account.|استخدم البريد الإلكتروني وكلمة المرور المخصصين لحساب الإدارة.
+Use your email verification code to view your profile and orders securely.|استخدم رمز التحقق المرسل لبريدك لعرض ملفك وطلباتك بأمان.
+Used coupons are safely deactivated by the backend so purchase history remains intact.|تُعطّل القسائم المستخدمة للحفاظ على سجل المشتريات.
+Used for order notifications and document consultation updates.|يُستخدم لإشعارات الطلبات وتحديثات الخدمة.
+Uses Per Customer|مرات الاستخدام لكل عميل
+Value|القيمة
+Verification code input|إدخال رمز التحقق
+Verified Customer|عميل موثّق
+Verified and published|موثّق ومنشور
+Verify & Continue|التحقق والمتابعة
+Verifying code...|جارٍ التحقق من الرمز...
+View|عرض
+View All Services|عرض جميع الخدمات
+View Order|عرض الطلب
+View all|عرض الكل
+View details|عرض التفاصيل
+We could not load the current service information. Please try again in a moment.|تعذّر تحميل معلومات الخدمة الحالية. حاول مجددًا بعد قليل.
+We couldn&apos;t load this page. Try again, or return to the SANAD homepage.|تعذّر تحميل الصفحة. حاول مجددًا أو ارجع للرئيسية.
+We sent a 6-digit verification code to:|أرسلنا رمز تحقق من ٦ أرقام إلى:
+We write and optimise professional CVs, LinkedIn profiles, cover letters, and related career documents. Each piece of work is handled by a writer with direct experience in Gulf-market hiring standards and ATS screening requirements.|نكتب ونطوّر السير الذاتية وملفات لينكدإن وخطابات التقديم والمستندات المهنية، على يد كتّاب ذوي خبرة بمعايير التوظيف الخليجية ومتطلبات أنظمة ATS.
+Welcome back|مرحبًا بعودتك
+What clients say about this service|ماذا يقول العملاء عن هذه الخدمة
+What clients shared|ما شاركه العملاء
+What to prepare|ما تحتاج إلى تجهيزه
+What we do|ما نقدمه
+What would you like this service to help you achieve?|ما الذي ترغب في تحقيقه من هذه الخدمة؟
+What&apos;s Next?|ما الخطوة التالية؟
+WhatsApp phone|رقم واتساب
+WhatsApp unavailable|واتساب غير متاح
+What’s Included|ماذا تشمل الخدمة
+Who this service is for|لمن تناسب هذه الخدمة
+You haven&apos;t placed any orders yet.|لم تقدم أي طلبات حتى الآن.
+Your account keeps the order, payment, and WhatsApp handoff connected in one place.|يجمع حسابك الطلب والدفع والتواصل عبر واتساب في مكان واحد.
+Your contact details have been saved.|تم حفظ بيانات التواصل الخاصة بك.
+Your details|بياناتك
+Your order is safely recorded. Continue with the SANAD team on WhatsApp to send your documents, requirements, and career information.|تم تسجيل طلبك بأمان. تابع مع فريق سند عبر واتساب لإرسال مستنداتك ومتطلباتك ومعلوماتك المهنية.
+Your order is saved. Complete payment with our secure provider, then return here to continue to WhatsApp.|تم حفظ طلبك. أكمل الدفع الآمن ثم ارجع هنا للمتابعة عبر واتساب.
+Your profile has strong potential, but without tailored Gulf ATS keywords and achievement metrics, you may be missing out on up to|لديك إمكانات قوية، لكن غياب الكلمات المناسبة لأنظمة ATS الخليجية ومؤشرات الإنجاز قد يفوّت عليك ما يصل إلى
+Your review is checked by SANAD before it appears publicly.|يراجع فريق سند تقييمك قبل نشره.
+confirmed|مؤكد
+days|أيام
+days estimated|أيام تقريبًا
+e.g. Al Mansoori|مثال: المنصوري
+e.g. Alexander|مثال: أحمد
+e.g. FinTech / SaaS|مثال: التقنية المالية / البرمجيات
+e.g. Product Manager|مثال: مدير منتج
+images|صور
+more included|عناصر إضافية مشمولة
+of|من
+order|طلب
+services|خدمات

@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import Image from 'next/image';
 
 import { cn } from '@/lib/utils/cn';
@@ -21,9 +22,11 @@ export function BrandLogo({
   loading,
   size = 'md',
 }: BrandLogoProps) {
+  const _copy = useCopy();
+
   return (
     <Image
-      alt={alt}
+      alt={_copy(alt)}
       className={cn(logoSizes[size], 'max-w-full object-contain', className)}
       height={880}
       loading={loading}

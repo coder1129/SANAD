@@ -24,6 +24,19 @@ describe('environment validation', () => {
     expect(validate(valid)).toMatchObject({ NODE_ENV: 'development' });
   });
 
+  it('validates the optional Google OAuth web client ID', () => {
+    expect(
+      validate({
+        ...valid,
+        GOOGLE_CLIENT_ID: '123456789-example.apps.googleusercontent.com',
+      }).GOOGLE_CLIENT_ID,
+    ).toBe('123456789-example.apps.googleusercontent.com');
+
+    expect(() =>
+      validate({ ...valid, GOOGLE_CLIENT_ID: 'not-a-google-client-id' }),
+    ).toThrow(/GOOGLE_CLIENT_ID/);
+  });
+
   it('rejects identical JWT secrets', () => {
     expect(() =>
       validate({ ...valid, JWT_REFRESH_SECRET: valid.JWT_ACCESS_SECRET }),
@@ -91,6 +104,19 @@ describe('environment validation', () => {
         PAYMENT_PROVIDER: 'mock',
       }),
     ).toThrow(/PAYMENT_PROVIDER=mock/);
+  });
+
+  it('rejects placeholder email credentials in production', () => {
+    expect(() =>
+      validate({
+        ...valid,
+        ...productionServices,
+        NODE_ENV: 'production',
+        TRUST_PROXY: '1',
+        PAYMENT_PROVIDER: 'bypass',
+        RESEND_API_KEY: 're_placeholder',
+      }),
+    ).toThrow(/SMTP_HOST or RESEND_API_KEY/);
   });
 
   it('rejects insecure production CORS origins and exposed Swagger', () => {

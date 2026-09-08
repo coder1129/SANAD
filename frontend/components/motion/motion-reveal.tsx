@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useRef, type ReactNode } from 'react';
 import {
@@ -68,9 +69,9 @@ const revealViewport = {
 function getOffset(direction: RevealDirection, distance: number) {
   switch (direction) {
     case 'left':
-      return { x: -distance, y: 0 };
+      return { x: -Math.min(distance, 12), y: 0 };
     case 'right':
-      return { x: distance, y: 0 };
+      return { x: Math.min(distance, 12), y: 0 };
     case 'none':
       return { x: 0, y: 0 };
     default:
@@ -86,18 +87,21 @@ export function MotionReveal({
   distance = 20,
   initialOpacity = 0,
 }: MotionRevealProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
   const offset = getOffset(direction, distance);
 
   return (
     <motion.div
+      data-motion-reveal
       className={className}
       initial={reduceMotion ? false : { opacity: initialOpacity, ...offset }}
       transition={{ delay, duration: 0.62, ease: easeOut }}
       viewport={revealViewport}
       whileInView={{ opacity: 1, x: 0, y: 0 }}
     >
-      {children}
+      {_copy(children)}
     </motion.div>
   );
 }
@@ -119,9 +123,12 @@ export function MotionHeading({
   lines,
   text,
 }: MotionHeadingProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
   const displayLines = lines?.length ? lines : [text];
   const animationProps = {
+    'data-motion-reveal': true,
     'aria-label': text,
     className,
     id,
@@ -145,14 +152,16 @@ export function MotionHeading({
         className="block"
         variants={reduceMotion ? undefined : headingLineVariants}
       >
-        {line}
+        {_copy(line)}
       </motion.span>
     </span>
   ));
 
-  if (level === 1) return <motion.h1 {...animationProps}>{content}</motion.h1>;
-  if (level === 3) return <motion.h3 {...animationProps}>{content}</motion.h3>;
-  return <motion.h2 {...animationProps}>{content}</motion.h2>;
+  if (level === 1)
+    return <motion.h1 {...animationProps}>{_copy(content)}</motion.h1>;
+  if (level === 3)
+    return <motion.h3 {...animationProps}>{_copy(content)}</motion.h3>;
+  return <motion.h2 {...animationProps}>{_copy(content)}</motion.h2>;
 }
 
 export function MotionAccentLine({ className }: { className?: string }) {
@@ -160,6 +169,7 @@ export function MotionAccentLine({ className }: { className?: string }) {
 
   return (
     <motion.span
+      data-motion-reveal
       aria-hidden="true"
       className={className}
       initial={reduceMotion ? false : { scaleX: 0 }}
@@ -177,6 +187,8 @@ export function MotionMediaReveal({
   parallax = false,
   parallaxDistance = 16,
 }: MotionMediaRevealProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
   const mediaRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -193,6 +205,7 @@ export function MotionMediaReveal({
   return (
     <motion.div className={className} ref={mediaRef}>
       <motion.div
+        data-motion-reveal
         className="relative size-full"
         initial={reduceMotion ? false : { opacity: 0.92, scale: 1.045 }}
         style={{ y: parallax && !reduceMotion ? smoothY : 0 }}
@@ -200,7 +213,7 @@ export function MotionMediaReveal({
         viewport={{ ...revealViewport, amount: 0.12 }}
         whileInView={{ opacity: 1, scale: 1 }}
       >
-        {children}
+        {_copy(children)}
       </motion.div>
     </motion.div>
   );
@@ -250,24 +263,30 @@ export function MotionStaggerList({
   ordered = false,
   stagger = 0.11,
 }: MotionStaggerListProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
   const animationProps = getStaggerAnimationProps(reduceMotion, delay, stagger);
 
   if (ordered) {
     return (
       <motion.ol
-        aria-label={ariaLabel}
+        aria-label={_copy(ariaLabel)}
         className={className}
         {...animationProps}
       >
-        {children}
+        {_copy(children)}
       </motion.ol>
     );
   }
 
   return (
-    <motion.ul aria-label={ariaLabel} className={className} {...animationProps}>
-      {children}
+    <motion.ul
+      aria-label={_copy(ariaLabel)}
+      className={className}
+      {...animationProps}
+    >
+      {_copy(children)}
     </motion.ul>
   );
 }
@@ -277,10 +296,13 @@ export function MotionStaggerItem({
   className,
   hoverLift = false,
 }: MotionStaggerItemProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
 
   return (
     <motion.li
+      data-motion-reveal
       className={className}
       transition={
         hoverLift && !reduceMotion
@@ -290,12 +312,14 @@ export function MotionStaggerItem({
       variants={reduceMotion ? undefined : staggerItemVariants}
       whileHover={hoverLift && !reduceMotion ? { y: -7 } : undefined}
     >
-      {children}
+      {_copy(children)}
     </motion.li>
   );
 }
 
 export function MotionTimeline({ children, className }: MotionTimelineProps) {
+  const _copy = useCopy();
+
   const reduceMotion = useReducedMotion();
   const timelineRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -321,7 +345,7 @@ export function MotionTimeline({ children, className }: MotionTimelineProps) {
         style={{ scaleY: reduceMotion ? 1 : progress }}
       />
       <motion.ol className={className} {...animationProps}>
-        {children}
+        {_copy(children)}
       </motion.ol>
     </div>
   );

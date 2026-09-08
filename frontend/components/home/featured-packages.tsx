@@ -1,6 +1,15 @@
-import { FileCheck2, LayoutTemplate, UserRoundCheck } from 'lucide-react';
+import { getCopy } from '@/lib/i18n/server-copy';
+import Link from 'next/link';
+import {
+  ArrowRight,
+  FileCheck2,
+  LayoutTemplate,
+  UserRoundCheck,
+} from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   MotionAccentLine,
   MotionHeading,
@@ -10,55 +19,41 @@ import {
 } from '@/components/motion/motion-reveal';
 import {
   Card,
-  CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 
-const featuredPackages = [
-  {
-    category: 'CV Service',
-    title: 'Professional CV',
-    description:
-      'A professionally written CV that presents your experience, skills, and career goals in a clear and compelling way.',
-    bestFor: 'Anyone looking to land interviews with a strong, well-structured CV.',
-    benefits: [
-      'Clear, professional structure from start to finish',
-      'Highlights your achievements and key strengths',
-      'Tailored to your target role and industry',
-    ],
-    icon: FileCheck2,
-  },
-  {
-    category: 'LinkedIn Optimization',
-    title: 'LinkedIn Profile',
-    description:
-      'Your LinkedIn profile updated and aligned with your new CV — so your online presence tells the same strong story.',
-    bestFor: 'Professionals who want their LinkedIn to match and reinforce their CV.',
-    benefits: [
-      'Headline and summary written to match your CV',
-      'Experience section aligned with your CV content',
-      'Profile positioned to attract the right opportunities',
-    ],
-    icon: UserRoundCheck,
-  },
-  {
-    category: 'LinkedIn Jobs',
-    title: 'LinkedIn Job Applications',
-    description:
-      'We apply to relevant job opportunities on LinkedIn on your behalf — saving you time and keeping your search active.',
-    bestFor: 'Professionals who want consistent job applications without the daily effort.',
-    benefits: [
-      'Targeted job search based on your role and preferences',
-      'Applications sent on your behalf through LinkedIn',
-      'Regular updates on applications submitted',
-    ],
-    icon: LayoutTemplate,
-  },
-] as const;
+export async function FeaturedPackages() {
+  const _copy = await getCopy();
 
-export function FeaturedPackages() {
+  const t = await getTranslations('home.featuredPackages');
+
+  const featuredPackages = [
+    {
+      category: t('cv.category'),
+      title: t('cv.title'),
+      description: t('cv.description'),
+      icon: FileCheck2,
+      href: '/packages',
+    },
+    {
+      category: t('linkedin.category'),
+      title: t('linkedin.title'),
+      description: t('linkedin.description'),
+      icon: UserRoundCheck,
+      href: '/packages',
+    },
+    {
+      category: t('linkedinJobs.category'),
+      title: t('linkedinJobs.title'),
+      description: t('linkedinJobs.description'),
+      icon: LayoutTemplate,
+      href: '/packages',
+    },
+  ];
+
   return (
     <section
       aria-labelledby="featured-packages-heading"
@@ -71,13 +66,13 @@ export function FeaturedPackages() {
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-                Featured services
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[17ch]"
               id="featured-packages-heading"
-              text="Your CV. Your LinkedIn. Your Next Job."
+              text={_copy(t('heading'))}
             />
           </div>
 
@@ -87,23 +82,14 @@ export function FeaturedPackages() {
             direction="right"
           >
             <p className="max-w-[34rem] text-base leading-7 text-muted-foreground md:text-lg md:leading-8">
-              We write your CV, optimise your LinkedIn to match it, then apply
-              to jobs on your behalf — so you can focus on preparing for
-              interviews.
+              {_copy(t('body'))}
             </p>
           </MotionReveal>
         </div>
 
         <MotionStaggerList className="mt-10 grid gap-5 md:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-6">
           {featuredPackages.map(
-            ({
-              bestFor,
-              benefits,
-              category,
-              description,
-              icon: Icon,
-              title,
-            }) => (
+            ({ category, description, href, icon: Icon, title }) => (
               <MotionStaggerItem
                 className="md:last:col-span-2 md:last:mx-auto md:last:w-[calc(50%-0.625rem)] lg:last:col-span-1 lg:last:mx-0 lg:last:w-auto"
                 hoverLift
@@ -114,13 +100,13 @@ export function FeaturedPackages() {
                     aria-hidden="true"
                     className="absolute inset-x-0 top-0 z-10 h-0.5 origin-left scale-x-0 bg-primary transition-transform duration-500 ease-[var(--ease-standard)] motion-safe:group-hover:scale-x-100 motion-safe:group-focus-within:scale-x-100 motion-reduce:transition-none"
                   />
-                  <CardHeader className="gap-0 border-b border-border/70">
+                  <CardHeader className="gap-0">
                     <div className="flex items-center justify-between gap-4">
                       <Badge
                         className="tracking-[0.08em] uppercase"
                         variant="secondary"
                       >
-                        {category}
+                        {_copy(category)}
                       </Badge>
                       <span className="grid size-10 shrink-0 place-items-center rounded-sm bg-surface-muted text-secondary transition-transform duration-300 ease-[var(--ease-standard)] motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:rotate-3 motion-reduce:transition-none">
                         <Icon
@@ -131,38 +117,31 @@ export function FeaturedPackages() {
                       </span>
                     </div>
 
-                    <CardTitle className="mt-6 text-primary">{title}</CardTitle>
-                    <CardDescription className="mt-3 text-base leading-7">
-                      {description}
+                    <CardTitle className="mt-5 text-primary text-xl font-bold">
+                      {_copy(title)}
+                    </CardTitle>
+                    <CardDescription className="mt-3 text-sm leading-6 text-muted-foreground">
+                      {_copy(description)}
                     </CardDescription>
-
-                    <div className="mt-5 border-t border-border/70 pt-4">
-                      <p className="type-label text-primary">Best for</p>
-                      <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                        {bestFor}
-                      </p>
-                    </div>
                   </CardHeader>
 
-                  <CardContent className="flex flex-1 flex-col pt-5 sm:pt-6">
-                    <p className="type-label text-primary">
-                      What this service supports
-                    </p>
-                    <ul className="mt-4 grid gap-3">
-                      {benefits.map((benefit) => (
-                        <li
-                          className="flex items-start gap-3 text-sm leading-6 text-foreground"
-                          key={benefit}
-                        >
-                          <span
-                            aria-hidden="true"
-                            className="mt-3 h-px w-4 shrink-0 bg-accent"
-                          />
-                          <span>{benefit}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
+                  <CardFooter className="mt-auto pt-4 border-t border-border/60">
+                    <Button
+                      asChild
+                      className="group/btn w-full justify-between"
+                      variant="ghost"
+                    >
+                      <Link href={href}>
+                        <span className="font-semibold text-primary group-hover/btn:text-accent-foreground">
+                          {_copy(t('exploreService'))}
+                        </span>
+                        <ArrowRight
+                          aria-hidden="true"
+                          className="size-4 rtl:rotate-180 transition-transform duration-200 motion-safe:group-hover/btn:translate-x-1 rtl:motion-safe:group-hover/btn:-translate-x-1"
+                        />
+                      </Link>
+                    </Button>
+                  </CardFooter>
                 </Card>
               </MotionStaggerItem>
             ),

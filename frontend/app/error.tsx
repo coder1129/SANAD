@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
@@ -13,6 +14,8 @@ export default function ApplicationError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const _copy = useCopy();
+
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -23,15 +26,18 @@ export default function ApplicationError({
           aria-hidden="true"
           className="mx-auto size-10 text-warning"
         />
-        <h1 className="type-h2 mt-5 text-primary">Something went wrong.</h1>
+        <h1 className="type-h2 mt-5 text-primary">
+          {_copy('Something went wrong.')}
+        </h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          We couldn&apos;t load this page. Try again, or return to the SANAD
-          homepage.
+          {_copy(
+            'We couldn&apos;t load this page. Try again, or return to the SANAD homepage.',
+          )}
         </p>
         <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button onClick={() => reset()}>Try Again</Button>
+          <Button onClick={() => reset()}>{_copy('Try Again')}</Button>
           <Button asChild variant="outline">
-            <Link href="/">Back to Home</Link>
+            <Link href="/">{_copy('Back to Home')}</Link>
           </Button>
         </div>
       </section>

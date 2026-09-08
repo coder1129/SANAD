@@ -17,6 +17,12 @@ export class CheckoutPreviewDto {
   @Type(() => Number)
   offer_id?: number;
 
+  @ApiPropertyOptional({ description: 'Optional second package unlocked by a cross-service offer' })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  secondary_package_id?: number;
+
   @ApiPropertyOptional({
     description: 'Optional coupon code to apply',
     example: 'SAVE10',
@@ -32,6 +38,11 @@ export interface PricingBreakdown {
   package_name_en: string;
   delivery_days: number;
   original_price: number;
+  secondary_package_id: number | null;
+  secondary_package_name_ar: string | null;
+  secondary_package_name_en: string | null;
+  secondary_original_price: number;
+  secondary_discount_amount: number;
   offer_id: number | null;
   offer_discount_percentage: number;
   offer_discount_amount: number;

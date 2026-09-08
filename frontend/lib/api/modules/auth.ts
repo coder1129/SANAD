@@ -13,6 +13,8 @@ import type {
   PasswordlessRequestResult,
   PasswordlessVerifyResult,
   PasswordlessCompleteProfileInput,
+  CustomerAuthFlow,
+  GoogleAuthResult,
 } from '@/types/domain';
 import { USER_ROLES } from '@/types/domain';
 
@@ -77,6 +79,23 @@ const passwordlessVerifySchema = z.discriminatedUnion('status', [
   z.object({
     status: z.literal('profile_required'),
     registrationToken: z.string().min(1),
+  }),
+]);
+
+const googleAuthSchema = z.discriminatedUnion('status', [
+  z.object({
+    status: z.literal('authenticated'),
+    user: userPayloadSchema,
+    accessToken: z.string().min(1),
+  }),
+  z.object({
+    status: z.literal('profile_required'),
+    registrationToken: z.string().min(1),
+    profile: z.object({
+      email: z.string().email(),
+      firstName: z.string(),
+      lastName: z.string(),
+    }),
   }),
 ]);
 
@@ -320,10 +339,11 @@ export const authApi = {
    */
   async requestPasswordlessOtp(
     email: string,
+    flow?: CustomerAuthFlow,
   ): Promise<PasswordlessRequestResult> {
     const payload = await api.post<unknown>(
       '/auth/passwordless/request',
-      { email },
+      { email, ...(flow ? { flow } : {}) },
       { authMode: 'none' },
     );
 
@@ -340,10 +360,11 @@ export const authApi = {
   async verifyPasswordlessOtp(
     email: string,
     otp: string,
+    flow?: CustomerAuthFlow,
   ): Promise<PasswordlessVerifyResult> {
     const payload = await api.post<unknown>(
       '/auth/passwordless/verify',
-      { email, otp },
+      { email, otp, ...(flow ? { flow } : {}) },
       { authMode: 'none' },
     );
 
@@ -367,6 +388,29 @@ export const authApi = {
       status: 'profile_required',
       registrationToken: parsed.registrationToken,
     };
+  },
+
+  /** Verifies a Google Identity Services credential on the backend. */
+  async authenticateWithGoogle(
+    credential: string,
+    flow: CustomerAuthFlow,
+  ): Promise<GoogleAuthResult> {
+    const payload = await api.post<unknown>(
+      '/auth/google',
+      { credential, flow },
+      { authMode: 'none' },
+    );
+    const parsed = parsePayload(googleAuthSchema, payload, 'POST /auth/google');
+
+    if (parsed.status === 'authenticated') {
+      return {
+        status: 'authenticated',
+        user: toUser(parsed.user),
+        tokens: { accessToken: parsed.accessToken },
+      };
+    }
+
+    return parsed;
   },
 
   /**

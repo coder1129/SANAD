@@ -4,6 +4,8 @@ import {
   MaxLength,
   MinLength,
   IsIn,
+  IsEmail,
+  IsBoolean,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -40,4 +42,20 @@ export class UpdateProfileDto {
   @IsString()
   @IsIn(['male', 'female'])
   gender?: string;
+}
+
+export class CreateAdministratorDto {
+  @IsString() @MinLength(2) @MaxLength(255) name!: string;
+  @IsEmail() @MaxLength(255) email!: string;
+  @IsString() @MinLength(12) password!: string;
+  @IsIn(['admin', 'super_admin']) role!: 'admin' | 'super_admin';
+}
+
+export class UpdateAdministratorDto {
+  @IsOptional() @IsIn(['admin', 'super_admin']) role?: 'admin' | 'super_admin';
+  @IsOptional() @IsBoolean() active?: boolean;
+}
+
+export class ResetAdministratorPasswordDto {
+  @IsString() @MinLength(12) password!: string;
 }

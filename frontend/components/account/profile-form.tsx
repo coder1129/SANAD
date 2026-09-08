@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +26,8 @@ type Values = z.infer<typeof schema>;
 const profileKey = ['profile'] as const;
 
 export function ProfileForm() {
+  const _copy = useCopy();
+
   const queryClient = useQueryClient();
   const [success, setSuccess] = useState(false);
   const query = useQuery({
@@ -61,14 +64,14 @@ export function ProfileForm() {
   if (query.isPending)
     return (
       <div className="py-12 text-sm text-muted-foreground" role="status">
-        Loading your profile...
+        {_copy('Loading your profile...')}
       </div>
     );
   if (query.error)
     return (
       <Alert
-        title="Profile unavailable"
-        description={query.error.userMessage}
+        title={_copy('Profile unavailable')}
+        description={_copy(query.error.userMessage)}
         variant="error"
       />
     );
@@ -85,80 +88,90 @@ export function ProfileForm() {
       {success ? (
         <Alert
           className="mb-6"
-          title="Profile updated"
-          description="Your contact details have been saved."
+          title={_copy('Profile updated')}
+          description={_copy('Your contact details have been saved.')}
           variant="success"
         />
       ) : null}
       {mutation.error ? (
         <Alert
           className="mb-6"
-          title="Could not save profile"
-          description={
+          title={_copy('Could not save profile')}
+          description={_copy(
             isApiError(mutation.error)
               ? mutation.error.userMessage
-              : 'Please try again.'
-          }
+              : 'Please try again.',
+          )}
           variant="error"
         />
       ) : null}
       <div className="grid gap-5 sm:grid-cols-2">
         <label className="grid gap-2 text-sm font-semibold">
-          First Name
+          {_copy('First Name')}
           <Input
             {...register('firstName')}
             invalid={Boolean(errors.firstName)}
           />
           {errors.firstName ? (
             <span className="text-xs text-error">
-              {errors.firstName.message}
+              {_copy(errors.firstName.message)}
             </span>
           ) : null}
         </label>
         <label className="grid gap-2 text-sm font-semibold">
-          Last Name
+          {_copy('Last Name')}
           <Input {...register('lastName')} invalid={Boolean(errors.lastName)} />
           {errors.lastName ? (
             <span className="text-xs text-error">
-              {errors.lastName.message}
+              {_copy(errors.lastName.message)}
             </span>
           ) : null}
         </label>
         <label className="grid gap-2 text-sm font-semibold">
-          Email
-          <Input readOnly value={query.data.email} />
+          {_copy('Email')}
+          <Input type="email" readOnly value={query.data.email} />
           <span className="font-normal text-xs text-muted-foreground">
-            Email is your passwordless identity and cannot be changed here.
+            {_copy(
+              'Email is your passwordless identity and cannot be changed here.',
+            )}
           </span>
         </label>
         <label className="grid gap-2 text-sm font-semibold">
-          Phone Number
-          <Input {...register('phone')} invalid={Boolean(errors.phone)} />
+          {_copy('Phone Number')}
+          <Input
+            type="tel"
+            {...register('phone')}
+            invalid={Boolean(errors.phone)}
+          />
           {errors.phone ? (
-            <span className="text-xs text-error">{errors.phone.message}</span>
+            <span className="text-xs text-error">
+              {_copy(errors.phone.message)}
+            </span>
           ) : null}
         </label>
         <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
-          Gender
+          {_copy('Gender')}
           <select
             className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
             {...register('gender')}
           >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
+            <option value="male">{_copy('Male')}</option>
+            <option value="female">{_copy('Female')}</option>
           </select>
           {errors.gender ? (
-            <span className="text-xs text-error">{errors.gender.message}</span>
+            <span className="text-xs text-error">
+              {_copy(errors.gender.message)}
+            </span>
           ) : null}
         </label>
       </div>
       <div className="mt-7 border-t border-border pt-6">
         <Button
           loading={mutation.isPending}
-          loadingLabel="Saving profile"
+          loadingLabel={_copy('Saving profile')}
           type="submit"
         >
-          {mutation.isPending ? 'Saving...' : 'Save changes'}
+          {_copy(mutation.isPending ? 'Saving...' : 'Save changes')}
         </Button>
       </div>
     </form>

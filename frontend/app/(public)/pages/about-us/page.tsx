@@ -1,3 +1,6 @@
+import { getLocalizedMetadata } from '@/lib/i18n/metadata';
+
+import { getCopy } from '@/lib/i18n/server-copy';
 import { ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -18,14 +21,32 @@ const fallbackMetadata: Metadata = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
+  const _copy = await getCopy();
   const page = await getPublishedCmsPage('about-us');
-  if (!page) return fallbackMetadata;
+  if (!page) {
+    return await getLocalizedMetadata({
+      title: _copy('About Us | SANAD', 'من نحن | سند'),
+      description: _copy(
+        'SANAD helps professionals present their experience with clarity across CVs, LinkedIn profiles, and career documents for the UAE and Gulf market.',
+        'سند تساعد المهنيين على إبراز خبراتهم بوضوح واحترافية في السير الذاتية وملفات لينكدإن والمستندات المهنية لسوق العمل.',
+      ),
+      alternates: fallbackMetadata.alternates,
+    });
+  }
 
-  return {
-    title: `${page.title_en} | SANAD`,
-    description: page.meta_description_en ?? fallbackMetadata.description,
+  const title = _copy(page.title_en, page.title_ar);
+  const description =
+    _copy(page.meta_description_en, page.meta_description_ar) ??
+    _copy(
+      fallbackMetadata.description as string,
+      'سند تساعد المهنيين على إبراز خبراتهم بوضوح واحترافية في السير الذاتية وملفات لينكدإن والمستندات المهنية لسوق العمل.',
+    );
+
+  return await getLocalizedMetadata({
+    title: `${title} | ${_copy('SANAD', 'سند')}`,
+    description,
     alternates: fallbackMetadata.alternates,
-  };
+  });
 }
 
 const principles = [
@@ -56,6 +77,8 @@ const principles = [
 ] as const;
 
 export default async function AboutUsPage() {
+  const _copy = await getCopy();
+
   const cmsPage = await getPublishedCmsPage('about-us');
 
   return (
@@ -63,30 +86,32 @@ export default async function AboutUsPage() {
       {/* Header */}
       <div className="border-b border-border bg-surface-muted">
         <div className="layout-container py-16 sm:py-20">
-          <nav aria-label="Breadcrumb" className="mb-8">
+          <nav aria-label={_copy('Breadcrumb')} className="mb-8">
             <ol className="flex items-center gap-2 text-sm text-muted-foreground">
               <li>
                 <Link className="transition-colors hover:text-primary" href="/">
-                  Home
+                  {_copy('Home')}
                 </Link>
               </li>
               <li aria-hidden="true" className="text-border">
-                /
+                {_copy('/')}
               </li>
-              <li className="font-medium text-primary">About Us</li>
+              <li className="font-medium text-primary">{_copy('About Us')}</li>
             </ol>
           </nav>
 
           <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
             <span aria-hidden="true" className="h-px w-8 bg-accent" />
-            Company
+            {_copy('Company')}
           </p>
           <h1 className="type-h2 mt-5 max-w-[20ch]">
-            {cmsPage?.title_en ?? 'Career Documents, Refined'}
+            {_copy(cmsPage?.title_en ?? 'Career Documents, Refined')}
           </h1>
           <p className="mt-6 max-w-[42rem] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-            {cmsPage?.meta_description_en ??
-              'SANAD helps professionals present their experience with clarity across a CV, LinkedIn profile, and supporting career documents shaped for the UAE and Gulf job market.'}
+            {_copy(
+              cmsPage?.meta_description_en ??
+                'SANAD helps professionals present their experience with clarity across a CV, LinkedIn profile, and supporting career documents shaped for the UAE and Gulf job market.',
+            )}
           </p>
         </div>
       </div>
@@ -99,52 +124,55 @@ export default async function AboutUsPage() {
               <CmsRichText content={cmsPage.content_en} />
             ) : (
               <>
-                <h2 className="type-h4 text-primary">What we do</h2>
+                <h2 className="type-h4 text-primary">{_copy('What we do')}</h2>
                 <p>
-                  We write and optimise professional CVs, LinkedIn profiles,
-                  cover letters, and related career documents. Each piece of
-                  work is handled by a writer with direct experience in
-                  Gulf-market hiring standards and ATS screening requirements.
+                  {_copy(
+                    'We write and optimise professional CVs, LinkedIn profiles, cover letters, and related career documents. Each piece of work is handled by a writer with direct experience in Gulf-market hiring standards and ATS screening requirements.',
+                  )}
                 </p>
                 <p>
-                  The process is straightforward: choose a service, share your
-                  career context, and receive polished deliverables within 48–72
-                  business hours. Unlimited revisions are included within 14
-                  days of the first draft so the final result reflects your
-                  voice and goals accurately.
+                  {_copy(
+                    'The process is straightforward: choose a service, share your career context, and receive polished deliverables within 48–72 business hours. Unlimited revisions are included within 14 days of the first draft so the final result reflects your voice and goals accurately.',
+                  )}
                 </p>
               </>
             )}
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-7 shadow-xs sm:p-8">
-            <h3 className="type-h4 text-primary">Quick facts</h3>
+            <h3 className="type-h4 text-primary">{_copy('Quick facts')}</h3>
             <dl className="mt-6 space-y-5 text-sm">
               <div>
-                <dt className="font-semibold text-primary">Focus</dt>
+                <dt className="font-semibold text-primary">{_copy('Focus')}</dt>
                 <dd className="mt-1 text-muted-foreground">
-                  CV, LinkedIn, and career-document services
+                  {_copy('CV, LinkedIn, and career-document services')}
                 </dd>
               </div>
               <Separator />
               <div>
-                <dt className="font-semibold text-primary">Market</dt>
+                <dt className="font-semibold text-primary">
+                  {_copy('Market')}
+                </dt>
                 <dd className="mt-1 text-muted-foreground">
-                  UAE, Saudi Arabia, and the wider GCC
+                  {_copy('UAE, Saudi Arabia, and the wider GCC')}
                 </dd>
               </div>
               <Separator />
               <div>
-                <dt className="font-semibold text-primary">Turnaround</dt>
+                <dt className="font-semibold text-primary">
+                  {_copy('Turnaround')}
+                </dt>
                 <dd className="mt-1 text-muted-foreground">
-                  48–72 business hours, standard delivery
+                  {_copy('48–72 business hours, standard delivery')}
                 </dd>
               </div>
               <Separator />
               <div>
-                <dt className="font-semibold text-primary">Revisions</dt>
+                <dt className="font-semibold text-primary">
+                  {_copy('Revisions')}
+                </dt>
                 <dd className="mt-1 text-muted-foreground">
-                  Unlimited within 14 days of first draft
+                  {_copy('Unlimited within 14 days of first draft')}
                 </dd>
               </div>
             </dl>
@@ -158,10 +186,10 @@ export default async function AboutUsPage() {
           <div className="max-w-2xl">
             <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
               <span aria-hidden="true" className="h-px w-8 bg-accent" />
-              Our approach
+              {_copy('Our approach')}
             </p>
             <h2 className="type-h2 mt-5 max-w-[18ch]">
-              Principles That Shape Every Document
+              {_copy('Principles That Shape Every Document')}
             </h2>
           </div>
 
@@ -175,12 +203,12 @@ export default async function AboutUsPage() {
                   aria-hidden="true"
                   className="font-display text-2xl leading-none text-accent sm:pt-0.5 sm:text-3xl"
                 >
-                  {number}
+                  {_copy(number)}
                 </span>
                 <div>
-                  <h3 className="type-h4 text-primary">{title}</h3>
+                  <h3 className="type-h4 text-primary">{_copy(title)}</h3>
                   <p className="mt-2 max-w-[42rem] text-sm leading-6 text-foreground/75 sm:text-base sm:leading-7">
-                    {description}
+                    {_copy(description)}
                   </p>
                 </div>
               </li>
@@ -197,15 +225,18 @@ export default async function AboutUsPage() {
               aria-hidden="true"
               className="mx-auto block h-px w-12 bg-accent"
             />
-            <h2 className="type-h2 mt-5 text-primary">Ready to get started?</h2>
+            <h2 className="type-h2 mt-5 text-primary">
+              {_copy('Ready to get started?')}
+            </h2>
             <p className="mx-auto mt-6 max-w-[38rem] text-base leading-7 text-foreground/75 sm:text-lg sm:leading-8">
-              Review the available services and choose the support that fits
-              your next career move.
+              {_copy(
+                'Review the available services and choose the support that fits your next career move.',
+              )}
             </p>
             <div className="mt-8 flex justify-center">
               <Button asChild className="group" size="lg">
                 <Link href={PUBLIC_SERVICES_HREF}>
-                  View Career Services
+                  {_copy('View Career Services')}
                   <ArrowRight
                     aria-hidden="true"
                     className="size-4 transition-transform duration-200 ease-[var(--ease-standard)] motion-safe:group-hover:translate-x-0.5 motion-reduce:transition-none"

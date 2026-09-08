@@ -1,15 +1,17 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import Link from 'next/link';
 import { Check, Minus } from 'lucide-react';
 import { getServiceCategory } from '@/lib/packages/categories';
 import {
   getPackageHref,
   getPackageCurrentPrice,
-  formatPackagePrice,
 } from '@/lib/packages/presentation';
 import type { CareerPackage } from '@/types/domain';
 import { Button } from '@/components/ui/button';
 
 export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
+  const _copy = useCopy();
+
   const bundles = packages.filter(
     (item) => getServiceCategory(item) === 'bundles',
   );
@@ -23,32 +25,35 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
     >
       <div className="layout-container layout-section">
         <h2 id="comparison-heading" className="type-h2 text-primary">
-          Compare complete packages
+          {_copy('Compare complete packages')}
         </h2>
         <p className="mt-3 max-w-2xl text-muted-foreground">
-          Choose by what is included, the delivery estimate and revision
-          allowance.
+          {_copy(
+            'Choose by what is included, the delivery estimate and revision allowance.',
+          )}
         </p>
         <p id="comparison-help" className="mt-5 text-sm text-muted-foreground">
-          On smaller screens, scroll the table sideways to compare every
-          package.
+          {_copy(
+            'On smaller screens, scroll the table sideways to compare every package.',
+          )}
         </p>
         <div
           role="region"
-          aria-label="Package comparison"
+          aria-label={_copy('Package comparison')}
           aria-describedby="comparison-help"
           tabIndex={0}
-          className="mt-3 overflow-x-auto rounded-lg border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative mt-3 overflow-x-auto rounded-lg border border-border bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <table className="w-full min-w-[42rem] text-left text-sm">
+          <table className="w-full min-w-[42rem] text-start text-sm">
             <caption className="sr-only">
-              Published deliverables, delivery estimates and
-              revisions
+              {_copy(
+                'Published deliverables, delivery estimates and revisions',
+              )}
             </caption>
             <thead>
               <tr className="border-b border-border">
                 <th scope="col" className="p-5">
-                  Included service
+                  {_copy('Included service')}
                 </th>
                 {bundles.map((item) => (
                   <th
@@ -60,12 +65,11 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
                       className="underline decoration-border underline-offset-4"
                       href={getPackageHref(item)}
                     >
-                      {item.name}
+                      {_copy(item.name, item.nameAr)}
                     </Link>
                     <span className="mt-3 block text-xl">
-                      {formatPackagePrice(getPackageCurrentPrice(item))}
+                      {_copy(_copy.money(getPackageCurrentPrice(item)))}
                     </span>
-
                   </th>
                 ))}
               </tr>
@@ -74,7 +78,7 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
               {features.map((feature) => (
                 <tr key={feature} className="border-b border-border">
                   <th scope="row" className="p-4 font-medium">
-                    {feature}
+                    {_copy(feature)}
                   </th>
                   {bundles.map((item) => (
                     <td key={item.id} className="p-4">
@@ -84,7 +88,7 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
                             className="size-5 text-secondary"
                             aria-hidden="true"
                           />
-                          <span className="sr-only">Included</span>
+                          <span className="sr-only">{_copy('Included')}</span>
                         </>
                       ) : (
                         <>
@@ -92,7 +96,7 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
                             className="size-5 text-muted-foreground"
                             aria-hidden="true"
                           />
-                          <span className="sr-only">Not listed</span>
+                          <span className="sr-only">{_copy('Not listed')}</span>
                         </>
                       )}
                     </td>
@@ -101,36 +105,36 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
               ))}
               <tr className="border-b border-border">
                 <th scope="row" className="p-4 font-medium">
-                  Estimated delivery
+                  {_copy('Estimated delivery')}
                 </th>
                 {bundles.map((item) => (
                   <td key={item.id} className="p-4">
-                    {item.deliveryDays} days
+                    {_copy(item.deliveryDays)} {_copy('days')}
                   </td>
                 ))}
               </tr>
               <tr className="border-b border-border">
                 <th scope="row" className="p-4 font-medium">
-                  Revision rounds
+                  {_copy('Revision rounds')}
                 </th>
                 {bundles.map((item) => (
                   <td key={item.id} className="p-4">
-                    {item.maxRevisions}
+                    {_copy(item.maxRevisions)}
                   </td>
                 ))}
               </tr>
               <tr>
                 <th scope="row" className="p-4 font-medium">
-                  Explore the scope
+                  {_copy('Explore the scope')}
                 </th>
                 {bundles.map((item) => (
                   <td key={item.id} className="p-4">
                     <Button asChild variant="outline">
                       <Link
-                        aria-label={`View ${item.name}`}
+                        aria-label={_copy(`View ${item.name}`)}
                         href={getPackageHref(item)}
                       >
-                        View details
+                        {_copy('View details')}
                       </Link>
                     </Button>
                   </td>
@@ -140,9 +144,9 @@ export function PackageComparison({ packages }: { packages: CareerPackage[] }) {
           </table>
         </div>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Compare standalone services too. A higher package price does not
-          necessarily mean a saving. Confirm any differences in scope before
-          choosing.
+          {_copy(
+            'Compare standalone services too. A higher package price does not necessarily mean a saving. Confirm any differences in scope before choosing.',
+          )}
         </p>
       </div>
     </section>

@@ -26,6 +26,7 @@ import {
   PasswordlessRequestDto,
   PasswordlessVerifyDto,
   PasswordlessCompleteProfileDto,
+  GoogleAuthDto,
 } from './dto';
 import { Public, CurrentUser } from '../common/decorators';
 import { RateLimit, RateLimitTtl } from '../common/guards';
@@ -206,6 +207,22 @@ export class AuthController {
     return this.publishSession(
       response,
       await this.authService.verifyPasswordlessOtp(dto),
+    );
+  }
+
+  @Public()
+  @Post('google')
+  @RateLimit(10)
+  @RateLimitTtl(60)
+  @ApiOperation({ summary: 'Sign in or start registration with Google' })
+  @HttpCode(HttpStatus.OK)
+  async authenticateWithGoogle(
+    @Body() dto: GoogleAuthDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.publishSession(
+      response,
+      await this.authService.authenticateWithGoogle(dto),
     );
   }
 

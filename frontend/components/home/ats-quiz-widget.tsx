@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { ArrowRight, CheckCircle2, RotateCcw, Sparkles } from 'lucide-react';
 import { useState } from 'react';
@@ -73,6 +74,8 @@ const STEPS = [
 ];
 
 export function AtsQuizWidget() {
+  const _copy = useCopy();
+
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [showResult, setShowResult] = useState(false);
@@ -101,21 +104,22 @@ export function AtsQuizWidget() {
 
   return (
     <section
-      aria-label="Interactive ATS Assessment"
+      aria-label={_copy('Interactive ATS Assessment')}
       className="border-b border-border bg-gradient-to-b from-surface to-surface-muted py-14 sm:py-18"
     >
       <div className="layout-container max-w-4xl">
         <div className="mx-auto text-center">
           <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-secondary">
             <Sparkles className="size-3.5 text-accent" />
-            Interactive Career Tool
+            {_copy('Interactive Career Tool')}
           </span>
           <h2 className="font-display text-2xl font-bold tracking-tight text-primary sm:text-3xl lg:text-4xl mt-3">
-            Check Your ATS & Market Readiness
+            {_copy('Check Your ATS & Market Readiness')}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground sm:text-base">
-            Answer 3 quick questions to evaluate your CV&rsquo;s competitive
-            readiness for UAE & GCC employers.
+            {_copy(
+              'Answer 3 quick questions to evaluate your CV’s competitive readiness for UAE & GCC employers.',
+            )}
           </p>
         </div>
 
@@ -126,7 +130,9 @@ export function AtsQuizWidget() {
               {/* Step indicator */}
               <div className="flex items-center justify-between border-b border-border pb-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-accent">
-                  Question {currentStep + 1} of {STEPS.length}
+                  {_copy('Question')}
+                  {_copy(currentStep + 1)} {_copy('of')}
+                  {_copy(STEPS.length)}
                 </span>
                 <div className="flex gap-1.5">
                   {STEPS.map((_, i) => (
@@ -142,27 +148,27 @@ export function AtsQuizWidget() {
 
               {/* Question title */}
               <h3 className="mt-5 text-base font-bold text-primary sm:text-lg">
-                {STEPS[currentStep].title}
+                {_copy(STEPS[currentStep].title)}
               </h3>
 
               {/* Options */}
               <div className="mt-5 space-y-3">
                 {STEPS[currentStep].options.map((opt) => (
                   <button
-                    className="group flex w-full items-center justify-between rounded-xl border border-border p-4 text-left transition-all duration-200 hover:border-accent hover:bg-surface-muted hover:shadow-xs active:scale-[0.99]"
+                    className="group flex w-full items-center justify-between rounded-xl border border-border p-4 text-start transition-all duration-200 hover:border-accent hover:bg-surface-muted hover:shadow-xs active:scale-[0.99]"
                     key={opt.label}
                     onClick={() => handleSelect(opt.points)}
                     type="button"
                   >
                     <div>
                       <p className="text-sm font-semibold text-primary group-hover:text-secondary">
-                        {opt.label}
+                        {_copy(opt.label)}
                       </p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {opt.sub}
+                        {_copy(opt.sub)}
                       </p>
                     </div>
-                    <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent shrink-0 ml-3" />
+                    <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1 group-hover:text-accent shrink-0 ms-3" />
                   </button>
                 ))}
               </div>
@@ -174,28 +180,31 @@ export function AtsQuizWidget() {
               </div>
 
               <h3 className="mt-4 font-display text-2xl font-bold text-primary">
-                Assessment Completed!
+                {_copy('Assessment Completed!')}
               </h3>
 
               <div className="mt-4 inline-flex items-baseline gap-2 rounded-xl border border-border bg-surface-muted px-6 py-3">
                 <span className="text-xs font-semibold text-muted-foreground uppercase">
-                  Estimated Current Market Score:
+                  {_copy('Estimated Current Market Score:')}
                 </span>
                 <span className="font-display text-2xl font-bold text-primary">
-                  {calculateScore()}%
+                  {_copy(calculateScore())}
+                  {_copy('%')}
                 </span>
               </div>
 
               <p className="mx-auto mt-4 max-w-lg text-sm text-foreground/85 leading-relaxed">
-                Your profile has strong potential, but without tailored Gulf ATS
-                keywords and achievement metrics, you may be missing out on up
-                to <strong>70% of employer screenings</strong>.
+                {_copy(
+                  'Your profile has strong potential, but without tailored Gulf ATS keywords and achievement metrics, you may be missing out on up to',
+                )}
+                <strong>{_copy('70% of employer screenings')}</strong>
+                {_copy('.')}
               </p>
 
               <div className="mt-6 flex flex-col gap-3 justify-center sm:flex-row">
                 <AuthModalTrigger className="h-11 px-6 shadow-sm" size="lg">
-                  Upgrade to a 98% ATS-Optimized CV
-                  <ArrowRight className="size-4 ml-1" />
+                  {_copy('Upgrade to a 98% ATS-Optimized CV')}
+                  <ArrowRight className="size-4 ms-1" />
                 </AuthModalTrigger>
                 <Button
                   className="h-11"
@@ -203,8 +212,8 @@ export function AtsQuizWidget() {
                   size="lg"
                   variant="outline"
                 >
-                  <RotateCcw className="size-4 mr-2" />
-                  Retake Assessment
+                  <RotateCcw className="size-4 me-2" />
+                  {_copy('Retake Assessment')}
                 </Button>
               </div>
             </div>

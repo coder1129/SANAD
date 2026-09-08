@@ -75,14 +75,26 @@ export class OffersService {
       throw new BadRequestException('End date must be after start date');
     }
 
-    const pkg = await this.prisma.packages.findUnique({
-      where: { id: dto.package_id },
-    });
-    if (!pkg) throw new NotFoundException('Package not found');
+    const type = dto.offer_type ?? 'standard';
+    if (type === 'cross_service_any' && dto.package_id) {
+      throw new BadRequestException('Any-service cross offers cannot target one package');
+    }
+    if (type !== 'standard' && !dto.trigger_package_id) {
+      throw new BadRequestException('Cross-service offers require a purchased package');
+    }
+    if (type === 'cross_service_specific' && !dto.package_id) {
+      throw new BadRequestException('Specific cross-service offers require a discounted package');
+    }
+    for (const id of [dto.package_id, dto.trigger_package_id].filter(Boolean)) {
+      const pkg = await this.prisma.packages.findUnique({ where: { id } });
+      if (!pkg) throw new NotFoundException('Package not found');
+    }
 
     return this.prisma.offers.create({
       data: {
         package_id: dto.package_id,
+        trigger_package_id: dto.trigger_package_id,
+        offer_type: type,
         name_ar: dto.name_ar,
         name_en: dto.name_en,
         description_ar: dto.description_ar,
@@ -105,16 +117,16 @@ export class OffersService {
     if (endDate <= startDate) {
       throw new BadRequestException('End date must be after start date');
     }
-    if (dto.package_id !== undefined) {
-      const pkg = await this.prisma.packages.findUnique({
-        where: { id: dto.package_id },
-      });
+    for (const id of [dto.package_id, dto.trigger_package_id].filter(Boolean)) {
+      const pkg = await this.prisma.packages.findUnique({ where: { id } });
       if (!pkg) throw new NotFoundException('Package not found');
     }
     return this.prisma.offers.update({
       where: { id },
       data: {
         ...(dto.package_id !== undefined && { package_id: dto.package_id }),
+        ...(dto.trigger_package_id !== undefined && { trigger_package_id: dto.trigger_package_id }),
+        ...(dto.offer_type !== undefined && { offer_type: dto.offer_type }),
         ...(dto.name_ar !== undefined && { name_ar: dto.name_ar }),
         ...(dto.name_en !== undefined && { name_en: dto.name_en }),
         ...(dto.description_ar !== undefined && {

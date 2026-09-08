@@ -1,5 +1,7 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 import { Button } from '@/components/ui/button';
 import { PUBLIC_SERVICES_HREF } from '@/constants/public-navigation';
@@ -9,7 +11,11 @@ import {
   MotionReveal,
 } from '@/components/motion/motion-reveal';
 
-export function PremiumCta() {
+export async function PremiumCta() {
+  const _copy = await getCopy();
+
+  const t = await getTranslations('home.premiumCta');
+
   return (
     <section
       aria-labelledby="premium-cta-heading"
@@ -26,24 +32,23 @@ export function PremiumCta() {
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-[color:var(--sanad-champagne)] uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-[color:var(--sanad-champagne)]" />
-                Professional presentation
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[19ch] text-primary-foreground"
               id="premium-cta-heading"
-              text="Your next opportunity deserves a stronger professional presentation."
+              text={_copy(t('heading'))}
             />
           </div>
 
           <MotionReveal
-            className="border-t border-primary-foreground/20 pt-7 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-12"
+            className="border-t border-primary-foreground/20 pt-7 lg:border-t-0 lg:border-s lg:pt-0 lg:ps-12"
             delay={0.14}
             direction="right"
           >
             <p className="max-w-[34rem] text-base leading-7 text-primary-foreground/80 sm:text-lg sm:leading-8">
-              Compare the service areas available and choose the support that
-              fits what you need to improve now.
+              {_copy(t('body'))}
             </p>
             <div className="mt-7">
               <Button
@@ -52,7 +57,7 @@ export function PremiumCta() {
                 size="lg"
               >
                 <Link href={PUBLIC_SERVICES_HREF}>
-                  Compare Services
+                  {_copy(t('cta'))}
                   <ArrowRight
                     aria-hidden="true"
                     className="size-4 transition-transform duration-200 ease-[var(--ease-standard)] motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-reduce:transition-none"

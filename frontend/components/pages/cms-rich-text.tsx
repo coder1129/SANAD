@@ -46,7 +46,7 @@ export function CmsRichText({ content }: CmsRichTextProps) {
 
   return (
     <div
-      className="space-y-4 text-sm leading-7 text-foreground/80 sm:text-base sm:leading-8 [&_a]:font-semibold [&_a]:text-secondary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-accent [&_blockquote]:pl-5 [&_h2]:type-h4 [&_h2]:text-primary [&_h3]:pt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-primary [&_h4]:font-semibold [&_h4]:text-primary [&_li]:ml-5 [&_li]:pl-1 [&_ol]:list-decimal [&_ul]:list-disc"
+      className="space-y-4 text-sm leading-7 text-foreground/80 sm:text-base sm:leading-8 [&_a]:font-semibold [&_a]:text-secondary [&_a]:underline [&_blockquote]:border-s-2 [&_blockquote]:border-accent [&_blockquote]:ps-5 [&_h2]:type-h4 [&_h2]:text-primary [&_h3]:pt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-primary [&_h4]:font-semibold [&_h4]:text-primary [&_li]:ms-5 [&_li]:ps-1 [&_ol]:list-decimal [&_ul]:list-disc"
       dangerouslySetInnerHTML={{ __html: sanitizedContent }}
     />
   );

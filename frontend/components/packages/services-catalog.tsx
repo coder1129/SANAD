@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import * as React from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -59,8 +60,11 @@ function matchesSearch(packageItem: CareerPackage, query: string): boolean {
 
   const searchable = [
     packageItem.name,
+    packageItem.nameAr ?? '',
     packageItem.description ?? '',
+    packageItem.descriptionAr ?? '',
     ...packageItem.features,
+    ...(packageItem.featuresAr ?? []),
   ]
     .join(' ')
     .toLowerCase();
@@ -69,6 +73,8 @@ function matchesSearch(packageItem: CareerPackage, query: string): boolean {
 }
 
 export function ServicesCatalog({ packages }: ServicesCatalogProps) {
+  const _copy = useCopy();
+
   const params = useSearchParams();
   const query = params.get('q') ?? '';
   const category =
@@ -135,18 +141,19 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
           <div>
             <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
               <span aria-hidden="true" className="h-px w-8 bg-accent" />
-              Find your fit
+              {_copy('Find your fit')}
             </p>
             <h2
               className="type-h2 mt-4 text-primary"
               id="services-catalog-heading"
             >
-              Choose the support you need.
+              {_copy('Choose the support you need.')}
             </h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-muted-foreground lg:text-right">
-            Start with the outcome you need, then compare scope, delivery, and
-            investment at a glance.
+          <p className="max-w-md text-sm leading-6 text-muted-foreground lg:text-end">
+            {_copy(
+              'Start with the outcome you need, then compare scope, delivery, and investment at a glance.',
+            )}
           </p>
         </div>
 
@@ -154,20 +161,20 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
           <div className="relative">
             <Search
               aria-hidden="true"
-              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+              className="pointer-events-none absolute top-1/2 start-3.5 size-4 -translate-y-1/2 text-muted-foreground"
             />
             <Input
-              aria-label="Search services"
-              className="h-12 pr-10 pl-10"
+              aria-label={_copy('Search services')}
+              className="h-12 pe-10 ps-10"
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by service, document, or outcome"
+              placeholder={_copy('Search by service, document, or outcome')}
               type="search"
               value={query}
             />
             {query ? (
               <button
-                aria-label="Clear service search"
-                className="absolute top-1/2 right-1 grid size-11 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                aria-label={_copy('Clear service search')}
+                className="absolute top-1/2 end-1 grid size-11 -translate-y-1/2 place-items-center rounded-sm text-muted-foreground transition-colors hover:bg-surface-muted hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 onClick={() => setQuery('')}
                 type="button"
               >
@@ -181,16 +188,16 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
               aria-hidden="true"
               className="size-4 shrink-0 text-secondary"
             />
-            <span className="sr-only">Sort services</span>
+            <span className="sr-only">{_copy('Sort services')}</span>
             <select
-              aria-label="Sort services"
+              aria-label={_copy('Sort services')}
               className="min-w-0 flex-1 cursor-pointer appearance-none bg-transparent text-foreground outline-none"
               onChange={(event) => setSort(event.target.value as SortOption)}
               value={sort}
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
-                  {option.label}
+                  {_copy(option.label)}
                 </option>
               ))}
             </select>
@@ -198,7 +205,7 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
         </div>
 
         <div
-          aria-label="Filter services by category"
+          aria-label={_copy('Filter services by category')}
           className="mt-4 flex flex-wrap gap-2"
           role="group"
         >
@@ -223,7 +230,7 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
                   type="button"
                 >
                   <Icon aria-hidden="true" className="size-4" />
-                  {label}
+                  {_copy(label)}
                 </button>
               );
             })}
@@ -235,7 +242,8 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
             role="status"
             aria-live="polite"
           >
-            Showing {visiblePackages.length} of {packages.length} services
+            {_copy('Showing')} {visiblePackages.length} {_copy('of')}{' '}
+            {packages.length} {_copy('services')}
           </p>
           {query || category !== 'all' || sort !== 'recommended' ? (
             <Button
@@ -245,7 +253,7 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
               variant="ghost"
             >
               <X aria-hidden="true" className="size-4" />
-              Reset filters
+              {_copy('Reset filters')}
             </Button>
           ) : null}
         </div>
@@ -274,19 +282,23 @@ export function ServicesCatalog({ packages }: ServicesCatalogProps) {
               <Search aria-hidden="true" className="size-5" />
             </span>
             <h3 className="mt-5 text-lg font-semibold text-primary">
-              {packages.length
-                ? 'No services match those filters.'
-                : 'Services are being updated.'}
+              {_copy(
+                packages.length
+                  ? 'No services match those filters.'
+                  : 'Services are being updated.',
+              )}
             </h3>
             <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              {packages.length
-                ? 'Try a broader search or return to the full services list.'
-                : 'Please check back shortly for the current catalog.'}
+              {_copy(
+                packages.length
+                  ? 'Try a broader search or return to the full services list.'
+                  : 'Please check back shortly for the current catalog.',
+              )}
             </p>
             {packages.length > 0 ? (
               <Button className="mt-6" onClick={clearFilters} type="button">
                 <Check aria-hidden="true" className="size-4" />
-                Show all services
+                {_copy('Show all services')}
               </Button>
             ) : null}
           </div>

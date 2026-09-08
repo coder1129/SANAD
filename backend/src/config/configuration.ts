@@ -49,6 +49,9 @@ export default () => ({
     otpEmail: process.env.DEMO_OTP_EMAIL?.trim().toLowerCase(),
     otpCode: process.env.DEMO_OTP_CODE?.trim(),
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID?.trim(),
+  },
   payment: {
     provider: process.env.PAYMENT_PROVIDER || 'mock',
     secretKey: process.env.PAYMENT_SECRET_KEY,

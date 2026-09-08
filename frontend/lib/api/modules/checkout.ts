@@ -16,6 +16,11 @@ const pricingPayloadSchema = z.object({
   delivery_days: z.number().int().positive(),
   original_price: decimalSchema,
   offer_id: z.number().int().positive().nullable(),
+  secondary_package_id: z.number().int().positive().nullable(),
+  secondary_package_name_en: z.string().nullable(),
+  secondary_package_name_ar: z.string().nullable(),
+  secondary_original_price: decimalSchema,
+  secondary_discount_amount: decimalSchema,
   offer_discount_percentage: decimalSchema.pipe(z.number().max(100)),
   offer_discount_amount: decimalSchema,
   coupon_code: z.string().nullable(),
@@ -36,6 +41,11 @@ function toCheckoutPricing(payload: PricingPayload): CheckoutPricing {
     deliveryDays: payload.delivery_days,
     originalPrice: payload.original_price,
     offerId: payload.offer_id,
+    secondaryPackageId: payload.secondary_package_id,
+    secondaryPackageName: payload.secondary_package_name_en,
+    secondaryPackageNameAr: payload.secondary_package_name_ar,
+    secondaryOriginalPrice: payload.secondary_original_price,
+    secondaryDiscountAmount: payload.secondary_discount_amount,
     offerDiscountPercentage: payload.offer_discount_percentage,
     offerDiscountAmount: payload.offer_discount_amount,
     couponCode: payload.coupon_code,
@@ -60,6 +70,7 @@ export const checkoutApi = {
         ...(input.couponCode === undefined
           ? {}
           : { coupon_code: input.couponCode }),
+        ...(input.secondaryPackageId === undefined ? {} : { secondary_package_id: input.secondaryPackageId }),
       },
       { authMode: 'none', signal: options.signal },
     );

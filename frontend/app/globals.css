@@ -1,4 +1,73 @@
 @import 'tailwindcss';
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Allow translated content to wrap inside single-column mobile grids. */
+.grid > * {
+  min-width: 0;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --background: #0c1420;
+  --foreground: #edf2f7;
+  --surface: #131f2e;
+  --surface-muted: #1b2a3b;
+  --primary: #c3d9ef;
+  --primary-foreground: #102337;
+  --secondary: #a9c9e6;
+  --secondary-foreground: #102337;
+  --accent: #d8b574;
+  --accent-foreground: #17212e;
+  --muted: #203043;
+  --muted-foreground: #a9b8c9;
+  --border: #34465b;
+  --input: #34465b;
+  --control-border: #637b95;
+  --ring: #d8b574;
+  --success: #76d4a5;
+  --success-foreground: #102c20;
+  --warning: #f1c46b;
+  --warning-foreground: #302407;
+  --destructive: #ff9e98;
+  --destructive-foreground: #381511;
+  --error: var(--destructive);
+  --error-foreground: var(--destructive-foreground);
+  --info: #97c6ff;
+  --info-foreground: #102337;
+  --interaction-hover: #d5e5f4;
+  --interaction-active: #afcbe5;
+  --sanad-shadow-sm: 0 2px 8px rgb(0 0 0 / 0.2);
+  --sanad-shadow-md: 0 8px 20px rgb(0 0 0 / 0.3);
+  --sanad-shadow-lg: 0 16px 36px rgb(0 0 0 / 0.4);
+}
+
+html[dir='rtl'] :where(h1, h2, h3, h4, h5) {
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+html[dir='rtl']
+  :where(input[type='email'], input[type='tel'], input[inputmode='numeric']) {
+  direction: ltr;
+  text-align: start;
+}
+html[dir='rtl'] .lucide-arrow-right,
+html[dir='rtl'] .lucide-arrow-left,
+html[dir='rtl'] .lucide-chevron-right,
+html[dir='rtl'] .lucide-chevron-left {
+  transform: scaleX(-1);
+}
+
+html[data-theme='dark'] .bg-primary {
+  --primary-foreground: #edf2f7;
+  background-color: #102337;
+}
+html[data-theme='dark'] :where(.bg-white) {
+  background-color: var(--surface);
+}
+html[data-theme='dark']
+  :where(.sanad-sheet-overlay, [data-slot='dialog-overlay']) {
+  background-color: rgb(0 0 0 / 0.65);
+}
 
 :root {
   color-scheme: light;
@@ -43,6 +112,7 @@
 
   --font-sans: var(--font-merriweather), Georgia, serif;
   --font-heading: var(--font-merriweather), Georgia, serif;
+  --font-arabic: var(--font-cairo), 'Cairo', Arial, sans-serif;
 
   --sanad-space-xs: 0.5rem;
   --sanad-space-sm: 0.75rem;
@@ -554,6 +624,12 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-motion-reveal],
+  [data-motion-reveal] span {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
   *,
   *::before,
   *::after {
@@ -572,5 +648,44 @@
   .sanad-sheet-overlay,
   .sanad-sheet-panel {
     animation: none !important;
+  }
+}
+
+/* ─── Arabic / RTL overrides ─────────────────────────────────────────────── */
+[dir='rtl'] {
+  /* Switch to Arabic font */
+  --font-sans: var(--font-arabic);
+  --font-heading: var(--font-arabic);
+
+  /* Reset tight letter-spacing — not suitable for Arabic script */
+  .type-display,
+  .type-h1,
+  .type-h2,
+  .type-h3,
+  .type-h4,
+  .type-h5 {
+    letter-spacing: 0;
+  }
+
+  /* Slightly larger line-height for Arabic readability */
+  .type-body,
+  .type-body-large,
+  .type-body-small {
+    line-height: 1.9;
+  }
+
+  /* Hero frame accent: flip origin to right in RTL */
+  .sanad-hero-frame-line {
+    transform-origin: right;
+  }
+
+  .sanad-hero-frame-accent {
+    transform-origin: left;
+  }
+
+  /* Accent line: origin-right so it draws correctly in RTL */
+  .sanad-hero-frame-line,
+  [class*='origin-left'] {
+    transform-origin: right;
   }
 }

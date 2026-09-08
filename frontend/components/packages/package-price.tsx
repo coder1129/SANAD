@@ -1,6 +1,6 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { Badge } from '@/components/ui/badge';
 import {
-  formatPackagePrice,
   getBestPackageOffer,
   getPackageCurrentPrice,
 } from '@/lib/packages/presentation';
@@ -18,6 +18,8 @@ export function PackagePrice({
   packageItem,
   size = 'card',
 }: PackagePriceProps) {
+  const _copy = useCopy();
+
   const offer = getBestPackageOffer(packageItem);
   const currentPrice = getPackageCurrentPrice(packageItem);
 
@@ -25,7 +27,9 @@ export function PackagePrice({
     <div className={className}>
       {offer ? (
         <Badge className="mb-3" variant="warning">
-          {offer.name} · {offer.discountPercentage}% off
+          {_copy(offer.name)} {_copy('·')}
+          {_copy(offer.discountPercentage)}
+          {_copy('% off')}
         </Badge>
       ) : null}
 
@@ -36,20 +40,17 @@ export function PackagePrice({
             size === 'hero' ? 'text-4xl sm:text-5xl' : 'text-3xl',
           )}
         >
-          <span className="sr-only">Current price: </span>
-          {formatPackagePrice(currentPrice)}
+          <span className="sr-only">{_copy('Current price:')}</span>
+          {_copy(_copy.money(currentPrice))}
         </p>
 
         {offer ? (
           <p className="text-sm text-muted-foreground line-through">
-            <span className="sr-only">Original price: </span>
-            {formatPackagePrice(packageItem.price)}
+            <span className="sr-only">{_copy('Original price:')}</span>
+            {_copy(_copy.money(packageItem.price))}
           </p>
         ) : null}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Final total shown at checkout
-      </p>
     </div>
   );
 }

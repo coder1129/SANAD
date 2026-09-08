@@ -42,7 +42,21 @@ export class CheckoutService {
       });
     }
 
-    const originalPrice = Number(pkg.price);
+    const primaryPrice = Number(pkg.price);
+    let secondaryPackage: typeof pkg | null = null;
+    let secondaryOriginalPrice = 0;
+    let secondaryDiscountAmount = 0;
+    if (dto.secondary_package_id) {
+      if (dto.secondary_package_id === pkg.id) {
+        throw new BadRequestException({ message: 'Choose a different second service', code: 'SECONDARY_PACKAGE_INVALID' });
+      }
+      secondaryPackage = await client.packages.findUnique({ where: { id: dto.secondary_package_id } });
+      if (!secondaryPackage?.is_active) {
+        throw new BadRequestException({ message: 'This second service is unavailable', code: 'SECONDARY_PACKAGE_INACTIVE' });
+      }
+      secondaryOriginalPrice = Number(secondaryPackage.price);
+    }
+    const originalPrice = primaryPrice + secondaryOriginalPrice;
     let priceAfterOffer = originalPrice;
     let appliedOfferId: number | null = null;
     let offerDiscountPercentage = 0;
@@ -52,11 +66,29 @@ export class CheckoutService {
     const now = new Date();
     let offer = null;
 
-    if (dto.offer_id) {
+    if (secondaryPackage) {
+      offer = await client.offers.findFirst({
+        where: {
+          trigger_package_id: pkg.id,
+          is_active: true,
+          start_date: { lte: now },
+          end_date: { gte: now },
+          OR: [
+            { offer_type: 'cross_service_any' },
+            { offer_type: 'cross_service_specific', package_id: secondaryPackage.id },
+          ],
+        },
+        orderBy: { discount_percentage: 'desc' },
+      });
+      if (!offer) {
+        throw new BadRequestException({ message: 'No active offer applies to this second service', code: 'CROSS_SERVICE_OFFER_NOT_FOUND' });
+      }
+    } else if (dto.offer_id) {
       offer = await client.offers.findFirst({
         where: {
           id: dto.offer_id,
           package_id: pkg.id,
+          offer_type: 'standard',
           is_active: true,
           start_date: { lte: now },
           end_date: { gte: now },
@@ -67,6 +99,7 @@ export class CheckoutService {
       offer = await client.offers.findFirst({
         where: {
           package_id: pkg.id,
+          offer_type: 'standard',
           is_active: true,
           start_date: { lte: now },
           end_date: { gte: now },
@@ -78,9 +111,9 @@ export class CheckoutService {
     if (offer) {
       appliedOfferId = offer.id;
       offerDiscountPercentage = Number(offer.discount_percentage);
-      offerDiscountAmount =
-        Math.round(((originalPrice * offerDiscountPercentage) / 100) * 100) /
-        100;
+      const discountBase = secondaryPackage ? secondaryOriginalPrice : originalPrice;
+      offerDiscountAmount = Math.round(((discountBase * offerDiscountPercentage) / 100) * 100) / 100;
+      secondaryDiscountAmount = secondaryPackage ? offerDiscountAmount : 0;
       priceAfterOffer = Math.max(0, originalPrice - offerDiscountAmount);
     }
 
@@ -124,6 +157,11 @@ export class CheckoutService {
       package_name_en: pkg.name_en,
       delivery_days: pkg.delivery_days,
       original_price: originalPrice,
+      secondary_package_id: secondaryPackage?.id ?? null,
+      secondary_package_name_ar: secondaryPackage?.name_ar ?? null,
+      secondary_package_name_en: secondaryPackage?.name_en ?? null,
+      secondary_original_price: secondaryOriginalPrice,
+      secondary_discount_amount: secondaryDiscountAmount,
       offer_id: appliedOfferId,
       offer_discount_percentage: offerDiscountPercentage,
       offer_discount_amount: offerDiscountAmount,

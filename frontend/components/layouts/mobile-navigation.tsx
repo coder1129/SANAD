@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { Menu } from 'lucide-react';
 import Link from 'next/link';
@@ -10,6 +11,7 @@ import {
 } from '@/constants/public-navigation';
 import { Button } from '@/components/ui/button';
 import { AccountNavigation } from '@/components/auth/account-navigation';
+import { LanguageSwitcher } from '@/components/layouts/language-switcher';
 import { Separator } from '@/components/ui/separator';
 import {
   Sheet,
@@ -22,6 +24,8 @@ import {
 } from '@/components/ui/sheet';
 
 export function MobileNavigation() {
+  const _copy = useCopy();
+
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -42,20 +46,24 @@ export function MobileNavigation() {
     <div className="lg:hidden">
       <Sheet onOpenChange={setOpen} open={open}>
         <SheetTrigger asChild>
-          <Button aria-label="Open navigation menu" size="icon" variant="ghost">
+          <Button
+            aria-label={_copy('Open navigation menu')}
+            size="icon"
+            variant="ghost"
+          >
             <Menu aria-hidden="true" className="size-5" />
           </Button>
         </SheetTrigger>
         <SheetContent className="flex flex-col p-0" side="right">
-          <SheetHeader className="border-b border-border p-5 pr-14">
-            <SheetTitle>Menu</SheetTitle>
+          <SheetHeader className="border-b border-border p-5 pe-14">
+            <SheetTitle>{_copy('Menu')}</SheetTitle>
             <SheetDescription>
-              Explore SANAD services and information.
+              {_copy('Explore SANAD services and information.')}
             </SheetDescription>
           </SheetHeader>
 
           <div className="flex flex-1 flex-col p-5">
-            <nav aria-label="Mobile navigation">
+            <nav aria-label={_copy('Mobile navigation')}>
               <ul className="grid gap-1">
                 {PUBLIC_NAVIGATION_LINKS.map((item) => (
                   <li key={item.label}>
@@ -64,7 +72,7 @@ export function MobileNavigation() {
                         className="flex min-h-12 items-center rounded-md px-3 text-base font-medium text-foreground transition-colors duration-200 hover:bg-surface-muted hover:text-primary"
                         href={item.href}
                       >
-                        {item.label}
+                        {_copy(item.label)}
                       </Link>
                     </SheetClose>
                   </li>
@@ -75,11 +83,16 @@ export function MobileNavigation() {
             <Separator className="my-5" />
 
             <div className="mt-auto grid gap-3 pt-3">
+              <LanguageSwitcher
+                className="w-full justify-start"
+                variant="full"
+              />
+              <Separator />
               <AccountNavigation mobile onNavigate={() => setOpen(false)} />
               <SheetClose asChild>
                 <Button asChild className="w-full" size="lg" variant="primary">
                   <Link href={PUBLIC_PRIMARY_ACTION.href}>
-                    {PUBLIC_PRIMARY_ACTION.label}
+                    {_copy(PUBLIC_PRIMARY_ACTION.label)}
                   </Link>
                 </Button>
               </SheetClose>

@@ -1,11 +1,13 @@
 import type { NextConfig } from 'next';
 import { withSentryConfig } from '@sentry/nextjs/config';
+import createNextIntlPlugin from 'next-intl/plugin';
 
 import { validatePublicEnvironment } from './lib/env/public-env-schema';
 
 const publicEnvironment = validatePublicEnvironment(
   {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
   },
@@ -43,7 +45,12 @@ for (const value of [
 const apiOrigin = toOrigin(publicEnvironment.apiBaseUrl);
 const mediaOrigin = toOrigin(publicEnvironment.mediaBaseUrl);
 const sentryOrigin = toOrigin(process.env.NEXT_PUBLIC_SENTRY_DSN);
-const connectSources = ["'self'", apiOrigin, sentryOrigin]
+const connectSources = [
+  "'self'",
+  apiOrigin,
+  sentryOrigin,
+  'https://accounts.google.com',
+]
   .filter(Boolean)
   .join(' ');
 const mediaSources = ["'self'", 'data:', 'blob:', apiOrigin, mediaOrigin]
@@ -54,12 +61,13 @@ const isSecureDeployment = publicEnvironment.siteUrl?.startsWith('https://');
 
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"}`,
+  `script-src 'self' 'unsafe-inline' https://accounts.google.com${isProduction ? '' : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
   `img-src ${mediaSources}`,
   `media-src ${mediaSources}`,
   `connect-src ${connectSources}${isProduction ? '' : ' ws: wss:'}`,
+  "frame-src 'self' https://accounts.google.com",
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",
@@ -71,7 +79,7 @@ const contentSecurityPolicy = [
 
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: contentSecurityPolicy },
-  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   {
     key: 'Permissions-Policy',
@@ -105,7 +113,7 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/register',
-        destination: '/sign-in',
+        destination: '/sign-up',
         permanent: false,
       },
     ];
@@ -119,8 +127,12 @@ const sentryBuildConfigured = Boolean(
   sentryAuthToken && sentryOrg && sentryProject,
 );
 
+const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+
+const intlConfig = withNextIntl(nextConfig);
+
 export default sentryBuildConfigured
-  ? withSentryConfig(nextConfig, {
+  ? withSentryConfig(intlConfig, {
       authToken: sentryAuthToken,
       org: sentryOrg,
       project: sentryProject,
@@ -129,4 +141,4 @@ export default sentryBuildConfigured
       sourcemaps: { deleteSourcemapsAfterUpload: true },
       webpack: { treeshake: { removeDebugLogging: true } },
     })
-  : nextConfig;
+  : intlConfig;

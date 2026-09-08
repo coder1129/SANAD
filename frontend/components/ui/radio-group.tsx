@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from 'next-intl';
 
 import * as RadioGroupPrimitive from '@radix-ui/react-radio-group';
 import { Circle } from 'lucide-react';
@@ -24,11 +25,13 @@ export const RadioGroup = forwardRef<
   ComponentRef<typeof RadioGroupPrimitive.Root>,
   RadioGroupProps
 >(({ 'aria-invalid': ariaInvalid, className, invalid, ...props }, ref) => {
+  const locale = useLocale();
   const isInvalid = invalid || ariaInvalid === true || ariaInvalid === 'true';
 
   return (
     <RadioGroupInvalidContext.Provider value={isInvalid}>
       <RadioGroupPrimitive.Root
+        dir={locale === 'ar' ? 'rtl' : 'ltr'}
         aria-invalid={isInvalid || undefined}
         className={cn('grid gap-3', className)}
         data-invalid={isInvalid || undefined}

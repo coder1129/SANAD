@@ -1,6 +1,15 @@
+import { getLocalizedMetadata } from '@/lib/i18n/metadata';
 import type { Metadata } from 'next';
 import { OrderDetail } from '@/components/account/order-detail';
-export const metadata: Metadata = { title: 'Order Confirmed | SANAD' };
+import { getCopy } from '@/lib/i18n/server-copy';
+
+export async function generateMetadata(): Promise<Metadata> {
+  const _copy = await getCopy();
+  return await getLocalizedMetadata({
+    title: _copy('Order Confirmed | SANAD', 'تم تأكيد الطلب | سند'),
+  });
+}
+
 export default async function OrderSuccessPage({
   params,
 }: {

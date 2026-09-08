@@ -1,10 +1,11 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 import { Button, type ButtonProps } from '@/components/ui/button';
 
-import { useAuthModal } from './auth-modal';
+import { type AuthModalMode, useAuthModal } from './auth-modal';
 
 interface AuthModalTriggerProps extends Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -12,6 +13,7 @@ interface AuthModalTriggerProps extends Omit<
 > {
   children: ReactNode;
   nextTarget?: string;
+  authMode?: AuthModalMode;
   variant?: ButtonProps['variant'];
   size?: 'sm' | 'md' | 'lg' | null;
   loading?: boolean;
@@ -23,13 +25,19 @@ interface AuthModalTriggerProps extends Omit<
 export function AuthModalTrigger({
   children,
   nextTarget,
+  authMode = 'sign-in',
   ...buttonProps
 }: AuthModalTriggerProps) {
+  const _copy = useCopy();
+
   const openAuthModal = useAuthModal();
 
   return (
-    <Button {...buttonProps} onClick={() => openAuthModal(nextTarget)}>
-      {children}
+    <Button
+      {...buttonProps}
+      onClick={() => openAuthModal(nextTarget, authMode)}
+    >
+      {_copy(children)}
     </Button>
   );
 }

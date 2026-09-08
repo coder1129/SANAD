@@ -45,7 +45,7 @@ export class ReviewsService {
         where,
         include: {
           user: { select: { name: true, first_name: true, last_name: true } },
-          package: { select: { id: true, name_en: true } },
+          package: { select: { id: true, name_en: true, name_ar: true } },
           order: { select: { id: true, order_number: true, status: true } },
         },
         orderBy: { created_at: 'desc' },
@@ -223,7 +223,7 @@ export class ReviewsService {
         where,
         include: {
           user: { select: { id: true, name: true, email: true } },
-          package: { select: { id: true, name_en: true } },
+          package: { select: { id: true, name_en: true, name_ar: true } },
           order: { select: { id: true, order_number: true, status: true } },
         },
         orderBy: { created_at: 'desc' },

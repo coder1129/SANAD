@@ -1,10 +1,11 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { cva, type VariantProps } from 'class-variance-authority';
 import type { HTMLAttributes } from 'react';
 
 import { cn } from '@/lib/utils/cn';
 
 const spinnerVariants = cva(
-  'inline-block shrink-0 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none',
+  'inline-block shrink-0 animate-spin rounded-full border-2 border-current border-e-transparent motion-reduce:animate-none',
   {
     variants: {
       size: {
@@ -32,6 +33,8 @@ export function Spinner({
   size,
   ...props
 }: SpinnerProps) {
+  const _copy = useCopy();
+
   return (
     <span
       aria-hidden={label ? undefined : true}
@@ -39,7 +42,7 @@ export function Spinner({
       role={label ? 'status' : undefined}
       {...props}
     >
-      {label ? <span className="sr-only">{label}</span> : null}
+      {label ? <span className="sr-only">{_copy(label)}</span> : null}
     </span>
   );
 }

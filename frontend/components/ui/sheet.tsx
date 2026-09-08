@@ -1,4 +1,6 @@
 'use client';
+import { useLocale } from 'next-intl';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -39,8 +41,8 @@ const sheetVariants = cva(
     variants: {
       side: {
         right:
-          'inset-y-0 right-0 h-full w-[min(24rem,calc(100vw-1rem))] border-l',
-        left: 'inset-y-0 left-0 h-full w-[min(24rem,calc(100vw-1rem))] border-r',
+          'inset-y-0 right-0 h-full w-[min(24rem,calc(100vw-1rem))] border-s',
+        left: 'inset-y-0 left-0 h-full w-[min(24rem,calc(100vw-1rem))] border-e',
         top: 'inset-x-0 top-0 max-h-[calc(100svh-1rem)] w-full border-b',
         bottom: 'inset-x-0 bottom-0 max-h-[calc(100svh-1rem)] w-full border-t',
       },
@@ -59,29 +61,41 @@ export interface SheetContentProps
 export const SheetContent = forwardRef<
   ComponentRef<typeof DialogPrimitive.Content>,
   SheetContentProps
->(({ children, className, side, ...props }, ref) => (
-  <SheetPortal>
-    <SheetOverlay />
-    <DialogPrimitive.Content
-      className={cn(
-        'sanad-sheet-panel motion-reduce:animate-none',
-        sheetVariants({ side }),
-        className,
-      )}
-      data-side={side ?? 'right'}
-      ref={ref}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close
-        aria-label="Close panel"
-        className="absolute top-3 right-3 flex size-10 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-200 hover:bg-surface-muted hover:text-primary"
+>(({ children, className, side = 'right', ...props }, ref) => {
+  const _copy = useCopy();
+  const locale = useLocale();
+  const physicalSide =
+    locale === 'ar'
+      ? side === 'right'
+        ? 'left'
+        : side === 'left'
+          ? 'right'
+          : side
+      : side;
+  return (
+    <SheetPortal>
+      <SheetOverlay />
+      <DialogPrimitive.Content
+        className={cn(
+          'sanad-sheet-panel motion-reduce:animate-none',
+          sheetVariants({ side: physicalSide }),
+          className,
+        )}
+        data-side={physicalSide}
+        ref={ref}
+        {...props}
       >
-        <X aria-hidden="true" className="size-5" />
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </SheetPortal>
-));
+        {_copy(children)}
+        <DialogPrimitive.Close
+          aria-label={_copy('Close panel')}
+          className="absolute top-3 end-3 flex size-10 items-center justify-center rounded-md text-muted-foreground outline-none transition-colors duration-200 hover:bg-surface-muted hover:text-primary"
+        >
+          <X aria-hidden="true" className="size-5" />
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </SheetPortal>
+  );
+});
 
 SheetContent.displayName = DialogPrimitive.Content.displayName;
 
@@ -89,7 +103,7 @@ export function SheetHeader({
   className,
   ...props
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('grid gap-2 pr-9', className)} {...props} />;
+  return <div className={cn('grid gap-2 pe-9', className)} {...props} />;
 }
 
 export function SheetFooter({

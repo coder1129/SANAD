@@ -91,6 +91,8 @@ export interface PasswordlessRequestResult {
   email: string;
 }
 
+export type CustomerAuthFlow = 'sign_in' | 'sign_up';
+
 /** Result of POST /auth/passwordless/verify */
 export type PasswordlessVerifyResult =
   | { status: 'authenticated'; user: User; tokens: AuthTokens }
@@ -104,3 +106,15 @@ export interface PasswordlessCompleteProfileInput {
   phone: string;
   gender: 'male' | 'female';
 }
+
+export type GoogleAuthResult =
+  | { status: 'authenticated'; user: User; tokens: AuthTokens }
+  | {
+      status: 'profile_required';
+      registrationToken: string;
+      profile: {
+        email: string;
+        firstName: string;
+        lastName: string;
+      };
+    };

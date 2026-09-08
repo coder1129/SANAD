@@ -1,8 +1,10 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Mail } from 'lucide-react';
 import type { SVGProps } from 'react';
+import { useSyncExternalStore } from 'react';
 
 import { settingsApi, settingsKeys } from '@/lib/api';
 import { whatsappHref } from '@/lib/orders/presentation';
@@ -77,67 +79,107 @@ const PLATFORM_ICONS: Record<
   linkedin: ExternalLink,
 };
 
+const DEFAULT_WHATSAPP_NUMBER =
+  process.env.NEXT_PUBLIC_DEFAULT_WHATSAPP_NUMBER || '971500000000';
+const DEFAULT_SUPPORT_EMAIL = 'saanadcv@gmail.com';
+const subscribeToHydration = () => () => {};
+
+const DEFAULT_SOCIAL_LINKS: PublicSocialLink[] = [
+  {
+    platform: 'instagram',
+    href: 'https://instagram.com',
+    label: 'Instagram',
+    ariaLabel: 'Follow us on Instagram',
+  },
+  {
+    platform: 'whatsapp',
+    href: `https://wa.me/${DEFAULT_WHATSAPP_NUMBER}?text=${encodeURIComponent('Hello, I would like to ask about SANAD career services.')}`,
+    label: 'WhatsApp',
+    ariaLabel: 'Contact us on WhatsApp',
+  },
+  {
+    platform: 'email',
+    href: `mailto:${DEFAULT_SUPPORT_EMAIL}`,
+    label: 'Email',
+    ariaLabel: 'Send us an email',
+  },
+  {
+    platform: 'linkedin',
+    href: 'https://linkedin.com',
+    label: 'LinkedIn',
+    ariaLabel: 'Follow us on LinkedIn',
+  },
+  {
+    platform: 'facebook',
+    href: 'https://facebook.com',
+    label: 'Facebook',
+    ariaLabel: 'Follow us on Facebook',
+  },
+];
+
 function configuredLinks(
   settings: Record<string, string | null> | undefined,
 ): PublicSocialLink[] {
-  if (!settings) return [];
-
   const links: PublicSocialLink[] = [];
-  const add = (
-    platform: SocialPlatformKey,
-    href: string | null | undefined,
-    label: string,
-    ariaLabel: string,
-  ) => {
-    if (href?.trim())
-      links.push({ platform, href: href.trim(), label, ariaLabel });
-  };
-  const externalUrl = (value: string | null | undefined) => {
-    if (!value?.trim()) return null;
-    try {
-      const url = new URL(value.trim());
-      return ['http:', 'https:'].includes(url.protocol) ? url.toString() : null;
-    } catch {
-      return null;
-    }
-  };
+  if (settings) {
+    const add = (
+      platform: SocialPlatformKey,
+      href: string | null | undefined,
+      label: string,
+      ariaLabel: string,
+    ) => {
+      if (href?.trim())
+        links.push({ platform, href: href.trim(), label, ariaLabel });
+    };
+    const externalUrl = (value: string | null | undefined) => {
+      if (!value?.trim()) return null;
+      try {
+        const url = new URL(value.trim());
+        return ['http:', 'https:'].includes(url.protocol)
+          ? url.toString()
+          : null;
+      } catch {
+        return null;
+      }
+    };
 
-  add(
-    'instagram',
-    externalUrl(settings.instagram_url),
-    'Instagram',
-    'Follow us on Instagram',
-  );
-  add(
-    'whatsapp',
-    whatsappHref(
-      settings.whatsapp_number,
-      'Hello, I would like to ask about SANAD career services.',
-    ),
-    'WhatsApp',
-    'Contact us on WhatsApp',
-  );
-  add(
-    'email',
-    settings.support_email ? `mailto:${settings.support_email.trim()}` : null,
-    'Email',
-    'Send us an email',
-  );
-  add(
-    'facebook',
-    externalUrl(settings.facebook_url),
-    'Facebook',
-    'Follow us on Facebook',
-  );
-  add('twitter', externalUrl(settings.twitter_url), 'X', 'Follow us on X');
-  add(
-    'linkedin',
-    externalUrl(settings.linkedin_url),
-    'LinkedIn',
-    'Follow us on LinkedIn',
-  );
+    add(
+      'instagram',
+      externalUrl(settings.instagram_url),
+      'Instagram',
+      'Follow us on Instagram',
+    );
+    add(
+      'whatsapp',
+      whatsappHref(
+        settings.whatsapp_number,
+        'Hello, I would like to ask about SANAD career services.',
+      ),
+      'WhatsApp',
+      'Contact us on WhatsApp',
+    );
+    add(
+      'email',
+      settings.support_email ? `mailto:${settings.support_email.trim()}` : null,
+      'Email',
+      'Send us an email',
+    );
+    add(
+      'facebook',
+      externalUrl(settings.facebook_url),
+      'Facebook',
+      'Follow us on Facebook',
+    );
+    add('twitter', externalUrl(settings.twitter_url), 'X', 'Follow us on X');
+    add(
+      'linkedin',
+      externalUrl(settings.linkedin_url),
+      'LinkedIn',
+      'Follow us on LinkedIn',
+    );
+  }
 
-  return links;
+  return links.length > 0 ? links : DEFAULT_SOCIAL_LINKS;
 }
 
 interface PublicSocialLinksProps {
@@ -145,18 +187,29 @@ interface PublicSocialLinksProps {
 }
 
 export function PublicSocialLinks({ className = '' }: PublicSocialLinksProps) {
+  const _copy = useCopy();
+  // The public settings API can return different data on the server and in
+  // the browser. Start with the same default on both sides, then load live
+  // settings after hydration so React never receives mismatched link props.
+  const isMounted = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
+
   const settings = useQuery({
     queryKey: settingsKeys.public,
     queryFn: ({ signal }) => settingsApi.getPublic({ signal }),
     staleTime: 5 * 60 * 1000,
+    enabled: isMounted,
   });
-  const links = configuredLinks(settings.data);
+  const links = configuredLinks(isMounted ? settings.data : undefined);
 
   if (links.length === 0) return null;
 
   return (
     <div
-      aria-label="Social media and contact channels"
+      aria-label={_copy('Social media and contact channels')}
       className={`flex flex-wrap items-center gap-2.5 ${className}`}
       role="list"
     >
@@ -166,14 +219,14 @@ export function PublicSocialLinks({ className = '' }: PublicSocialLinksProps) {
 
         return (
           <a
-            aria-label={item.ariaLabel}
+            aria-label={_copy(item.ariaLabel)}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary-foreground/10 text-primary-foreground/80 shadow-xs transition-all duration-200 hover:scale-110 hover:bg-accent hover:text-accent-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary active:scale-95"
             href={item.href}
             key={item.platform}
             rel={isEmail ? undefined : 'noreferrer noopener'}
             role="listitem"
             target={isEmail ? undefined : '_blank'}
-            title={item.label}
+            title={_copy(item.label)}
           >
             {IconComponent && <IconComponent className="h-4 w-4 shrink-0" />}
           </a>

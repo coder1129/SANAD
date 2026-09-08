@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import * as AvatarPrimitive from '@radix-ui/react-avatar';
 import { cva, type VariantProps } from 'class-variance-authority';
@@ -39,17 +40,19 @@ export function Avatar({
   src,
   ...props
 }: AvatarProps) {
+  const _copy = useCopy();
+
   return (
     <AvatarPrimitive.Root
       aria-hidden={alt ? undefined : true}
-      aria-label={alt || undefined}
+      aria-label={_copy(alt || undefined)}
       className={cn(avatarVariants({ size }), className)}
       role={alt ? 'img' : undefined}
       {...props}
     >
       {src ? (
         <AvatarPrimitive.Image
-          alt=""
+          alt={_copy('')}
           className="size-full object-cover"
           src={src}
         />
@@ -59,7 +62,7 @@ export function Avatar({
         className="flex size-full items-center justify-center bg-surface-muted font-semibold uppercase text-primary"
         delayMs={src ? 250 : 0}
       >
-        {fallback}
+        {_copy(fallback)}
       </AvatarPrimitive.Fallback>
     </AvatarPrimitive.Root>
   );

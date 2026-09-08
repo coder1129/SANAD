@@ -44,4 +44,40 @@ describe('authApi cookie session contract', () => {
       }),
     ).resolves.toMatchObject({ accessToken: 'access-token' });
   });
+
+  it('sends an explicit flow for passwordless sign-in and sign-up', async () => {
+    mocks.post.mockResolvedValue({
+      message: 'sent',
+      email: 'us***@example.com',
+    });
+
+    await authApi.requestPasswordlessOtp('user@example.com', 'sign_up');
+
+    expect(mocks.post).toHaveBeenCalledWith(
+      '/auth/passwordless/request',
+      { email: 'user@example.com', flow: 'sign_up' },
+      { authMode: 'none' },
+    );
+  });
+
+  it('maps an authenticated Google response into the session contract', async () => {
+    mocks.post.mockResolvedValue({
+      status: 'authenticated',
+      accessToken: 'google-access-token',
+      user: {
+        id: 7,
+        name: 'Google User',
+        email: 'google@example.com',
+        role: 'customer',
+      },
+    });
+
+    await expect(
+      authApi.authenticateWithGoogle('google-id-token', 'sign_in'),
+    ).resolves.toMatchObject({
+      status: 'authenticated',
+      user: { id: 7 },
+      tokens: { accessToken: 'google-access-token' },
+    });
+  });
 });

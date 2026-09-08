@@ -43,6 +43,7 @@ PAYMENT_PROVIDER=bypass   # أو مزود دفع حقيقي
 PAYMENT_WEBHOOK_SECRET=...
 SENTRY_DSN=
 SENTRY_ENVIRONMENT=production
+GOOGLE_CLIENT_ID=000000000000-example.apps.googleusercontent.com
 ```
 
 ### إذا لم تنشر Vercel بعد
@@ -121,6 +122,7 @@ SWAGGER_ENABLED=false
 NEXT_PUBLIC_API_BASE_URL=https://your-railway-api.up.railway.app/api/v1
 NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
 NEXT_PUBLIC_MEDIA_BASE_URL=https://media.your-domain.com
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=000000000000-example.apps.googleusercontent.com
 R2_PUBLIC_URL=https://media.your-domain.com
 NEXT_PUBLIC_SENTRY_DSN=
 NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
@@ -131,6 +133,13 @@ SENTRY_AUTH_TOKEN=
 SENTRY_ORG=
 SENTRY_PROJECT=
 ```
+
+### إعداد تسجيل الدخول عبر Google
+
+1. افتح Google Cloud Console وأنشئ OAuth 2.0 Client من نوع **Web application**.
+2. أضف `http://localhost:3000` ودومين Vercel النهائي إلى **Authorized JavaScript origins**.
+3. ضع Client ID نفسه في `GOOGLE_CLIENT_ID` على Railway و`NEXT_PUBLIC_GOOGLE_CLIENT_ID` على Vercel.
+4. أعد نشر الخدمتين بعد حفظ المتغيرات. لا يلزم Client Secret لأن الواجهة ترسل Google ID token ويتحقق الباك إند من توقيعه ومصدره والجمهور.
 
 للتجربة المؤقتة بدون مزود بريد، يمكن تحديد إيميل Demo واحد وكود ثابت. يعمل هذا
 المسار فقط عندما تكون `NODE_ENV=development`، ولا تستخدمه في الإنتاج:

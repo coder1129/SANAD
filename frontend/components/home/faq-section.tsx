@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -114,6 +115,8 @@ const faqItems: readonly FaqItem[] = [
 ];
 
 export function FaqSection() {
+  const _copy = useCopy();
+
   return (
     <section
       aria-labelledby="faq-heading"
@@ -125,18 +128,19 @@ export function FaqSection() {
           <MotionReveal direction="none">
             <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
               <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-              FAQ
+              {_copy('FAQ')}
             </p>
           </MotionReveal>
           <MotionHeading
             className="type-h2 mt-5 max-w-[14ch]"
             id="faq-heading"
-            text="Common Questions"
+            text={_copy('Common Questions')}
           />
           <MotionReveal delay={0.12} distance={14}>
             <p className="mt-6 max-w-[42rem] text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-              Answers to the questions visitors most often ask before choosing
-              a career service.
+              {_copy(
+                'Answers to the questions visitors most often ask before choosing a career service.',
+              )}
             </p>
           </MotionReveal>
         </div>
@@ -145,16 +149,16 @@ export function FaqSection() {
           {faqItems.map(({ answer, link, question }) => (
             <MotionStaggerItem key={question}>
               <div className="border-t-2 border-accent pt-5">
-                <h3 className="type-h5 text-primary">{question}</h3>
+                <h3 className="type-h5 text-primary">{_copy(question)}</h3>
                 <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  {answer}
+                  {_copy(answer)}
                 </p>
                 {link ? (
                   <Link
                     className="group mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary underline decoration-accent underline-offset-4 transition-colors duration-200 hover:text-secondary"
                     href={link.href}
                   >
-                    {link.label}
+                    {_copy(link.label)}
                     <ArrowRight
                       aria-hidden="true"
                       className="size-3.5 transition-transform duration-200 ease-[var(--ease-standard)] motion-safe:group-hover:translate-x-0.5 motion-safe:group-focus-visible:translate-x-0.5 motion-reduce:transition-none"

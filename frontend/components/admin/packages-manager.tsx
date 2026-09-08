@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -26,7 +27,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { adminApi, adminKeys, ApiError, type AdminPackage } from '@/lib/api';
-import { formatDate, formatMoney } from '@/lib/orders/presentation';
+
 import {
   AdminPageHeader,
   AdminTable,
@@ -36,10 +37,13 @@ import {
 } from './admin-ui';
 
 const schema = z.object({
-  name: z.string().trim().min(2),
-  description: z.string().trim().min(2),
+  name_en: z.string().trim().min(2),
+  name_ar: z.string().trim().min(2),
+  description_en: z.string().trim().min(2),
+  description_ar: z.string().trim().min(2),
   price: z.coerce.number().min(0),
-  features: z.string(),
+  features_en: z.string(),
+  features_ar: z.string(),
   deliveryDays: z.coerce.number().int().min(1),
   revisions: z.coerce.number().int().min(0),
   sortOrder: z.coerce.number().int(),
@@ -48,10 +52,13 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 type FormInput = z.input<typeof schema>;
 const defaults: Values = {
-  name: '',
-  description: '',
+  name_en: '',
+  name_ar: '',
+  description_en: '',
+  description_ar: '',
   price: 0,
-  features: '',
+  features_en: '',
+  features_ar: '',
   deliveryDays: 7,
   revisions: 1,
   sortOrder: 0,
@@ -59,6 +66,8 @@ const defaults: Values = {
 };
 
 export function PackagesManager() {
+  const _copy = useCopy();
+
   const client = useQueryClient();
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<AdminPackage | null | undefined>(
@@ -94,10 +103,13 @@ export function PackagesManager() {
     if (editing === null) reset(defaults);
     else if (editing)
       reset({
-        name: editing.name_en,
-        description: editing.description_en ?? '',
+        name_en: editing.name_en,
+        name_ar: editing.name_ar ?? '',
+        description_en: editing.description_en ?? '',
+        description_ar: editing.description_ar ?? '',
         price: Number(editing.price),
-        features: (editing.features_en ?? []).join('\n'),
+        features_en: (editing.features_en ?? []).join('\n'),
+        features_ar: (editing.features_ar ?? []).join('\n'),
         deliveryDays: editing.delivery_days,
         revisions: editing.max_revisions ?? 0,
         sortOrder: editing.sort_order ?? 0,
@@ -109,16 +121,16 @@ export function PackagesManager() {
   const save = useMutation({
     mutationFn: async (values: Values) => {
       const input = {
-        name_en: values.name,
-        name_ar: values.name,
-        description_en: values.description,
-        description_ar: values.description,
+        name_en: values.name_en,
+        name_ar: values.name_ar,
+        description_en: values.description_en,
+        description_ar: values.description_ar,
         price: values.price,
-        features_en: values.features
+        features_en: values.features_en
           .split('\n')
           .map((v) => v.trim())
           .filter(Boolean),
-        features_ar: values.features
+        features_ar: values.features_ar
           .split('\n')
           .map((v) => v.trim())
           .filter(Boolean),
@@ -220,12 +232,10 @@ export function PackagesManager() {
             (item) => item.id !== imageId,
           ),
         });
-        void adminApi.packages
-          .list({ page, limit: 20 })
-          .then((result) => {
-            const fresh = result.items.find((item) => item.id === editing.id);
-            if (fresh) setEditing(fresh);
-          });
+        void adminApi.packages.list({ page, limit: 20 }).then((result) => {
+          const fresh = result.items.find((item) => item.id === editing.id);
+          if (fresh) setEditing(fresh);
+        });
       }
       setImageFeedback({
         type: 'success',
@@ -244,28 +254,34 @@ export function PackagesManager() {
   return (
     <>
       <AdminPageHeader
-        title="Packages"
-        description="Maintain service pricing, scope, delivery details, availability, and images."
-        action={<Button onClick={() => setEditing(null)}>Add Package</Button>}
+        title={_copy('Packages')}
+        description={_copy(
+          'Maintain service pricing, scope, delivery details, availability, and images.',
+        )}
+        action={
+          <Button onClick={() => setEditing(null)}>
+            {_copy('Add Package')}
+          </Button>
+        }
       />
       <DataState
         loading={query.isPending}
-        error={query.error?.userMessage}
+        error={_copy(query.error?.userMessage)}
         empty={query.data?.items.length === 0}
       >
         <AdminTable>
-          <table className="w-full min-w-[920px] text-left text-sm">
+          <table className="w-full min-w-[920px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
-                <th className="px-4 py-3">Image</th>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Delivery</th>
-                <th className="px-4 py-3">Revisions</th>
-                <th className="px-4 py-3">Sort</th>
-                <th className="px-4 py-3">Updated</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{_copy('Image')}</th>
+                <th className="px-4 py-3">{_copy('Name')}</th>
+                <th className="px-4 py-3">{_copy('Price')}</th>
+                <th className="px-4 py-3">{_copy('Status')}</th>
+                <th className="px-4 py-3">{_copy('Delivery')}</th>
+                <th className="px-4 py-3">{_copy('Revisions')}</th>
+                <th className="px-4 py-3">{_copy('Sort')}</th>
+                <th className="px-4 py-3">{_copy('Updated')}</th>
+                <th className="px-4 py-3">{_copy('Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -278,7 +294,10 @@ export function PackagesManager() {
                     <td className="px-4 py-3">
                       {image ? (
                         <Image
-                          alt={image.alt_text ?? pkg.name_en}
+                          alt={_copy(
+                            image.alt_text ?? pkg.name_en,
+                            pkg.name_ar,
+                          )}
                           className="size-12 rounded-md object-cover"
                           height={48}
                           src={image.image_url ?? image.url ?? image.image_path}
@@ -292,22 +311,33 @@ export function PackagesManager() {
                       )}
                     </td>
                     <td className="px-4 py-3 font-semibold text-primary">
-                      {pkg.name_en}
+                      <div>{_copy(pkg.name_en)}</div>
+                      {pkg.name_ar ? (
+                        <div className="text-xs font-normal text-muted-foreground">
+                          {pkg.name_ar}
+                        </div>
+                      ) : null}
                     </td>
-                    <td className="px-4 py-3">{formatMoney(pkg.price)}</td>
                     <td className="px-4 py-3">
-                      {pkg.is_active ? 'Active' : 'Inactive'}
+                      {_copy(_copy.money(pkg.price))}
                     </td>
-                    <td className="px-4 py-3">{pkg.delivery_days} days</td>
-                    <td className="px-4 py-3">{pkg.max_revisions ?? 0}</td>
-                    <td className="px-4 py-3">{pkg.sort_order ?? 0}</td>
+                    <td className="px-4 py-3">
+                      {_copy(pkg.is_active ? 'Active' : 'Inactive')}
+                    </td>
+                    <td className="px-4 py-3">
+                      {_copy(pkg.delivery_days)} {_copy('days')}
+                    </td>
+                    <td className="px-4 py-3">
+                      {_copy(pkg.max_revisions ?? 0)}
+                    </td>
+                    <td className="px-4 py-3">{_copy(pkg.sort_order ?? 0)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
-                      {formatDate(pkg.updated_at)}
+                      {_copy(_copy.date(pkg.updated_at))}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         <Button
-                          aria-label={`Edit ${pkg.name_en}`}
+                          aria-label={_copy(`Edit ${pkg.name_en}`)}
                           onClick={() => setEditing(pkg)}
                           size="icon"
                           variant="outline"
@@ -315,7 +345,9 @@ export function PackagesManager() {
                           <Pencil className="size-4" />
                         </Button>
                         <Button
-                          aria-label={`${pkg.is_active ? 'Deactivate' : 'Activate'} ${pkg.name_en}`}
+                          aria-label={_copy(
+                            `${pkg.is_active ? 'Deactivate' : 'Activate'} ${pkg.name_en}`,
+                          )}
                           onClick={() => setConfirming(pkg)}
                           size="icon"
                           variant="outline"
@@ -345,17 +377,18 @@ export function PackagesManager() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              {editing ? 'Edit Package' : 'Add Package'}
+              {_copy(editing ? 'Edit Package' : 'Add Package')}
             </DialogTitle>
             <DialogDescription>
-              English content is mirrored internally to required Arabic fields
-              until localized editing is introduced.
+              {_copy(
+                'Manage package details, pricing, and localized English and Arabic content.',
+              )}
             </DialogDescription>
           </DialogHeader>
           {save.error ? (
             <Alert
-              title="Could not save package"
-              description={save.error.userMessage}
+              title={_copy('Could not save package')}
+              description={_copy(save.error.userMessage)}
               variant="error"
             />
           ) : null}
@@ -363,67 +396,92 @@ export function PackagesManager() {
             className="grid gap-4 sm:grid-cols-2"
             onSubmit={handleSubmit((values) => save.mutate(values))}
           >
-            <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
-              Name
-              <Input {...register('name')} invalid={Boolean(errors.name)} />
-            </label>
-            <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
-              Description
-              <Textarea
-                {...register('description')}
-                invalid={Boolean(errors.description)}
+            <label className="grid gap-1 text-sm font-semibold">
+              {_copy('English Name')}
+              <Input
+                {...register('name_en')}
+                invalid={Boolean(errors.name_en)}
               />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Price
+              {_copy('Arabic Name')}
+              <Input
+                dir="rtl"
+                {...register('name_ar')}
+                invalid={Boolean(errors.name_ar)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
+              {_copy('English Description')}
+              <Textarea
+                {...register('description_en')}
+                invalid={Boolean(errors.description_en)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
+              {_copy('Arabic Description')}
+              <Textarea
+                dir="rtl"
+                {...register('description_ar')}
+                invalid={Boolean(errors.description_ar)}
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold">
+              {_copy('Price')}
               <Input step="0.01" type="number" {...register('price')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Delivery Days
+              {_copy('Delivery Days')}
               <Input type="number" {...register('deliveryDays')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Max Revisions
+              {_copy('Max Revisions')}
               <Input type="number" {...register('revisions')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Sort Order
+              {_copy('Sort Order')}
               <Input type="number" {...register('sortOrder')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
-              Features (one per line)
-              <Textarea {...register('features')} />
+              {_copy('English Features')}
+              <Textarea {...register('features_en')} />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
+              {_copy('Arabic Features')}
+              <Textarea dir="rtl" {...register('features_ar')} />
             </label>
             <label className="flex items-center gap-3 text-sm font-semibold sm:col-span-2">
               <Switch
                 checked={active}
                 onCheckedChange={(value) => setValue('active', value)}
               />
-              Active
+              {_copy('Active')}
             </label>
             <DialogFooter className="sm:col-span-2">
               <Button onClick={() => setEditing(undefined)} variant="outline">
-                Cancel
+                {_copy('Cancel')}
               </Button>
               <Button
                 loading={save.isPending}
-                loadingLabel="Saving package"
+                loadingLabel={_copy('Saving package')}
                 type="submit"
               >
-                {save.isPending ? 'Saving...' : 'Save Package'}
+                {_copy(save.isPending ? 'Saving...' : 'Save Package')}
               </Button>
             </DialogFooter>
           </form>
           {editing ? (
             <section className="border-t border-border pt-5">
-              <h3 className="font-semibold text-primary">Package Images</h3>
+              <h3 className="font-semibold text-primary">
+                {_copy('Package Images')}
+              </h3>
               {imageFeedback ? (
                 <Alert
                   className="mt-3"
-                  description={imageFeedback.message}
-                  title={
-                    imageFeedback.type === 'success' ? 'Success' : 'Error'
-                  }
+                  description={_copy(imageFeedback.message)}
+                  title={_copy(
+                    imageFeedback.type === 'success' ? 'Success' : 'Error',
+                  )}
                   variant={imageFeedback.type}
                 />
               ) : null}
@@ -434,7 +492,10 @@ export function PackagesManager() {
                     key={image.id}
                   >
                     <Image
-                      alt={image.alt_text ?? editing.name_en}
+                      alt={_copy(
+                        image.alt_text ?? editing.name_en,
+                        editing.name_ar,
+                      )}
                       className="size-16 object-cover"
                       height={64}
                       src={image.image_url ?? image.url ?? image.image_path}
@@ -442,7 +503,7 @@ export function PackagesManager() {
                       width={64}
                     />
                     <Input
-                      aria-label="Image alt text"
+                      aria-label={_copy('Image alt text')}
                       defaultValue={image.alt_text ?? ''}
                       onBlur={(event) => {
                         if (event.target.value !== (image.alt_text ?? ''))
@@ -454,7 +515,7 @@ export function PackagesManager() {
                     />
                     <div className="flex gap-1">
                       <Button
-                        aria-label="Move image up"
+                        aria-label={_copy('Move image up')}
                         onClick={() =>
                           imageMutation.mutate({
                             imageId: image.id,
@@ -472,7 +533,7 @@ export function PackagesManager() {
                         <ArrowUp className="size-4" />
                       </Button>
                       <Button
-                        aria-label="Move image down"
+                        aria-label={_copy('Move image down')}
                         onClick={() =>
                           imageMutation.mutate({
                             imageId: image.id,
@@ -496,14 +557,14 @@ export function PackagesManager() {
                         size="sm"
                         variant="outline"
                       >
-                        {image.is_primary ? 'Primary' : 'Set primary'}
+                        {_copy(image.is_primary ? 'Primary' : 'Set primary')}
                       </Button>
                       <Button
                         onClick={() => setImageToDelete(image.id)}
                         size="sm"
                         variant="destructive"
                       >
-                        Delete
+                        {_copy('Delete')}
                       </Button>
                     </div>
                   </div>
@@ -512,14 +573,14 @@ export function PackagesManager() {
               <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
                 <Input
                   accept="image/jpeg,image/png,image/webp"
-                  aria-label="Package image"
+                  aria-label={_copy('Package image')}
                   onChange={(event) => setFile(event.target.files?.[0] ?? null)}
                   type="file"
                 />
                 <Input
-                  aria-label="Image alt text"
+                  aria-label={_copy('Image alt text')}
                   onChange={(event) => setAltText(event.target.value)}
-                  placeholder="Image alt text"
+                  placeholder={_copy('Image alt text')}
                   value={altText}
                 />
                 <Button
@@ -527,7 +588,7 @@ export function PackagesManager() {
                   loading={upload.isPending}
                   onClick={() => upload.mutate()}
                 >
-                  Upload
+                  {_copy('Upload')}
                 </Button>
               </div>
             </section>
@@ -539,8 +600,12 @@ export function PackagesManager() {
         onOpenChange={(open) => {
           if (!open) setConfirming(null);
         }}
-        title={`${confirming?.is_active ? 'Deactivate' : 'Activate'} package?`}
-        description="Existing order records remain preserved. Deactivated packages are removed from the public catalog."
+        title={_copy(
+          `${confirming?.is_active ? 'Deactivate' : 'Activate'} package?`,
+        )}
+        description={_copy(
+          'Existing order records remain preserved. Deactivated packages are removed from the public catalog.',
+        )}
         confirmLabel={confirming?.is_active ? 'Deactivate' : 'Activate'}
         loading={status.isPending}
         onConfirm={() => confirming && status.mutate(confirming)}
@@ -554,11 +619,13 @@ export function PackagesManager() {
             deleteImage.reset();
           }
         }}
-        title="Delete package image?"
-        description="The image file and its package reference will be removed permanently."
+        title={_copy('Delete package image?')}
+        description={_copy(
+          'The image file and its package reference will be removed permanently.',
+        )}
         confirmLabel="Delete image"
         destructive
-        error={deleteImage.error?.userMessage}
+        error={_copy(deleteImage.error?.userMessage)}
         loading={deleteImage.isPending}
         onConfirm={() =>
           imageToDelete !== null && deleteImage.mutate(imageToDelete)

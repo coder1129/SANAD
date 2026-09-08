@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { ArrowRight, Check, Clock3 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -17,6 +18,8 @@ interface PackageRelatedCardProps {
 }
 
 export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
+  const _copy = useCopy();
+
   const image = getPackagePrimaryImage(packageItem);
 
   return (
@@ -27,7 +30,7 @@ export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
       <div className="relative aspect-[16/9] overflow-hidden border-b border-border bg-surface-muted">
         {image ? (
           <Image
-            alt={image.altText ?? `${packageItem.name} service preview`}
+            alt={_copy(image.altText ?? `${packageItem.name} service preview`)}
             className="object-cover transition-transform duration-300 motion-safe:group-hover:scale-[1.015] motion-reduce:transition-none"
             fill
             sizes="(max-width: 767px) calc(100vw - 2rem), 33vw"
@@ -43,7 +46,7 @@ export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
         <div className="flex items-center justify-between gap-4">
           <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase">
             <Clock3 aria-hidden="true" className="size-3.5 text-accent" />
-            {packageItem.deliveryDays} days
+            {_copy(packageItem.deliveryDays)} {_copy('days')}
           </span>
           <ArrowRight
             aria-hidden="true"
@@ -51,10 +54,10 @@ export function PackageRelatedCard({ packageItem }: PackageRelatedCardProps) {
           />
         </div>
         <h3 className="mt-4 text-lg font-semibold text-primary">
-          {getPackageShortTitle(packageItem)}
+          {_copy(getPackageShortTitle(packageItem), packageItem.nameAr)}
         </h3>
         <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-muted-foreground">
-          {getPackageShortDescription(packageItem)}
+          {_copy(getPackageShortDescription(packageItem))}
         </p>
         <PackagePrice className="mt-5" packageItem={packageItem} />
         <PackageSocialProof

@@ -1,3 +1,4 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import {
   MotionAccentLine,
   MotionHeading,
@@ -5,31 +6,20 @@ import {
   MotionStaggerItem,
   MotionStaggerList,
 } from '@/components/motion/motion-reveal';
+import { getTranslations } from 'next-intl/server';
 
-const reasons = [
-  {
-    title: 'Substance Before Decoration',
-    description:
-      'Your experience and career direction lead the story; formatting supports the message instead of competing with it.',
-  },
-  {
-    title: 'Context Shapes the Work',
-    description:
-      'Language and presentation are considered for professionals pursuing opportunities in the UAE market.',
-  },
-  {
-    title: 'One Connected Story',
-    description:
-      'Your CV, LinkedIn profile, and supporting documents work together instead of sending mixed messages.',
-  },
-  {
-    title: 'Readable at Every Stage',
-    description:
-      'Clear hierarchy and concise language support screening workflows while remaining straightforward for hiring teams to review.',
-  },
-] as const;
+export async function WhySanad() {
+  const _copy = await getCopy();
 
-export function WhySanad() {
+  const t = await getTranslations('home.whySanad');
+
+  const reasons = [
+    { title: t('reason1Title'), description: t('reason1Desc') },
+    { title: t('reason2Title'), description: t('reason2Desc') },
+    { title: t('reason3Title'), description: t('reason3Desc') },
+    { title: t('reason4Title'), description: t('reason4Desc') },
+  ];
+
   return (
     <section
       aria-labelledby="why-sanad-heading"
@@ -37,22 +27,21 @@ export function WhySanad() {
     >
       <div className="layout-container layout-section">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] lg:gap-16 xl:gap-24">
-          <div className="lg:pr-4">
+          <div className="lg:pe-4">
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-                Why SANAD
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[16ch]"
               id="why-sanad-heading"
-              text="A Considered Approach to Career Presentation"
+              text={_copy(t('heading'))}
             />
             <MotionReveal delay={0.12} distance={14}>
               <p className="mt-6 max-w-[34rem] text-base leading-7 text-foreground/75 sm:text-lg sm:leading-8">
-                Every choice—from content order to visual hierarchy—should make
-                your professional story easier to understand.
+                {_copy(t('body'))}
               </p>
             </MotionReveal>
           </div>
@@ -72,12 +61,12 @@ export function WhySanad() {
                   aria-hidden="true"
                   className="font-display text-2xl leading-none text-accent sm:pt-0.5 sm:text-3xl"
                 >
-                  {String(index + 1).padStart(2, '0')}
+                  {_copy(String(index + 1).padStart(2, '0'))}
                 </span>
                 <div>
-                  <h3 className="type-h4 text-primary">{title}</h3>
+                  <h3 className="type-h4 text-primary">{_copy(title)}</h3>
                   <p className="mt-2 max-w-[42rem] text-sm leading-6 text-foreground/75 sm:text-base sm:leading-7">
-                    {description}
+                    {_copy(description)}
                   </p>
                 </div>
               </MotionStaggerItem>

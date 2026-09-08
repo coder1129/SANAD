@@ -48,8 +48,6 @@ describe('unwrapEnvelope', () => {
   });
 
   it('throws ApiError when 2xx response violates envelope format', () => {
-    expect(() => unwrapEnvelope({ unknown_field: 123 }, 200)).toThrow(
-      ApiError,
-    );
+    expect(() => unwrapEnvelope({ unknown_field: 123 }, 200)).toThrow(ApiError);
   });
 });

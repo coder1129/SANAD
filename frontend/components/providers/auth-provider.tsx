@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useEffect, type ReactNode } from 'react';
 
@@ -29,11 +30,13 @@ interface AuthProviderProps {
  * nothing has to be blocked here.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
+  const _copy = useCopy();
+
   ensureAuthInterceptors();
 
   useEffect(() => {
     void bootstrapAuthSession();
   }, []);
 
-  return <>{children}</>;
+  return <>{_copy(children)}</>;
 }

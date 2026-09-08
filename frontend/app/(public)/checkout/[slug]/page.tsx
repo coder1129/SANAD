@@ -1,3 +1,6 @@
+import { getLocalizedMetadata } from '@/lib/i18n/metadata';
+
+import { getCopy } from '@/lib/i18n/server-copy';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
@@ -35,16 +38,26 @@ async function resolvePackage(slug: string) {
 export async function generateMetadata({
   params,
 }: CheckoutPageProps): Promise<Metadata> {
+  const _copy = await getCopy();
   const { slug } = await params;
   const packageItem = await resolvePackage(slug);
-  return {
-    title: `Checkout | ${packageItem.name} | SANAD`,
-    description: `Complete your secure order for ${packageItem.name}.`,
+  const localizedName = _copy(packageItem.name, packageItem.nameAr);
+  return await getLocalizedMetadata({
+    title: _copy(
+      `Checkout | ${packageItem.name} | SANAD`,
+      `إتمام الطلب | ${localizedName} | سند`,
+    ),
+    description: _copy(
+      `Complete your secure order for ${packageItem.name}.`,
+      `أكمل طلبك الآمن لخدمة ${localizedName}.`,
+    ),
     robots: { index: false, follow: false },
-  };
+  });
 }
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
+  const _copy = await getCopy();
+
   const { slug } = await params;
   const packageItem = await resolvePackage(slug);
 
@@ -63,45 +76,47 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
       <section className="border-b border-border bg-surface-muted">
         <div className="layout-container py-10 sm:py-14">
           <nav
-            aria-label="Breadcrumb"
+            aria-label={_copy('Breadcrumb')}
             className="text-sm text-muted-foreground"
           >
             <ol className="flex flex-wrap items-center gap-2">
               <li>
                 <Link className="hover:text-primary" href="/">
-                  Home
+                  {_copy('Home')}
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true">{_copy('/')}</li>
               <li>
                 <Link className="hover:text-primary" href="/packages">
-                  Services
+                  {_copy('Services')}
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true">{_copy('/')}</li>
               <li>
                 <Link
                   className="max-w-52 truncate hover:text-primary"
                   href={getPackageHref(packageItem)}
                 >
-                  {packageItem.name}
+                  {_copy(packageItem.name, packageItem.nameAr)}
                 </Link>
               </li>
-              <li aria-hidden="true">/</li>
+              <li aria-hidden="true">{_copy('/')}</li>
               <li aria-current="page" className="font-semibold text-primary">
-                Checkout
+                {_copy('Checkout')}
               </li>
             </ol>
           </nav>
           <p className="mt-8 text-xs font-semibold tracking-[0.18em] text-secondary uppercase">
-            Secure checkout
+            {_copy('Secure checkout')}
           </p>
           <h1 className="type-h1 mt-3 max-w-3xl text-primary">
-            Complete your {packageItem.name} order
+            {_copy('Complete your')}
+            {_copy(packageItem.name, packageItem.nameAr)} {_copy('order')}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-            Add the context we need, review the final total, and continue to
-            secure payment.
+            {_copy(
+              'Add the context we need, review the final total, and continue to secure payment.',
+            )}
           </p>
         </div>
       </section>

@@ -31,7 +31,10 @@ if (!existsSync(validationPath)) {
 const { validate } = require(validationPath);
 
 try {
-  const config = validate(process.env);
+  const config = validate({
+    ...process.env,
+    ...(process.argv.includes('--production') && { NODE_ENV: 'production' }),
+  });
   const nodeEnv = config.NODE_ENV;
   process.stdout.write(`Environment OK (NODE_ENV=${nodeEnv}).\n`);
 

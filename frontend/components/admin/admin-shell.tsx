@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import {
   Activity,
@@ -15,6 +16,7 @@ import {
   Star,
   Tags,
   Users,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,6 +31,8 @@ import {
 } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/use-auth';
 import { cn } from '@/lib/utils/cn';
+import { LanguageSwitcher } from '@/components/layouts/language-switcher';
+import { ThemeSwitcher } from '@/components/layouts/theme-switcher';
 
 const navigation = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,12 +47,15 @@ const navigation = [
   { href: '/admin/media', label: 'Media', icon: ImageIcon },
   { href: '/admin/settings', label: 'Settings', icon: Settings },
   { href: '/admin/activity-logs', label: 'Activity Logs', icon: Activity },
+  { href: '/admin/administrators', label: 'Administrators', icon: Shield, superOnly: true },
 ] as const;
 
-function Navigation({ pathname }: { pathname: string }) {
+function Navigation({ pathname, superAdmin = false }: { pathname: string; superAdmin?: boolean }) {
+  const _copy = useCopy();
+
   return (
-    <nav aria-label="Admin navigation" className="mt-7 grid gap-1">
-      {navigation.map(({ href, label, icon: Icon }) => {
+    <nav aria-label={_copy('Admin navigation')} className="mt-7 grid gap-1">
+      {navigation.filter((item) => !('superOnly' in item) || !item.superOnly || superAdmin).map(({ href, label, icon: Icon }) => {
         const active =
           href === '/admin' ? pathname === href : pathname.startsWith(href);
         return (
@@ -64,7 +71,7 @@ function Navigation({ pathname }: { pathname: string }) {
             key={href}
           >
             <Icon className="size-4" aria-hidden="true" />
-            {label}
+            {_copy(label)}
           </Link>
         );
       })}
@@ -83,6 +90,8 @@ function currentTitle(pathname: string) {
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
+  const _copy = useCopy();
+
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -94,14 +103,14 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <div className="rounded-md bg-white p-2">
           <BrandLogo size="sm" />
         </div>
-        <Navigation pathname={pathname} />
+        <Navigation pathname={pathname} superAdmin={user?.role === 'super_admin'} />
       </aside>
       <div className="min-w-0">
         <header className="sticky top-0 z-30 flex min-h-16 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
           <Sheet>
             <SheetTrigger asChild>
               <Button
-                aria-label="Open navigation"
+                aria-label={_copy('Open navigation')}
                 className="lg:hidden"
                 size="icon"
                 variant="outline"
@@ -114,27 +123,29 @@ export function AdminShell({ children }: { children: ReactNode }) {
               side="left"
             >
               <SheetTitle className="text-primary-foreground">
-                SANAD Admin
+                {_copy('SANAD Admin')}
               </SheetTitle>
-              <Navigation pathname={pathname} />
+              <Navigation pathname={pathname} superAdmin={user?.role === 'super_admin'} />
             </SheetContent>
           </Sheet>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs text-muted-foreground">
-              SANAD Administration
+              {_copy('SANAD Administration')}
             </p>
             <h1 className="truncate font-semibold text-primary">
-              {currentTitle(pathname)}
+              {_copy(currentTitle(pathname))}
             </h1>
           </div>
-          <div className="hidden text-right sm:block">
+          <div className="hidden text-end sm:block">
             <p className="text-sm font-semibold text-primary">{user?.name}</p>
             <p className="text-xs text-muted-foreground">
-              {user?.role.replace('_', ' ')}
+              {_copy(user?.role.replace('_', ' '))}
             </p>
           </div>
+          <LanguageSwitcher variant="text" />
+          <ThemeSwitcher />
           <Button
-            aria-label="Sign out"
+            aria-label={_copy('Sign out')}
             onClick={doLogout}
             size="icon"
             variant="ghost"
@@ -142,7 +153,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <LogOut className="size-4" />
           </Button>
         </header>
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="p-4 sm:p-6 lg:p-8">{_copy(children)}</main>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import {
   CheckCircle2,
@@ -10,7 +11,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 
 import { useAuthModal } from '@/components/auth/auth-modal';
 import { Alert } from '@/components/ui/alert';
@@ -18,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
-import { isApiError, ordersApi, paymentsApi } from '@/lib/api';
+import { checkoutApi, isApiError, ordersApi, packagesApi, paymentsApi } from '@/lib/api';
 import type {
   CareerPackage,
   CheckoutPaymentMethod,
@@ -38,6 +39,7 @@ interface CheckoutFormState {
   careerGoals: string;
   notes: string;
   paymentMethod: CheckoutPaymentMethod;
+  couponCode: string;
 }
 
 interface FieldErrors {
@@ -67,15 +69,6 @@ const PAYMENT_METHODS: Array<{
     icon: Smartphone,
   },
 ];
-
-function formatMoney(value: number, currency: string): string {
-  return new Intl.NumberFormat('en-AE', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 function validateForm(form: CheckoutFormState): FieldErrors {
   const errors: FieldErrors = {};
@@ -114,6 +107,8 @@ export function CheckoutExperience({
   packageItem,
   pricing,
 }: CheckoutExperienceProps) {
+  const _copy = useCopy();
+
   const pathname = usePathname();
   const router = useRouter();
   const openAuthModal = useAuthModal();
@@ -125,7 +120,12 @@ export function CheckoutExperience({
     careerGoals: '',
     notes: '',
     paymentMethod: 'card',
+    couponCode: '',
   });
+  const [displayPricing, setDisplayPricing] = useState(pricing);
+  const [packages, setPackages] = useState<CareerPackage[]>([]);
+  const [secondaryPackageId, setSecondaryPackageId] = useState<number | null>(null);
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,6 +140,52 @@ export function CheckoutExperience({
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
     setError(null);
+  }
+
+  const companionOffer = packageItem.companionOffers?.[0];
+  useEffect(() => {
+    if (!companionOffer) return;
+    if (companionOffer.type === 'cross_service_any') {
+      void packagesApi.list().then((result) => setPackages(result.items.filter((item) => item.id !== packageItem.id)));
+    }
+  }, [companionOffer, packageItem.id]);
+
+  async function refreshPricing(nextSecondaryPackageId = secondaryPackageId, couponCode = form.couponCode.trim()) {
+    const nextPricing = await checkoutApi.preview({
+      packageId: packageItem.id,
+      offerId: pricing.offerId ?? undefined,
+      ...(nextSecondaryPackageId ? { secondaryPackageId: nextSecondaryPackageId } : {}),
+      ...(couponCode ? { couponCode } : {}),
+    });
+    setDisplayPricing(nextPricing);
+  }
+
+  async function selectSecondaryPackage(id: number) {
+    setError(null);
+    setSecondaryPackageId(id);
+    try { await refreshPricing(id); } catch (requestError) {
+      setSecondaryPackageId(null);
+      setDisplayPricing(pricing);
+      setError(isApiError(requestError) ? requestError.userMessage : 'We could not apply this service offer.');
+    }
+  }
+
+  async function applyCoupon() {
+    const couponCode = form.couponCode.trim();
+    setError(null);
+    setIsApplyingCoupon(true);
+    try {
+      await refreshPricing(secondaryPackageId, couponCode);
+    } catch (requestError) {
+      setDisplayPricing(pricing);
+      setError(
+        isApiError(requestError)
+          ? requestError.userMessage
+          : 'We could not apply this coupon. Please try again.',
+      );
+    } finally {
+      setIsApplyingCoupon(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -161,7 +207,9 @@ export function CheckoutExperience({
     try {
       const order = await ordersApi.create({
         packageId: packageItem.id,
-        offerId: pricing.offerId ?? undefined,
+        offerId: displayPricing.offerId ?? undefined,
+        couponCode: displayPricing.couponCode ?? undefined,
+        secondaryPackageId: displayPricing.secondaryPackageId ?? undefined,
         customerPhone: submittedForm.phone.trim(),
         notes: form.notes.trim() || undefined,
         requirements: {
@@ -203,7 +251,7 @@ export function CheckoutExperience({
     return (
       <div className="grid min-h-80 place-items-center rounded-xl border border-border bg-surface p-8">
         <div className="text-sm text-muted-foreground" role="status">
-          Restoring your secure session...
+          {_copy('Restoring your secure session...')}
         </div>
       </div>
     );
@@ -215,20 +263,23 @@ export function CheckoutExperience({
         <span className="mx-auto grid size-14 place-items-center rounded-full bg-primary text-primary-foreground">
           <LockKeyhole aria-hidden="true" className="size-6" />
         </span>
-        <h2 className="type-h3 mt-6 text-primary">Sign in to continue</h2>
+        <h2 className="type-h3 mt-6 text-primary">
+          {_copy('Sign in to continue')}
+        </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-          Your account keeps the order, payment, and WhatsApp handoff connected
-          in one place.
+          {_copy(
+            'Your account keeps the order, payment, and WhatsApp handoff connected in one place.',
+          )}
         </p>
         <Button
           className="mt-7 min-w-48"
           onClick={() => openAuthModal(pathname)}
           size="lg"
         >
-          Open sign in
+          {_copy('Open sign in')}
         </Button>
         <p className="mt-4 text-xs text-muted-foreground">
-          The sign-in form opens in a centered modal on this page.
+          {_copy('The sign-in form opens in a centered modal on this page.')}
         </p>
       </section>
     );
@@ -241,15 +292,16 @@ export function CheckoutExperience({
           <CreditCard aria-hidden="true" className="size-6" />
         </span>
         <h2 className="type-h3 mt-6 text-primary">
-          Continue to secure payment
+          {_copy('Continue to secure payment')}
         </h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Your order is saved. Complete payment with our secure provider, then
-          return here to continue to WhatsApp.
+          {_copy(
+            'Your order is saved. Complete payment with our secure provider, then return here to continue to WhatsApp.',
+          )}
         </p>
         <Button asChild className="mt-7" size="lg">
           <a href={pendingPayment.paymentUrl ?? '#'}>
-            Open secure payment
+            {_copy('Open secure payment')}
             <ExternalLink aria-hidden="true" className="size-4" />
           </a>
         </Button>
@@ -266,13 +318,15 @@ export function CheckoutExperience({
         <div className="flex items-start justify-between gap-4 border-b border-border pb-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
-              Your details
+              {_copy('Your details')}
             </p>
             <h2 className="type-h3 mt-2 text-primary">
-              Help us prepare your order
+              {_copy('Help us prepare your order')}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              A few details help the service owner start with the right context.
+              {_copy(
+                'A few details help the service owner start with the right context.',
+              )}
             </p>
           </div>
           <ShieldCheck
@@ -284,7 +338,7 @@ export function CheckoutExperience({
         {error ? (
           <Alert
             className="mt-6"
-            description={error}
+            description={_copy(error)}
             icon={<ShieldCheck />}
             variant="error"
           />
@@ -296,7 +350,7 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-email"
             >
-              Account email
+              {_copy('Account email')}
             </label>
             <Input
               className="mt-2"
@@ -305,7 +359,8 @@ export function CheckoutExperience({
               value={user.email}
             />
             <p className="mt-2 text-xs text-muted-foreground">
-              Signed in as {user.name}
+              {_copy('Signed in as')}
+              {user.name}
             </p>
           </div>
           <div className="sm:col-span-2">
@@ -313,7 +368,8 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-phone"
             >
-              WhatsApp phone <span className="text-error">*</span>
+              {_copy('WhatsApp phone')}
+              <span className="text-error">{_copy('*')}</span>
             </label>
             <div className="relative mt-2">
               <Phone
@@ -322,15 +378,17 @@ export function CheckoutExperience({
               />
               <Input
                 aria-invalid={fieldErrors.phone ? true : undefined}
-                className="pl-10"
+                className="ps-10"
                 id="checkout-phone"
                 onChange={(event) => updateField('phone', event.target.value)}
-                placeholder="+966 5X XXX XXXX"
+                placeholder={_copy('+966 5X XXX XXXX')}
                 value={form.phone || user.phone || ''}
               />
             </div>
             {fieldErrors.phone ? (
-              <p className="mt-2 text-sm text-error">{fieldErrors.phone}</p>
+              <p className="mt-2 text-sm text-error">
+                {_copy(fieldErrors.phone)}
+              </p>
             ) : null}
           </div>
           <div>
@@ -338,7 +396,7 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-job-title"
             >
-              Target job title
+              {_copy('Target job title')}
             </label>
             <Input
               aria-invalid={fieldErrors.targetJobTitle ? true : undefined}
@@ -347,12 +405,12 @@ export function CheckoutExperience({
               onChange={(event) =>
                 updateField('targetJobTitle', event.target.value)
               }
-              placeholder="e.g. Product Manager"
+              placeholder={_copy('e.g. Product Manager')}
               value={form.targetJobTitle}
             />
             {fieldErrors.targetJobTitle ? (
               <p className="mt-2 text-sm text-error">
-                {fieldErrors.targetJobTitle}
+                {_copy(fieldErrors.targetJobTitle)}
               </p>
             ) : null}
           </div>
@@ -361,7 +419,7 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-industry"
             >
-              Target industry
+              {_copy('Target industry')}
             </label>
             <Input
               aria-invalid={fieldErrors.targetIndustry ? true : undefined}
@@ -370,12 +428,12 @@ export function CheckoutExperience({
               onChange={(event) =>
                 updateField('targetIndustry', event.target.value)
               }
-              placeholder="e.g. FinTech / SaaS"
+              placeholder={_copy('e.g. FinTech / SaaS')}
               value={form.targetIndustry}
             />
             {fieldErrors.targetIndustry ? (
               <p className="mt-2 text-sm text-error">
-                {fieldErrors.targetIndustry}
+                {_copy(fieldErrors.targetIndustry)}
               </p>
             ) : null}
           </div>
@@ -384,7 +442,7 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-goals"
             >
-              Career goals
+              {_copy('Career goals')}
             </label>
             <Textarea
               aria-invalid={fieldErrors.careerGoals ? true : undefined}
@@ -393,12 +451,14 @@ export function CheckoutExperience({
               onChange={(event) =>
                 updateField('careerGoals', event.target.value)
               }
-              placeholder="What would you like this service to help you achieve?"
+              placeholder={_copy(
+                'What would you like this service to help you achieve?',
+              )}
               value={form.careerGoals}
             />
             {fieldErrors.careerGoals ? (
               <p className="mt-2 text-sm text-error">
-                {fieldErrors.careerGoals}
+                {_copy(fieldErrors.careerGoals)}
               </p>
             ) : null}
           </div>
@@ -407,18 +467,22 @@ export function CheckoutExperience({
               className="type-label text-foreground"
               htmlFor="checkout-notes"
             >
-              Additional notes
+              {_copy('Additional notes')}
             </label>
             <Textarea
               aria-invalid={fieldErrors.notes ? true : undefined}
               className="mt-2"
               id="checkout-notes"
               onChange={(event) => updateField('notes', event.target.value)}
-              placeholder="Anything else the service owner should know?"
+              placeholder={_copy(
+                'Anything else the service owner should know?',
+              )}
               value={form.notes}
             />
             {fieldErrors.notes ? (
-              <p className="mt-2 text-sm text-error">{fieldErrors.notes}</p>
+              <p className="mt-2 text-sm text-error">
+                {_copy(fieldErrors.notes)}
+              </p>
             ) : null}
           </div>
         </div>
@@ -427,42 +491,136 @@ export function CheckoutExperience({
       <aside className="h-fit rounded-xl border border-border bg-surface shadow-sm lg:sticky lg:top-6">
         <div className="border-b border-border bg-surface-muted p-6">
           <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
-            Order summary
+            {_copy('Order summary')}
           </p>
           <h2 className="mt-2 text-lg font-semibold text-primary">
-            {packageItem.name}
+            {_copy(packageItem.name, packageItem.nameAr)}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Delivered in {pricing.deliveryDays} days
+            {_copy('Delivered in')}
+            {_copy(displayPricing.deliveryDays)} {_copy('days')}
           </p>
         </div>
         <div className="p-6">
           <dl className="grid gap-3 text-sm">
             <div className="flex items-center justify-between gap-4">
-              <dt className="text-muted-foreground">Service price</dt>
+              <dt className="text-muted-foreground">
+                {_copy('Service price')}
+              </dt>
               <dd className="font-semibold text-foreground">
-                {formatMoney(pricing.originalPrice, pricing.currency)}
+                {_copy(_copy.money(displayPricing.originalPrice, displayPricing.currency))}
               </dd>
             </div>
-            {pricing.offerDiscountAmount > 0 ? (
+            {displayPricing.offerDiscountAmount > 0 ? (
               <div className="flex items-center justify-between gap-4 text-success">
-                <dt>Offer saving</dt>
+                <dt>{_copy('Offer saving')}</dt>
                 <dd className="font-semibold">
-                  -{formatMoney(pricing.offerDiscountAmount, pricing.currency)}
+                  {_copy('-')}
+                  {_copy(
+                    _copy.money(displayPricing.offerDiscountAmount, displayPricing.currency),
+                  )}
+                </dd>
+              </div>
+            ) : null}
+            {displayPricing.couponDiscountAmount > 0 ? (
+              <div className="flex items-center justify-between gap-4 text-success">
+                <dt>{_copy('Coupon discount')}</dt>
+                <dd className="font-semibold">
+                  {_copy('-')}
+                  {_copy(
+                    _copy.money(
+                      displayPricing.couponDiscountAmount,
+                      displayPricing.currency,
+                    ),
+                  )}
                 </dd>
               </div>
             ) : null}
             <div className="mt-2 flex items-end justify-between gap-4 border-t border-border pt-4">
-              <dt className="font-semibold text-primary">Total</dt>
+              <dt className="font-semibold text-primary">{_copy('Total')}</dt>
               <dd className="font-display text-3xl leading-none text-primary">
-                {formatMoney(pricing.finalAmount, pricing.currency)}
+                {_copy(_copy.money(displayPricing.finalAmount, displayPricing.currency))}
               </dd>
             </div>
           </dl>
 
+          <div className="mt-6 border-t border-border pt-5">
+            <label className="type-label text-foreground" htmlFor="checkout-coupon">
+              {_copy('Coupon Code')}
+            </label>
+            <div className="mt-2 flex gap-2">
+              <Input
+                id="checkout-coupon"
+                onChange={(event) => updateField('couponCode', event.target.value)}
+                placeholder={_copy('Enter coupon code')}
+                value={form.couponCode}
+              />
+              <Button
+                loading={isApplyingCoupon}
+                onClick={() => void applyCoupon()}
+                type="button"
+                variant="outline"
+              >
+                {_copy('Apply')}
+              </Button>
+            </div>
+            {displayPricing.couponCode ? (
+              <p className="mt-2 text-xs text-success">
+                {_copy('Coupon applied')}: {_copy(displayPricing.couponCode)}
+              </p>
+            ) : null}
+          </div>
+
+          {companionOffer ? (
+            <div className="mt-6 border-t border-border pt-5">
+              <p className="type-label text-foreground">{_copy('Second service offer')}</p>
+              {companionOffer.type === 'cross_service_specific' && companionOffer.packageId ? (
+                <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm">
+                  <input
+                    checked={secondaryPackageId === companionOffer.packageId}
+                    className="mt-1 size-4 accent-primary"
+                    onChange={(event) => {
+                      if (event.target.checked) void selectSecondaryPackage(companionOffer.packageId!);
+                      else {
+                        setSecondaryPackageId(null);
+                        void refreshPricing(null).catch(() => setDisplayPricing(pricing));
+                      }
+                    }}
+                    type="checkbox"
+                  />
+                  <span>
+                    <span className="block font-semibold text-foreground">
+                      {_copy('Add the discounted second service')}
+                    </span>
+                    <span className="mt-1 block text-muted-foreground">
+                      {_copy('You can continue with this service only if you prefer.')}
+                    </span>
+                  </span>
+                </label>
+              ) : (
+                <label className="mt-2 grid gap-1 text-sm text-muted-foreground">
+                  {_copy('Choose your discounted second service')}
+                  <select
+                    className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3 text-foreground"
+                    onChange={(event) => { const id = Number(event.target.value); if (id) void selectSecondaryPackage(id); }}
+                    value={secondaryPackageId ?? 0}
+                  >
+                    <option value="0">{_copy('Select package')}</option>
+                    {packages.map((item) => <option key={item.id} value={item.id}>{_copy(item.name, item.nameAr)}</option>)}
+                  </select>
+                </label>
+              )}
+              {displayPricing.secondaryPackageId ? (
+                <p className="mt-2 text-xs text-success">
+                  {_copy('Second service saving')}: {_copy('-')}{_copy(_copy.money(displayPricing.secondaryDiscountAmount, displayPricing.currency))}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
           <fieldset className="mt-7">
             <legend className="type-label text-foreground">
-              Payment method
+              {_copy('Payment method')}
             </legend>
             <div className="mt-3 grid gap-2">
               {PAYMENT_METHODS.map(({ value, label, detail, icon: Icon }) => (
@@ -483,14 +641,14 @@ export function CheckoutExperience({
                   </span>
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-primary">
-                      {label}
+                      {_copy(label)}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {detail}
+                      {_copy(detail)}
                     </span>
                   </span>
                   <span
-                    className={`ml-auto grid size-5 place-items-center rounded-full border ${form.paymentMethod === value ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}
+                    className={`ms-auto grid size-5 place-items-center rounded-full border ${form.paymentMethod === value ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}
                   >
                     {form.paymentMethod === value ? (
                       <CheckCircle2 aria-hidden="true" className="size-3.5" />
@@ -504,11 +662,11 @@ export function CheckoutExperience({
           <Button
             className="mt-7 w-full"
             loading={isSubmitting}
-            loadingLabel="Starting secure checkout"
+            loadingLabel={_copy('Starting secure checkout')}
             size="lg"
             type="submit"
           >
-            Continue to payment
+            {_copy('Continue to payment')}
             <CreditCard aria-hidden="true" className="size-4" />
           </Button>
           <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
@@ -516,8 +674,9 @@ export function CheckoutExperience({
               aria-hidden="true"
               className="mt-0.5 size-4 shrink-0 text-success"
             />
-            Payment is processed securely. WhatsApp appears only after payment
-            confirmation.
+            {_copy(
+              'Payment is processed securely. WhatsApp appears only after payment confirmation.',
+            )}
           </p>
         </div>
       </aside>

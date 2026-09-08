@@ -30,11 +30,18 @@ const orderPayloadSchema = z.object({
     .object({
       id: z.number().int().positive(),
       name_en: z.string(),
+      name_ar: z.string().nullish(),
     })
     .passthrough()
     .nullish(),
-  offer: z.object({ name_en: z.string() }).passthrough().nullish(),
-  offers: z.object({ name_en: z.string() }).passthrough().nullish(),
+  offer: z
+    .object({ name_en: z.string(), name_ar: z.string().nullish() })
+    .passthrough()
+    .nullish(),
+  offers: z
+    .object({ name_en: z.string(), name_ar: z.string().nullish() })
+    .passthrough()
+    .nullish(),
   payments: z
     .array(
       z
@@ -82,6 +89,7 @@ function toCustomerOrder(
     orderNumber: payload.order_number,
     packageId: payload.package_id ?? null,
     packageName: payload.package?.name_en ?? null,
+    packageNameAr: payload.package?.name_ar ?? null,
     customerName: payload.customer_name,
     customerEmail: payload.customer_email,
     customerPhone: payload.customer_phone ?? '',
@@ -101,6 +109,7 @@ function toCustomerOrder(
       'pending',
     currency: payload.payments?.[0]?.currency ?? 'AED',
     offerName: payload.offer?.name_en ?? payload.offers?.name_en ?? null,
+    offerNameAr: payload.offer?.name_ar ?? payload.offers?.name_ar ?? null,
     payments: (payload.payments ?? []).map((payment) => ({
       id: payment.id,
       transactionId: payment.transaction_id,
@@ -154,6 +163,7 @@ export const ordersApi = {
         package_id: input.packageId,
         ...(input.offerId === undefined ? {} : { offer_id: input.offerId }),
         ...(input.couponCode ? { coupon_code: input.couponCode } : {}),
+        ...(input.secondaryPackageId === undefined ? {} : { secondary_package_id: input.secondaryPackageId }),
         customer_phone: input.customerPhone,
         ...(input.notes ? { notes: input.notes } : {}),
         ...(requirements && Object.keys(requirements).length > 0

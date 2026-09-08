@@ -213,13 +213,33 @@ async function main() {
     activePackageIds.push(saved.id);
   }
 
-  await prisma.packages.updateMany({
-    where: { id: { notIn: activePackageIds }, is_active: true },
-    data: { is_active: false },
-  });
+  const defaultSettings = [
+    { setting_key: 'whatsapp_number', setting_value: '+971500000000', description: 'WhatsApp contact number' },
+    { setting_key: 'support_email', setting_value: 'saanadcv@gmail.com', description: 'Support email address' },
+    { setting_key: 'currency', setting_value: 'AED', description: 'System currency code' },
+    { setting_key: 'site_name', setting_value: 'سند | المنصة الأولى للخدمات المهنية', description: 'Site name (Arabic)' },
+    { setting_key: 'site_name_en', setting_value: 'SANAD | Professional Career Services', description: 'Site name (English)' },
+    { setting_key: 'facebook_url', setting_value: 'https://facebook.com', description: 'Facebook page URL' },
+    { setting_key: 'instagram_url', setting_value: 'https://instagram.com', description: 'Instagram profile URL' },
+    { setting_key: 'linkedin_url', setting_value: 'https://linkedin.com', description: 'LinkedIn company URL' },
+    { setting_key: 'twitter_url', setting_value: 'https://x.com', description: 'X / Twitter profile URL' },
+  ];
+
+  for (const s of defaultSettings) {
+    await prisma.settings.upsert({
+      where: { setting_key: s.setting_key },
+      update: {},
+      create: {
+        setting_key: s.setting_key,
+        setting_value: s.setting_value,
+        description: s.description,
+        setting_type: 'string',
+      },
+    });
+  }
 
   process.stdout.write(
-    `Seeded ${activePackageIds.length} active SANAD career services.\n`,
+    `Seeded ${activePackageIds.length} active SANAD career services and default settings.\n`,
   );
 }
 

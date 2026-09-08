@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { LayoutDashboard, LogOut, PackageCheck, UserRound } from 'lucide-react';
 import Link from 'next/link';
@@ -24,6 +25,8 @@ export function AccountNavigation({
   mobile = false,
   onNavigate,
 }: AccountNavigationProps) {
+  const _copy = useCopy();
+
   const router = useRouter();
   const openAuthModal = useAuthModal();
   const { user, isAdmin, isAuthenticated, isInitializing, logout } = useAuth();
@@ -39,17 +42,29 @@ export function AccountNavigation({
 
   if (!isAuthenticated) {
     return (
-      <Button
-        className={mobile ? 'w-full' : undefined}
-        onClick={() => {
-          onNavigate?.();
-          openAuthModal();
-        }}
-        size={mobile ? 'lg' : 'md'}
-        variant={mobile ? 'outline' : 'ghost'}
-      >
-        Sign In
-      </Button>
+      <div className={mobile ? 'grid w-full gap-2' : 'flex items-center gap-2'}>
+        <Button
+          className={mobile ? 'w-full' : undefined}
+          onClick={() => {
+            onNavigate?.();
+            openAuthModal(undefined, 'sign-in');
+          }}
+          size={mobile ? 'lg' : 'md'}
+          variant={mobile ? 'outline' : 'ghost'}
+        >
+          {_copy('Sign In')}
+        </Button>
+        <Button
+          className={mobile ? 'w-full' : undefined}
+          onClick={() => {
+            onNavigate?.();
+            openAuthModal(undefined, 'sign-up');
+          }}
+          size={mobile ? 'lg' : 'md'}
+        >
+          {_copy('Sign Up')}
+        </Button>
+      </div>
     );
   }
 
@@ -65,7 +80,7 @@ export function AccountNavigation({
         >
           <Link href={destination} onClick={onNavigate}>
             {isAdmin ? <LayoutDashboard /> : <PackageCheck />}
-            {isAdmin ? 'Admin Dashboard' : 'My Orders'}
+            {_copy(isAdmin ? 'Admin Dashboard' : 'My Orders')}
           </Link>
         </Button>
         {!isAdmin ? (
@@ -77,7 +92,7 @@ export function AccountNavigation({
           >
             <Link href="/profile" onClick={onNavigate}>
               <UserRound />
-              My Profile
+              {_copy('My Profile')}
             </Link>
           </Button>
         ) : null}
@@ -91,7 +106,7 @@ export function AccountNavigation({
           variant="ghost"
         >
           <LogOut />
-          Sign Out
+          {_copy('Sign Out')}
         </Button>
       </div>
     );
@@ -101,7 +116,7 @@ export function AccountNavigation({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost">
-          {user?.firstName ?? user?.name ?? 'Account'}
+          {_copy(user?.firstName ?? user?.name ?? 'Account')}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -112,14 +127,14 @@ export function AccountNavigation({
         <DropdownMenuItem asChild>
           <Link href={destination}>
             {isAdmin ? <LayoutDashboard /> : <PackageCheck />}
-            {isAdmin ? 'Admin Dashboard' : 'My Orders'}
+            {_copy(isAdmin ? 'Admin Dashboard' : 'My Orders')}
           </Link>
         </DropdownMenuItem>
         {!isAdmin ? (
           <DropdownMenuItem asChild>
             <Link href="/profile">
               <UserRound />
-              My Profile
+              {_copy('My Profile')}
             </Link>
           </DropdownMenuItem>
         ) : null}
@@ -129,7 +144,7 @@ export function AccountNavigation({
           onSelect={() => void logout().finally(() => router.replace('/'))}
         >
           <LogOut />
-          Sign Out
+          {_copy('Sign Out')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

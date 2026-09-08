@@ -1,5 +1,7 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import { Check } from 'lucide-react';
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 
 import {
   MotionAccentLine,
@@ -11,14 +13,13 @@ import {
 } from '@/components/motion/motion-reveal';
 import uaeCareerFocusImage from '@/public/images/home/uae-career-focus.png';
 
-const focusPoints = [
-  'Clear Professional Positioning',
-  'Consistent Career Documents',
-  'Modern Professional Presentation',
-  'UAE-Focused Career Services',
-] as const;
+export async function UaeCareerFocus() {
+  const _copy = await getCopy();
 
-export function UaeCareerFocus() {
+  const t = await getTranslations('home.uaeCareerFocus');
+
+  const focusPoints = [t('focus1'), t('focus2'), t('focus3'), t('focus4')];
+
   return (
     <section
       aria-labelledby="uae-career-focus-heading"
@@ -30,19 +31,17 @@ export function UaeCareerFocus() {
             <MotionReveal direction="none">
               <p className="flex items-center gap-3 text-xs font-semibold tracking-[0.18em] text-secondary uppercase sm:text-sm">
                 <MotionAccentLine className="h-px w-8 origin-left bg-accent" />
-                Built for professional ambition
+                {_copy(t('eyebrow'))}
               </p>
             </MotionReveal>
             <MotionHeading
               className="type-h2 mt-5 max-w-[17ch] text-primary"
               id="uae-career-focus-heading"
-              text="Professional Presentation for a Competitive UAE Market"
+              text={_copy(t('heading'))}
             />
             <MotionReveal delay={0.12} distance={14}>
               <p className="mt-6 max-w-[38rem] text-base leading-7 text-foreground/75 sm:text-lg sm:leading-8">
-                SANAD helps professionals present their experience with clarity,
-                consistency, and confidence when pursuing opportunities across
-                the UAE.
+                {_copy(t('body'))}
               </p>
             </MotionReveal>
             <MotionStaggerList
@@ -59,7 +58,7 @@ export function UaeCareerFocus() {
                     aria-hidden="true"
                     className="size-4 shrink-0 text-accent"
                   />
-                  <span>{point}</span>
+                  <span>{_copy(point)}</span>
                 </MotionStaggerItem>
               ))}
             </MotionStaggerList>
@@ -70,10 +69,10 @@ export function UaeCareerFocus() {
             parallax
           >
             <Image
-              alt="Contemporary UAE corporate office overlooking a modern business district"
+              alt={_copy(t('imageAlt'))}
               className="scale-[1.06] object-cover"
               fill
-              placeholder="blur"
+              placeholder={_copy('blur')}
               sizes="(max-width: 1023px) calc(100vw - 2rem), 55vw"
               src={uaeCareerFocusImage}
             />

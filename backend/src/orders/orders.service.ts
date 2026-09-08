@@ -117,6 +117,7 @@ export class OrdersService {
           {
             package_id: dto.package_id,
             offer_id: dto.offer_id,
+            secondary_package_id: dto.secondary_package_id,
             coupon_code: dto.coupon_code,
           },
           userId,
@@ -137,6 +138,7 @@ export class OrdersService {
             order_number: orderNumber,
             user_id: user.id,
             package_id: pricing.package_id,
+            secondary_package_id: pricing.secondary_package_id,
             offer_id: pricing.offer_id,
             customer_name: customerName,
             customer_email: customerEmail,
@@ -145,6 +147,8 @@ export class OrdersService {
             original_amount: pricing.original_price,
             discount_amount:
               pricing.offer_discount_amount + pricing.coupon_discount_amount,
+            secondary_original_amount: pricing.secondary_original_price || null,
+            secondary_discount_amount: pricing.secondary_discount_amount,
             vat_amount: 0,
             total_amount: pricing.total_amount,
             final_amount: pricing.final_amount,

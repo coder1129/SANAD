@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -6,14 +7,11 @@ import { AdminPageHeader, AdminTable, DataState } from './admin-ui';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { adminApi, adminKeys } from '@/lib/api';
-import {
-  formatDate,
-  formatMoney,
-  formatStatus,
-  statusIntent,
-} from '@/lib/orders/presentation';
+import { statusIntent } from '@/lib/orders/presentation';
 
 export function DashboardView() {
+  const _copy = useCopy();
+
   const query = useQuery({
     queryKey: adminKeys.dashboard,
     queryFn: ({ signal }) => adminApi.dashboard({ signal }),
@@ -27,7 +25,7 @@ export function DashboardView() {
         ['Completed', data.overview.orders.completed],
         [
           'Revenue',
-          formatMoney(
+          _copy.money(
             data.overview.revenue.total,
             data.overview.revenue.currency,
           ),
@@ -38,10 +36,15 @@ export function DashboardView() {
   return (
     <>
       <AdminPageHeader
-        title="Overview"
-        description="A current operational snapshot based on SANAD orders, payments, and customers."
+        title={_copy('Overview')}
+        description={_copy(
+          'A current operational snapshot based on SANAD orders, payments, and customers.',
+        )}
       />
-      <DataState loading={query.isPending} error={query.error?.userMessage}>
+      <DataState
+        loading={query.isPending}
+        error={_copy(query.error?.userMessage)}
+      >
         {data ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -51,35 +54,37 @@ export function DashboardView() {
                   key={label}
                 >
                   <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {label}
+                    {_copy(label)}
                   </p>
                   <p className="mt-3 font-display text-3xl text-primary">
-                    {value}
+                    {_copy(value)}
                   </p>
                 </article>
               ))}
             </div>
             <div className="mt-8 flex items-end justify-between gap-4">
               <div>
-                <h3 className="type-h3 text-primary">Recent Orders</h3>
+                <h3 className="type-h3 text-primary">
+                  {_copy('Recent Orders')}
+                </h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Latest purchases across all services.
+                  {_copy('Latest purchases across all services.')}
                 </p>
               </div>
               <Button asChild variant="outline">
-                <Link href="/admin/orders">View all</Link>
+                <Link href="/admin/orders">{_copy('View all')}</Link>
               </Button>
             </div>
             <AdminTable>
-              <table className="w-full min-w-[720px] text-left text-sm">
+              <table className="w-full min-w-[720px] text-start text-sm">
                 <thead className="bg-surface-muted text-xs uppercase text-secondary">
                   <tr>
-                    <th className="px-5 py-4">Order</th>
-                    <th className="px-5 py-4">Customer</th>
-                    <th className="px-5 py-4">Service</th>
-                    <th className="px-5 py-4">Amount</th>
-                    <th className="px-5 py-4">Status</th>
-                    <th className="px-5 py-4">Date</th>
+                    <th className="px-5 py-4">{_copy('Order')}</th>
+                    <th className="px-5 py-4">{_copy('Customer')}</th>
+                    <th className="px-5 py-4">{_copy('Service')}</th>
+                    <th className="px-5 py-4">{_copy('Amount')}</th>
+                    <th className="px-5 py-4">{_copy('Status')}</th>
+                    <th className="px-5 py-4">{_copy('Date')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -90,23 +95,27 @@ export function DashboardView() {
                           className="font-semibold text-primary hover:underline"
                           href={`/admin/orders/${order.id}`}
                         >
-                          #{order.order_number}
+                          {_copy('#')}
+                          {_copy(order.order_number)}
                         </Link>
                       </td>
                       <td className="px-5 py-4">{order.customer_name}</td>
                       <td className="px-5 py-4">
-                        {order.package?.name_en ?? '—'}
+                        {_copy(
+                          order.package?.name_en ?? '—',
+                          order.package?.name_ar,
+                        )}
                       </td>
                       <td className="px-5 py-4">
-                        {formatMoney(order.final_amount)}
+                        {_copy(_copy.money(order.final_amount))}
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge intent={statusIntent(order.status)}>
-                          {formatStatus(order.status)}
+                          {_copy(_copy.status(order.status))}
                         </StatusBadge>
                       </td>
                       <td className="px-5 py-4 text-muted-foreground">
-                        {formatDate(order.created_at)}
+                        {_copy(_copy.date(order.created_at))}
                       </td>
                     </tr>
                   ))}

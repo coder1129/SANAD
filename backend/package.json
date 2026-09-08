@@ -22,6 +22,7 @@
     "test:integration": "vitest run --config ./vitest.config.integration.mts",
     "test:all": "npm run lint && npx tsc --noEmit && npm run test:cov && npm run test:e2e && npm run test:integration && npm run build",
     "preflight": "node scripts/preflight.cjs",
+    "preflight:production": "node scripts/preflight.cjs --production",
     "staging:smoke": "node scripts/staging-smoke.cjs",
     "load:staging": "k6 run test/load/staging.k6.js",
     "gen:secrets": "node scripts/gen-secrets.cjs",

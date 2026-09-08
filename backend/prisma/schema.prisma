@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  engineType = "library"
 }
 
 datasource db {
@@ -16,6 +17,7 @@ model users {
   first_name               String?                 @db.VarChar(100)
   last_name                String?                 @db.VarChar(100)
   gender                   String?                 @db.VarChar(20)
+  google_subject           String?                 @unique @db.VarChar(255)
   role                     String                  @default("customer") @db.VarChar(20)
   email_verified           Boolean?                @default(false)
   email_verification_token String?                 @db.VarChar(255)
@@ -60,7 +62,9 @@ model packages {
   created_at     DateTime?        @default(now()) @db.Timestamp(6)
   updated_at     DateTime?        @default(now()) @db.Timestamp(6)
   offers         offers[]
+  triggered_offers offers[] @relation("OfferTriggerPackage")
   orders         orders[]
+  secondary_orders orders[] @relation("OrderSecondaryPackage")
   package_images package_images[]
   testimonials   testimonials[]
   package_reviews package_reviews[]
@@ -69,6 +73,8 @@ model packages {
 model offers {
   id                  Int       @id @default(autoincrement())
   package_id          Int?
+  trigger_package_id  Int?
+  offer_type          String    @default("standard") @db.VarChar(30)
   name_ar             String    @db.VarChar(255)
   name_en             String    @db.VarChar(255)
   description_ar      String?
@@ -80,9 +86,11 @@ model offers {
   created_at          DateTime? @default(now()) @db.Timestamp(6)
   updated_at          DateTime? @default(now()) @db.Timestamp(6)
   package             packages? @relation(fields: [package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  trigger_package     packages? @relation("OfferTriggerPackage", fields: [trigger_package_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   orders              orders[]
 
   @@index([package_id], map: "idx_offers_package_id")
+  @@index([trigger_package_id], map: "idx_offers_trigger_package_id")
   @@index([is_active], map: "idx_offers_is_active")
   @@index([end_date], map: "idx_offers_end_date")
   @@index([start_date], map: "idx_offers_start_date")
@@ -146,6 +154,7 @@ model orders {
   order_number         String                 @unique @db.VarChar(50)
   user_id              Int?
   package_id           Int?
+  secondary_package_id Int?
   offer_id             Int?
   customer_name        String                 @db.VarChar(255)
   customer_email       String                 @db.VarChar(255)
@@ -153,6 +162,8 @@ model orders {
   status               String                 @default("pending") @db.VarChar(50)
   original_amount      Decimal                @db.Decimal(10, 2)
   discount_amount      Decimal?               @default(0) @db.Decimal(10, 2)
+  secondary_original_amount Decimal?          @db.Decimal(10, 2)
+  secondary_discount_amount Decimal?          @default(0) @db.Decimal(10, 2)
   vat_amount           Decimal                @db.Decimal(10, 2)
   total_amount         Decimal                @db.Decimal(10, 2)
   final_amount         Decimal                @db.Decimal(10, 2)
@@ -169,12 +180,14 @@ model orders {
   order_status_history order_status_history[]
   offers               offers?                @relation(fields: [offer_id], references: [id], onUpdate: NoAction)
   package              packages?              @relation(fields: [package_id], references: [id], onUpdate: NoAction)
+  secondary_package    packages?              @relation("OrderSecondaryPackage", fields: [secondary_package_id], references: [id], onUpdate: NoAction)
   user                 users?                 @relation(fields: [user_id], references: [id], onUpdate: NoAction)
   payments             payments[]
   package_review        package_reviews?
 
   @@index([order_number], map: "idx_orders_order_number")
   @@index([user_id], map: "idx_orders_user_id")
+  @@index([secondary_package_id], map: "idx_orders_secondary_package_id")
   @@index([status], map: "idx_orders_status")
   @@index([created_at], map: "idx_orders_created_at")
   @@index([delivery_date], map: "idx_orders_delivery_date")

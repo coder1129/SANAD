@@ -20,7 +20,13 @@ const reviewSchema = z.object({
   updated_at: z.string().nullish(),
   customer_display_name: z.string().optional(),
   verified_customer: z.boolean().optional(),
-  package: z.object({ id: z.number(), name_en: z.string() }).optional(),
+  package: z
+    .object({
+      id: z.number(),
+      name_en: z.string(),
+      name_ar: z.string().nullish(),
+    })
+    .optional(),
   order: z
     .object({ id: z.number(), order_number: z.string(), status: z.string() })
     .optional(),
@@ -47,6 +53,7 @@ function toReview(value: z.infer<typeof reviewSchema>): PackageReview {
     customerDisplayName: value.customer_display_name,
     verifiedCustomer: value.verified_customer,
     packageName: value.package?.name_en,
+    packageNameAr: value.package?.name_ar,
     orderNumber: value.order?.order_number,
     customerName: value.user?.name,
     customerEmail: value.user?.email,

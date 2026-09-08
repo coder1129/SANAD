@@ -19,9 +19,12 @@ export interface AdminPackageImage {
 export interface AdminPackage {
   id: number;
   name_en: string;
+  name_ar?: string | null;
   description_en: string | null;
+  description_ar?: string | null;
   price: DecimalValue;
   features_en: string[] | null;
+  features_ar?: string[] | null;
   is_active: boolean | null;
   sort_order: number | null;
   delivery_days: number;
@@ -34,13 +37,17 @@ export interface AdminPackage {
 export interface AdminOffer {
   id: number;
   package_id: number | null;
+  trigger_package_id?: number | null;
+  offer_type?: 'standard' | 'cross_service_any' | 'cross_service_specific';
   name_en: string;
+  name_ar?: string | null;
   description_en: string | null;
+  description_ar?: string | null;
   discount_percentage: DecimalValue;
   start_date: string;
   end_date: string;
   is_active: boolean | null;
-  package: { id: number; name_en: string } | null;
+  package: { id: number; name_en: string; name_ar?: string | null } | null;
 }
 
 export interface AdminCoupon {
@@ -58,6 +65,17 @@ export interface AdminCoupon {
   is_active: boolean | null;
 }
 
+export interface Administrator {
+  id: number;
+  name: string;
+  email: string;
+  role: 'admin' | 'super_admin';
+  email_verified: boolean;
+  account_locked: boolean | null;
+  last_login?: string | null;
+  created_at: string | null;
+}
+
 export interface AdminOrder {
   id: number;
   order_number: string;
@@ -72,7 +90,7 @@ export interface AdminOrder {
   admin_notes?: string | null;
   notes?: string | null;
   created_at: string | null;
-  package: { id: number; name_en: string } | null;
+  package: { id: number; name_en: string; name_ar?: string | null } | null;
   user?: {
     id: number;
     name: string;
@@ -134,9 +152,12 @@ export interface AdminPayment {
 export interface CmsPage {
   id: number;
   title_en: string;
+  title_ar?: string | null;
   slug: string;
   content_en: string | null;
+  content_ar?: string | null;
   meta_description_en: string | null;
+  meta_description_ar?: string | null;
   is_active: boolean | null;
   updated_at: string | null;
 }
@@ -147,6 +168,7 @@ export interface SiteMedia {
   media_path: string;
   media_type: string;
   alt_text_en: string | null;
+  alt_text_ar?: string | null;
   is_active: boolean | null;
   url: string;
   created_at: string | null;
@@ -251,6 +273,12 @@ export const adminKeys = {
 };
 
 export const adminApi = {
+  administrators: {
+    list: async () => array<Administrator>(await api.get<unknown>('/admin/administrators'), 'GET /admin/administrators'),
+    create: async (input: { name: string; email: string; password: string; role: 'admin' | 'super_admin' }) => object<Administrator>(await api.post<unknown>('/admin/administrators', input), 'POST /admin/administrators'),
+    update: async (id: number, input: { role?: 'admin' | 'super_admin'; active?: boolean }) => object<Administrator>(await api.patch<unknown>(`/admin/administrators/${id}`, input), 'PATCH /admin/administrators/:id'),
+    resetPassword: async (id: number, password: string) => api.post<unknown>(`/admin/administrators/${id}/reset-password`, { password }),
+  },
   dashboard: async (options: Options = {}) =>
     object<DashboardData>(
       await api.get<unknown>('/admin/dashboard', options),
@@ -455,21 +483,28 @@ export const adminApi = {
         await api.get<unknown>('/admin/media', options),
         'GET /admin/media',
       ),
-    upload: async (file: File, input: { mediaKey: string; altText: string }) =>
+    upload: async (
+      file: File,
+      input: { mediaKey: string; altTextEn: string; altTextAr?: string },
+    ) =>
       object<SiteMedia>(
         await api.post<unknown>(
           '/admin/media',
           createFileFormData(file, {
             media_key: input.mediaKey,
-            alt_text_en: input.altText,
-            alt_text_ar: input.altText,
+            alt_text_en: input.altTextEn,
+            alt_text_ar: input.altTextAr || input.altTextEn,
           }),
         ),
         'POST /admin/media',
       ),
     update: async (
       id: number,
-      input: { alt_text_en?: string; is_active?: boolean },
+      input: {
+        alt_text_en?: string;
+        alt_text_ar?: string;
+        is_active?: boolean;
+      },
     ) =>
       object<SiteMedia>(
         await api.patch<unknown>(`/admin/media/${id}`, input),

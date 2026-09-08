@@ -13,10 +13,12 @@ export type {
   PasswordlessRequestResult,
   PasswordlessVerifyResult,
   PasswordlessCompleteProfileInput,
+  CustomerAuthFlow,
+  GoogleAuthResult,
 } from './auth';
 export { USER_ROLES } from './user';
 export type { User, UserRole } from './user';
-export type { CareerPackage, PackageImage, PackageOffer } from './package';
+export type { CareerPackage, CompanionOffer, PackageImage, PackageOffer } from './package';
 export type { CheckoutPreviewInput, CheckoutPricing } from './checkout';
 export type { CreateOrderInput, CustomerOrder } from './order';
 export type { OrderPayment, OrderStatusHistory } from './order';

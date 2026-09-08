@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import {
@@ -14,9 +15,11 @@ export function Pagination({
   className,
   ...props
 }: HTMLAttributes<HTMLElement>) {
+  const _copy = useCopy();
+
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={_copy('Pagination')}
       className={cn('flex w-full justify-center', className)}
       {...props}
     />
@@ -100,18 +103,30 @@ export const PaginationLink = forwardRef<
 PaginationLink.displayName = 'PaginationLink';
 
 export function PaginationPrevious(props: PaginationLinkProps) {
+  const _copy = useCopy();
+
   return (
-    <PaginationLink aria-label="Go to previous page" size="default" {...props}>
+    <PaginationLink
+      aria-label={_copy('Go to previous page')}
+      size="default"
+      {...props}
+    >
       <ChevronLeft aria-hidden="true" className="size-4" />
-      <span className="hidden sm:inline">Previous</span>
+      <span className="hidden sm:inline">{_copy('Previous')}</span>
     </PaginationLink>
   );
 }
 
 export function PaginationNext(props: PaginationLinkProps) {
+  const _copy = useCopy();
+
   return (
-    <PaginationLink aria-label="Go to next page" size="default" {...props}>
-      <span className="hidden sm:inline">Next</span>
+    <PaginationLink
+      aria-label={_copy('Go to next page')}
+      size="default"
+      {...props}
+    >
+      <span className="hidden sm:inline">{_copy('Next')}</span>
       <ChevronRight aria-hidden="true" className="size-4" />
     </PaginationLink>
   );
@@ -121,13 +136,15 @@ export function PaginationEllipsis({
   className,
   ...props
 }: HTMLAttributes<HTMLSpanElement>) {
+  const _copy = useCopy();
+
   return (
     <span
       className={cn('flex size-10 items-center justify-center', className)}
       {...props}
     >
       <MoreHorizontal aria-hidden="true" className="size-4" />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{_copy('More pages')}</span>
     </span>
   );
 }

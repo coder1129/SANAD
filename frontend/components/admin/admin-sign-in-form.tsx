@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -17,6 +18,8 @@ const schema = z.object({
 });
 type Values = z.infer<typeof schema>;
 export function AdminSignInForm() {
+  const _copy = useCopy();
+
   const router = useRouter();
   const { login, logout } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -53,21 +56,27 @@ export function AdminSignInForm() {
       })}
     >
       {error ? (
-        <Alert title="Access denied" description={error} variant="error" />
+        <Alert
+          title={_copy('Access denied')}
+          description={_copy(error)}
+          variant="error"
+        />
       ) : null}
       <label className="grid gap-2 text-sm font-semibold">
-        Email
+        {_copy('Email')}
         <Input
           autoComplete="username"
           {...register('email')}
           invalid={Boolean(errors.email)}
         />
         {errors.email ? (
-          <span className="text-xs text-error">{errors.email.message}</span>
+          <span className="text-xs text-error">
+            {_copy(errors.email.message)}
+          </span>
         ) : null}
       </label>
       <label className="grid gap-2 text-sm font-semibold">
-        Password
+        {_copy('Password')}
         <Input
           autoComplete="current-password"
           type="password"
@@ -75,16 +84,18 @@ export function AdminSignInForm() {
           invalid={Boolean(errors.password)}
         />
         {errors.password ? (
-          <span className="text-xs text-error">{errors.password.message}</span>
+          <span className="text-xs text-error">
+            {_copy(errors.password.message)}
+          </span>
         ) : null}
       </label>
       <Button
         loading={isSubmitting}
-        loadingLabel="Signing in"
+        loadingLabel={_copy('Signing in')}
         size="lg"
         type="submit"
       >
-        {isSubmitting ? 'Signing in...' : 'Sign in to Admin'}
+        {_copy(isSubmitting ? 'Signing in...' : 'Sign in to Admin')}
       </Button>
     </form>
   );

@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import { Slot, Slottable } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
@@ -81,6 +82,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
+    const _copy = useCopy();
+
     const Component = asChild ? Slot : 'button';
     const isDisabled = disabled || loading;
 
@@ -94,14 +97,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading ? (
-          <Spinner label={null} size="sm" />
+          <Spinner label={_copy(null)} size="sm" />
         ) : leftIcon ? (
-          <span aria-hidden="true">{leftIcon}</span>
+          <span aria-hidden="true">{_copy(leftIcon)}</span>
         ) : null}
-        {loading && size === 'icon' ? null : <Slottable>{children}</Slottable>}
-        {loading ? <span className="sr-only">{loadingLabel}</span> : null}
+        {loading && size === 'icon' ? null : (
+          <Slottable>{_copy(children)}</Slottable>
+        )}
+        {loading ? (
+          <span className="sr-only">{_copy(loadingLabel)}</span>
+        ) : null}
         {!loading && rightIcon ? (
-          <span aria-hidden="true">{rightIcon}</span>
+          <span aria-hidden="true">{_copy(rightIcon)}</span>
         ) : null}
       </Component>
     );

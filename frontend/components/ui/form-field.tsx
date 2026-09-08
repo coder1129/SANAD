@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import {
   cloneElement,
@@ -39,6 +40,8 @@ export function FormField({
   required = false,
   ...props
 }: FormFieldProps) {
+  const _copy = useCopy();
+
   const generatedId = useId();
   const resolvedId = children.props.id ?? controlId ?? generatedId;
   const labelId = `${resolvedId}-label`;
@@ -65,13 +68,17 @@ export function FormField({
   return (
     <div className={cn('grid gap-2', className)} {...props}>
       <FieldLabel htmlFor={resolvedId} id={labelId} required={required}>
-        {label}
+        {_copy(label)}
       </FieldLabel>
       {description ? (
-        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+        <FieldDescription id={descriptionId}>
+          {_copy(description)}
+        </FieldDescription>
       ) : null}
-      {control}
-      {error ? <FieldMessage id={messageId}>{error}</FieldMessage> : null}
+      {_copy(control)}
+      {error ? (
+        <FieldMessage id={messageId}>{_copy(error)}</FieldMessage>
+      ) : null}
     </div>
   );
 }
@@ -86,15 +93,17 @@ export function FieldLabel({
   required = false,
   ...props
 }: FieldLabelProps) {
+  const _copy = useCopy();
+
   return (
     <label className={cn('type-label text-foreground', className)} {...props}>
-      {children}
+      {_copy(children)}
       {required ? (
         <>
-          <span aria-hidden="true" className="ml-1 text-error">
-            *
+          <span aria-hidden="true" className="ms-1 text-error">
+            {_copy('*')}
           </span>
-          <span className="sr-only"> (required)</span>
+          <span className="sr-only"> {_copy('(required)')}</span>
         </>
       ) : null}
     </label>

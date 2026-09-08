@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -7,12 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { adminApi, adminKeys } from '@/lib/api';
-import {
-  formatDate,
-  formatMoney,
-  formatStatus,
-  statusIntent,
-} from '@/lib/orders/presentation';
+import { statusIntent } from '@/lib/orders/presentation';
 import { AdminPageHeader, AdminTable, DataState, Pager } from './admin-ui';
 
 const statuses = [
@@ -30,6 +26,8 @@ const statuses = [
   'refunded',
 ];
 export function OrdersView() {
+  const _copy = useCopy();
+
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -47,23 +45,25 @@ export function OrdersView() {
   return (
     <>
       <AdminPageHeader
-        title="Orders"
-        description="Search purchases, inspect payment state, and move work through the approved order lifecycle."
+        title={_copy('Orders')}
+        description={_copy(
+          'Search purchases, inspect payment state, and move work through the approved order lifecycle.',
+        )}
       />
       <div className="mb-5 grid gap-3 border border-border bg-surface p-4 sm:grid-cols-[minmax(0,1fr)_14rem]">
         <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
-          Search
+          {_copy('Search')}
           <Input
             onChange={(event) => {
               setSearch(event.target.value);
               setPage(1);
             }}
-            placeholder="Order, customer, email or phone"
+            placeholder={_copy('Order, customer, email or phone')}
             value={search}
           />
         </label>
         <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
-          Status
+          {_copy('Status')}
           <select
             className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm"
             onChange={(event) => {
@@ -74,7 +74,7 @@ export function OrdersView() {
           >
             {statuses.map((value) => (
               <option key={value} value={value}>
-                {value ? formatStatus(value) : 'All statuses'}
+                {_copy(value ? _copy.status(value) : 'All statuses')}
               </option>
             ))}
           </select>
@@ -82,21 +82,21 @@ export function OrdersView() {
       </div>
       <DataState
         loading={query.isPending}
-        error={query.error?.userMessage}
+        error={_copy(query.error?.userMessage)}
         empty={query.data?.items.length === 0}
       >
         <AdminTable>
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
-                <th className="px-4 py-3">Order</th>
-                <th className="px-4 py-3">Customer</th>
-                <th className="px-4 py-3">Package</th>
-                <th className="px-4 py-3">Amount</th>
-                <th className="px-4 py-3">Payment</th>
-                <th className="px-4 py-3">Order Status</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{_copy('Order')}</th>
+                <th className="px-4 py-3">{_copy('Customer')}</th>
+                <th className="px-4 py-3">{_copy('Package')}</th>
+                <th className="px-4 py-3">{_copy('Amount')}</th>
+                <th className="px-4 py-3">{_copy('Payment')}</th>
+                <th className="px-4 py-3">{_copy('Order Status')}</th>
+                <th className="px-4 py-3">{_copy('Date')}</th>
+                <th className="px-4 py-3">{_copy('Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -105,7 +105,8 @@ export function OrdersView() {
                 return (
                   <tr key={order.id}>
                     <td className="px-4 py-4 font-semibold text-primary">
-                      #{order.order_number}
+                      {_copy('#')}
+                      {_copy(order.order_number)}
                     </td>
                     <td className="px-4 py-4">
                       <p className="font-medium">{order.customer_name}</p>
@@ -114,27 +115,32 @@ export function OrdersView() {
                       </p>
                     </td>
                     <td className="px-4 py-4">
-                      {order.package?.name_en ?? '—'}
+                      {_copy(
+                        order.package?.name_en ?? '—',
+                        order.package?.name_ar,
+                      )}
                     </td>
                     <td className="px-4 py-4">
-                      {formatMoney(order.final_amount)}
+                      {_copy(_copy.money(order.final_amount))}
                     </td>
                     <td className="px-4 py-4">
                       <StatusBadge intent={statusIntent(payment)}>
-                        {formatStatus(payment)}
+                        {_copy(_copy.status(payment))}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-4">
                       <StatusBadge intent={statusIntent(order.status)}>
-                        {formatStatus(order.status)}
+                        {_copy(_copy.status(order.status))}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-4 text-muted-foreground">
-                      {formatDate(order.created_at)}
+                      {_copy(_copy.date(order.created_at))}
                     </td>
                     <td className="px-4 py-4">
                       <Button asChild size="sm" variant="outline">
-                        <Link href={`/admin/orders/${order.id}`}>View</Link>
+                        <Link href={`/admin/orders/${order.id}`}>
+                          {_copy('View')}
+                        </Link>
                       </Button>
                     </td>
                   </tr>

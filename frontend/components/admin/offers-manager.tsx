@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { adminApi, adminKeys, type AdminOffer } from '@/lib/api';
-import { formatDate } from '@/lib/orders/presentation';
+
 import {
   AdminPageHeader,
   AdminTable,
@@ -29,12 +30,24 @@ import {
 
 const schema = z
   .object({
-    packageId: z.coerce.number().int().positive(),
-    name: z.string().trim().min(2),
+    type: z.enum(['standard', 'cross_service_any', 'cross_service_specific']),
+    packageId: z.coerce.number().int().min(0),
+    triggerPackageId: z.coerce.number().int().min(0),
+    name_en: z.string().trim().min(2),
+    name_ar: z.string().trim().min(2),
     discount: z.coerce.number().min(0).max(100),
     startDate: z.string().min(1),
     endDate: z.string().min(1),
     active: z.boolean(),
+  })
+  .refine((data) => data.type !== 'standard' || data.packageId > 0, {
+    path: ['packageId'], message: 'Select package.',
+  })
+  .refine((data) => data.type === 'standard' || data.triggerPackageId > 0, {
+    path: ['triggerPackageId'], message: 'Select purchased package.',
+  })
+  .refine((data) => data.type !== 'cross_service_specific' || data.packageId > 0, {
+    path: ['packageId'], message: 'Select discounted package.',
   })
   .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     path: ['endDate'],
@@ -43,8 +56,11 @@ const schema = z
 type Values = z.infer<typeof schema>;
 type FormInput = z.input<typeof schema>;
 const empty: Values = {
+  type: 'standard',
   packageId: 0,
-  name: '',
+  triggerPackageId: 0,
+  name_en: '',
+  name_ar: '',
   discount: 10,
   startDate: '',
   endDate: '',
@@ -56,6 +72,8 @@ function localDate(value: string) {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 export function OffersManager() {
+  const _copy = useCopy();
+
   const client = useQueryClient();
   const [editing, setEditing] = useState<AdminOffer | null | undefined>(
     undefined,
@@ -82,13 +100,17 @@ export function OffersManager() {
     defaultValues: empty,
   });
   const active = useWatch({ control, name: 'active' });
+  const offerType = useWatch({ control, name: 'type' });
   useEffect(() => {
     if (editing === null)
       reset({ ...empty, packageId: packages.data?.items[0]?.id ?? 0 });
     else if (editing)
       reset({
         packageId: editing.package_id ?? 0,
-        name: editing.name_en,
+        triggerPackageId: editing.trigger_package_id ?? 0,
+        type: editing.offer_type ?? 'standard',
+        name_en: editing.name_en,
+        name_ar: editing.name_ar ?? '',
         discount: Number(editing.discount_percentage),
         startDate: localDate(editing.start_date),
         endDate: localDate(editing.end_date),
@@ -100,9 +122,11 @@ export function OffersManager() {
   const save = useMutation({
     mutationFn: (values: Values) => {
       const input = {
-        package_id: values.packageId,
-        name_en: values.name,
-        name_ar: values.name,
+        ...(values.type === 'cross_service_any' ? {} : { package_id: values.packageId }),
+        offer_type: values.type,
+        ...(values.type !== 'standard' ? { trigger_package_id: values.triggerPackageId } : {}),
+        name_en: values.name_en,
+        name_ar: values.name_ar,
         description_en: '',
         description_ar: '',
         discount_percentage: values.discount,
@@ -129,48 +153,64 @@ export function OffersManager() {
   return (
     <>
       <AdminPageHeader
-        title="Offers"
-        description="Schedule package-specific percentage discounts with clear start and end dates."
-        action={<Button onClick={() => setEditing(null)}>Add Offer</Button>}
+        title={_copy('Offers')}
+        description={_copy(
+          'Schedule package-specific percentage discounts with clear start and end dates.',
+        )}
+        action={
+          <Button onClick={() => setEditing(null)}>{_copy('Add Offer')}</Button>
+        }
       />
       <DataState
         loading={query.isPending}
-        error={query.error?.userMessage}
+        error={_copy(query.error?.userMessage)}
         empty={query.data?.items.length === 0}
       >
         <AdminTable>
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-[760px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
-                <th className="px-4 py-3">Offer</th>
-                <th className="px-4 py-3">Package</th>
-                <th className="px-4 py-3">Discount</th>
-                <th className="px-4 py-3">Dates</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{_copy('Offer')}</th>
+                <th className="px-4 py-3">{_copy('Package')}</th>
+                <th className="px-4 py-3">{_copy('Discount')}</th>
+                <th className="px-4 py-3">{_copy('Dates')}</th>
+                <th className="px-4 py-3">{_copy('Status')}</th>
+                <th className="px-4 py-3">{_copy('Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {query.data?.items.map((offer) => (
                 <tr key={offer.id}>
                   <td className="px-4 py-4 font-semibold text-primary">
-                    {offer.name_en}
+                    <div>{_copy(offer.name_en)}</div>
+                    {offer.name_ar ? (
+                      <div className="text-xs font-normal text-muted-foreground">
+                        {offer.name_ar}
+                      </div>
+                    ) : null}
                   </td>
-                  <td className="px-4 py-4">{offer.package?.name_en ?? '—'}</td>
                   <td className="px-4 py-4">
-                    {Number(offer.discount_percentage)}%
+                    {_copy(
+                      offer.package?.name_en ?? '—',
+                      offer.package?.name_ar,
+                    )}
+                  </td>
+                  <td className="px-4 py-4">
+                    {_copy(Number(offer.discount_percentage))}
+                    {_copy('%')}
                   </td>
                   <td className="px-4 py-4 text-muted-foreground">
-                    {formatDate(offer.start_date)} –{' '}
-                    {formatDate(offer.end_date)}
+                    {_copy(_copy.date(offer.start_date))} {_copy('–')}
+                    {_copy(' ')}
+                    {_copy(_copy.date(offer.end_date))}
                   </td>
                   <td className="px-4 py-4">
-                    {offer.is_active ? 'Active' : 'Inactive'}
+                    {_copy(offer.is_active ? 'Active' : 'Inactive')}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex gap-2">
                       <Button
-                        aria-label="Edit offer"
+                        aria-label={_copy('Edit offer')}
                         onClick={() => setEditing(offer)}
                         size="icon"
                         variant="outline"
@@ -178,7 +218,7 @@ export function OffersManager() {
                         <Pencil className="size-4" />
                       </Button>
                       <Button
-                        aria-label="Delete offer"
+                        aria-label={_copy('Delete offer')}
                         onClick={() => setDeleting(offer)}
                         size="icon"
                         variant="outline"
@@ -201,15 +241,19 @@ export function OffersManager() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Offer' : 'Add Offer'}</DialogTitle>
+            <DialogTitle>
+              {_copy(editing ? 'Edit Offer' : 'Add Offer')}
+            </DialogTitle>
             <DialogDescription>
-              Required Arabic fields mirror the English label internally.
+              {_copy(
+                'Manage offer details, discount percentage, and localized English and Arabic content.',
+              )}
             </DialogDescription>
           </DialogHeader>
           {save.error ? (
             <Alert
-              title="Could not save offer"
-              description={save.error.userMessage}
+              title={_copy('Could not save offer')}
+              description={_copy(save.error.userMessage)}
               variant="error"
             />
           ) : null}
@@ -217,26 +261,58 @@ export function OffersManager() {
             className="grid gap-4"
             onSubmit={handleSubmit((values) => save.mutate(values))}
           >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-1 text-sm font-semibold">
+                {_copy('English Name')}
+                <Input
+                  {...register('name_en')}
+                  invalid={Boolean(errors.name_en)}
+                />
+              </label>
+              <label className="grid gap-1 text-sm font-semibold">
+                {_copy('Arabic Name')}
+                <Input
+                  dir="rtl"
+                  {...register('name_ar')}
+                  invalid={Boolean(errors.name_ar)}
+                />
+              </label>
+            </div>
             <label className="grid gap-1 text-sm font-semibold">
-              Offer Name
-              <Input {...register('name')} invalid={Boolean(errors.name)} />
+              {_copy('Offer type')}
+              <select className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3" {...register('type')}>
+                <option value="standard">{_copy('Discount on one service')}</option>
+                <option value="cross_service_any">{_copy('Buy a service, discount any second service')}</option>
+                <option value="cross_service_specific">{_copy('Buy a service, discount a selected second service')}</option>
+              </select>
             </label>
+            {offerType !== 'standard' ? (
+              <label className="grid gap-1 text-sm font-semibold">
+                {_copy('Purchased service')}
+                <select className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3" {...register('triggerPackageId')}>
+                  <option value="0">{_copy('Select package')}</option>
+                  {packages.data?.items.map((pkg) => <option key={pkg.id} value={pkg.id}>{_copy(pkg.name_en, pkg.name_ar)}</option>)}
+                </select>
+              </label>
+            ) : null}
+            {offerType !== 'cross_service_any' ? (
             <label className="grid gap-1 text-sm font-semibold">
-              Package
+              {_copy('Package')}
               <select
                 className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
                 {...register('packageId')}
               >
-                <option value="0">Select package</option>
+                <option value="0">{_copy('Select package')}</option>
                 {packages.data?.items.map((pkg) => (
                   <option key={pkg.id} value={pkg.id}>
-                    {pkg.name_en}
+                    {_copy(pkg.name_en, pkg.name_ar)}
                   </option>
                 ))}
               </select>
             </label>
+            ) : null}
             <label className="grid gap-1 text-sm font-semibold">
-              Discount %
+              {_copy('Discount %')}
               <Input
                 max="100"
                 min="0"
@@ -247,11 +323,11 @@ export function OffersManager() {
             </label>
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1 text-sm font-semibold">
-                Start Date
+                {_copy('Start Date')}
                 <Input type="datetime-local" {...register('startDate')} />
               </label>
               <label className="grid gap-1 text-sm font-semibold">
-                End Date
+                {_copy('End Date')}
                 <Input
                   type="datetime-local"
                   {...register('endDate')}
@@ -259,7 +335,7 @@ export function OffersManager() {
                 />
                 {errors.endDate ? (
                   <span className="text-xs text-error">
-                    {errors.endDate.message}
+                    {_copy(errors.endDate.message)}
                   </span>
                 ) : null}
               </label>
@@ -269,14 +345,14 @@ export function OffersManager() {
                 checked={active}
                 onCheckedChange={(value) => setValue('active', value)}
               />
-              Active
+              {_copy('Active')}
             </label>
             <DialogFooter>
               <Button onClick={() => setEditing(undefined)} variant="outline">
-                Cancel
+                {_copy('Cancel')}
               </Button>
               <Button loading={save.isPending} type="submit">
-                {save.isPending ? 'Saving...' : 'Save Offer'}
+                {_copy(save.isPending ? 'Saving...' : 'Save Offer')}
               </Button>
             </DialogFooter>
           </form>
@@ -287,8 +363,10 @@ export function OffersManager() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="Delete offer?"
-        description="Offers used by orders are safely deactivated by the backend; other offers may be removed."
+        title={_copy('Delete offer?')}
+        description={_copy(
+          'Offers used by orders are safely deactivated by the backend; other offers may be removed.',
+        )}
         confirmLabel="Delete offer"
         destructive
         loading={remove.isPending}

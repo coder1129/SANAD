@@ -1,0 +1,305 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "howItWorks": "How It Works",
+    "aboutUs": "About Us",
+    "clientFeedback": "Client Feedback",
+    "faq": "FAQ",
+    "signIn": "Sign In",
+    "viewServices": "View Services",
+    "sanadHome": "SANAD home",
+    "primaryNavigation": "Primary navigation",
+    "mobileNavigation": "Mobile navigation",
+    "openNavigationMenu": "Open navigation menu",
+    "menu": "Menu",
+    "menuDescription": "Explore SANAD services and information."
+  },
+  "footer": {
+    "tagline": "Professional career services designed to help you stand out.",
+    "explore": "Explore",
+    "company": "Company",
+    "support": "Support",
+    "copyright": "© {year} SANAD. All rights reserved.",
+    "legalLinks": "Legal links",
+    "footerLinks": "{group} links",
+    "privacyPolicy": "Privacy Policy",
+    "termsAndConditions": "Terms & Conditions"
+  },
+  "announcement": {
+    "default": "Professional Career Services for the UAE Market"
+  },
+  "home": {
+    "hero": {
+      "eyebrow": "Career documents, refined",
+      "headline1": "Build a Career Profile",
+      "headline2": "That Opens Doors.",
+      "body": "Present your experience clearly across a professional CV, LinkedIn profile, cover letter, and supporting career documents.",
+      "ctaPrimary": "View Career Services",
+      "ctaSecondary": "See How It Works",
+      "ctaNote": "Choose the service that matches your current career-document needs.",
+      "ariaLabel": "SANAD service qualities",
+      "trustAts": "ATS-Conscious",
+      "trustUae": "UAE Career Focused",
+      "trustCrafted": "Professionally Crafted",
+      "imageAlt": "Premium CV, cover letter, and professional profile documents arranged in a contemporary UAE office"
+    },
+    "featuredPackages": {
+      "eyebrow": "Featured services",
+      "heading": "Your CV. Your LinkedIn. Your Next Job.",
+      "body": "We write your CV, optimise your LinkedIn to match it, then apply to jobs on your behalf — so you can focus on preparing for interviews.",
+      "exploreService": "Explore Service",
+      "bestFor": "Best for",
+      "supports": "What this service supports",
+      "cv": {
+        "category": "CV Service",
+        "title": "Professional CV",
+        "description": "A professionally written CV that presents your experience, skills, and career goals in a clear and compelling way.",
+        "bestFor": "Anyone looking to land interviews with a strong, well-structured CV.",
+        "benefit1": "Clear, professional structure from start to finish",
+        "benefit2": "Highlights your achievements and key strengths",
+        "benefit3": "Tailored to your target role and industry"
+      },
+      "linkedin": {
+        "category": "LinkedIn Optimization",
+        "title": "LinkedIn Profile",
+        "description": "Your LinkedIn profile updated and aligned with your new CV — so your online presence tells the same strong story.",
+        "bestFor": "Professionals who want their LinkedIn to match and reinforce their CV.",
+        "benefit1": "Headline and summary written to match your CV",
+        "benefit2": "Experience section aligned with your CV content",
+        "benefit3": "Profile positioned to attract the right opportunities"
+      },
+      "linkedinJobs": {
+        "category": "LinkedIn Jobs",
+        "title": "LinkedIn Job Applications",
+        "description": "We apply to relevant job opportunities on LinkedIn on your behalf — saving you time and keeping your search active.",
+        "bestFor": "Professionals who want consistent job applications without the daily effort.",
+        "benefit1": "Targeted job search based on your role and preferences",
+        "benefit2": "Applications sent on your behalf through LinkedIn",
+        "benefit3": "Regular updates on applications submitted"
+      }
+    },
+    "careerStory": {
+      "eyebrow": "Your experience, brought into focus",
+      "heading": "Turn Your Experience Into a Stronger Professional Story",
+      "body": "A strong professional profile is more than visual design. SANAD helps transform experience, achievements, and career goals into clear, consistent professional documents.",
+      "point1": "Clarify the experience that matters most",
+      "point2": "Connect achievements to a consistent career direction",
+      "point3": "Carry one professional story across every document",
+      "imageAlt": "Professional reviewing a CV and career notes at an elegant workspace"
+    },
+    "whySanad": {
+      "eyebrow": "Why SANAD",
+      "heading": "A Considered Approach to Career Presentation",
+      "body": "Every choice—from content order to visual hierarchy—should make your professional story easier to understand.",
+      "reason1Title": "Substance Before Decoration",
+      "reason1Desc": "Your experience and career direction lead the story; formatting supports the message instead of competing with it.",
+      "reason2Title": "Context Shapes the Work",
+      "reason2Desc": "Language and presentation are considered for professionals pursuing opportunities in the UAE market.",
+      "reason3Title": "One Connected Story",
+      "reason3Desc": "Your CV, LinkedIn profile, and supporting documents work together instead of sending mixed messages.",
+      "reason4Title": "Readable at Every Stage",
+      "reason4Desc": "Clear hierarchy and concise language support screening workflows while remaining straightforward for hiring teams to review."
+    },
+    "uaeCareerFocus": {
+      "eyebrow": "Built for professional ambition",
+      "heading": "Professional Presentation for a Competitive UAE Market",
+      "body": "SANAD helps professionals present their experience with clarity, consistency, and confidence when pursuing opportunities across the UAE.",
+      "focus1": "Clear Professional Positioning",
+      "focus2": "Consistent Career Documents",
+      "focus3": "Modern Professional Presentation",
+      "focus4": "UAE-Focused Career Services",
+      "imageAlt": "Contemporary UAE corporate office overlooking a modern business district"
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "heading": "A Clear Path to Stronger Career Documents",
+      "body": "Choose a service, share the relevant context, and receive your completed career documents through the SANAD order process.",
+      "step1Number": "01",
+      "step1Title": "Choose Your Service",
+      "step1Desc": "Choose the support that matches the career document or profile you want to improve.",
+      "step2Number": "02",
+      "step2Title": "Share Your Details",
+      "step2Desc": "Provide your existing documents, professional details, and target-role context.",
+      "step3Number": "03",
+      "step3Title": "Receive Your Career Documents",
+      "step3Desc": "Access the completed work through your SANAD order."
+    },
+    "premiumCta": {
+      "eyebrow": "Professional presentation",
+      "heading": "Your next opportunity deserves a stronger professional presentation.",
+      "body": "Compare the service areas available and choose the support that fits what you need to improve now.",
+      "cta": "Compare Services"
+    },
+    "stats": {
+      "ariaLabel": "SANAD Performance Metrics",
+      "atsValue": "98%",
+      "atsLabel": "ATS Pass Rate",
+      "atsDesc": "Screening compliant for UAE & Gulf employers",
+      "interviewValue": "3.2x",
+      "interviewLabel": "More Interview Calls",
+      "interviewDesc": "Reported by clients within first 30 days",
+      "deliveryValue": "48-72h",
+      "deliveryLabel": "Standard Delivery",
+      "deliveryDesc": "Fast turnaround with dedicated review rounds",
+      "placedValue": "500+",
+      "placedLabel": "Professionals Placed",
+      "placedDesc": "Across Dubai, Abu Dhabi, Riyadh & Doha"
+    },
+    "industries": {
+      "eyebrow": "Specialized Regional Knowledge",
+      "heading": "Targeted Expertise Across Core UAE & GCC Sectors",
+      "body": "Our career writers understand the exact terminology, KPIs, and competencies demanded by top employers in your specific industry.",
+      "tech": {
+        "name": "Technology, AI & Software",
+        "roles": "Engineering Managers, Product Leads, Data Scientists"
+      },
+      "finance": {
+        "name": "Banking, Private Equity & FinTech",
+        "roles": "Investment Bankers, Risk Analysts, CFOs"
+      },
+      "engineering": {
+        "name": "Engineering, Real Estate & Construction",
+        "roles": "Project Directors, Architects, Site Operations"
+      },
+      "healthcare": {
+        "name": "Healthcare, Pharma & Medical",
+        "roles": "Medical Directors, Clinical Specialists, Operations"
+      },
+      "government": {
+        "name": "Government & Semi-Government",
+        "roles": "Policy Advisors, Strategy Directors, Public Sector Leads"
+      },
+      "aviation": {
+        "name": "Aviation, Logistics & Supply Chain",
+        "roles": "Operations Executives, Procurement Leads, Fleet Directors"
+      }
+    },
+    "testimonials": {
+      "eyebrow": "Client feedback",
+      "heading": "Feedback, Shared Responsibly",
+      "body": "Real words from clients who used SANAD to present their experience with more clarity.",
+      "publishedFeedback": "Published client feedback",
+      "serviceSpecific": "Service-specific reviews",
+      "serviceSpecificBody": "Browse feedback by service and see what each experience helped clients improve.",
+      "noFeedback": "Published feedback will appear here as clients approve their reviews for sharing.",
+      "viewAll": "View all client feedback"
+    },
+    "finalCta": {
+      "heading": "Ready to present your experience with greater clarity?",
+      "body": "Review SANAD's career services and choose the support that fits your next professional move.",
+      "cta": "Find the Right Service"
+    }
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "continueWithGoogle": "Continue with Google",
+    "emailPlaceholder": "you@example.com",
+    "passwordPlaceholder": "Your password",
+    "signingIn": "Signing in...",
+    "myAccount": "My Account",
+    "myOrders": "My Orders",
+    "profile": "Profile"
+  },
+  "account": {
+    "myOrders": "My Orders",
+    "orderSuccess": "Order Successful",
+    "profile": "Profile",
+    "noOrders": "No orders yet",
+    "noOrdersBody": "Your orders will appear here once you've made a purchase.",
+    "browseServices": "Browse Services",
+    "orderStatus": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    }
+  },
+  "packages": {
+    "heading": "Career Services",
+    "body": "Professional CV, LinkedIn, and career-document services for UAE professionals.",
+    "viewDetails": "View Details",
+    "orderNow": "Order Now",
+    "from": "From",
+    "perPackage": "per package"
+  },
+  "checkout": {
+    "heading": "Checkout",
+    "orderSummary": "Order Summary",
+    "paymentDetails": "Payment Details",
+    "placeOrder": "Place Order",
+    "processing": "Processing...",
+    "total": "Total",
+    "subtotal": "Subtotal",
+    "discount": "Discount",
+    "couponCode": "Coupon Code",
+    "apply": "Apply",
+    "remove": "Remove"
+  },
+  "faq": {
+    "heading": "Frequently Asked Questions",
+    "body": "Everything you need to know about SANAD career services."
+  },
+  "feedback": {
+    "heading": "Client Feedback",
+    "body": "What our clients say about SANAD career services.",
+    "rating": "Rating",
+    "reviews": "reviews",
+    "averageRating": "Average Rating",
+    "submitFeedback": "Submit Feedback",
+    "yourFeedback": "Your Feedback",
+    "thankYou": "Thank you for your feedback!"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong.",
+    "tryAgain": "Try again",
+    "backHome": "Back to Home",
+    "notFound": "Page not found",
+    "notFoundBody": "The page you're looking for doesn't exist or has been moved.",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "contactUs": "Contact Us",
+    "whatsapp": "WhatsApp",
+    "close": "Close",
+    "open": "Open",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "next": "Next",
+    "previous": "Previous",
+    "page": "Page",
+    "of": "of"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "orders": "Orders",
+    "customers": "Customers",
+    "packages": "Packages",
+    "coupons": "Coupons",
+    "offers": "Offers",
+    "payments": "Payments",
+    "reviews": "Reviews",
+    "settings": "Settings",
+    "media": "Media",
+    "activityLogs": "Activity Logs",
+    "pages": "Pages",
+    "totalOrders": "Total Orders",
+    "totalRevenue": "Total Revenue",
+    "totalCustomers": "Total Customers",
+    "pendingOrders": "Pending Orders"
+  }
+}

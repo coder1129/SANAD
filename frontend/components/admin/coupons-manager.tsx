@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +20,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { adminApi, adminKeys, type AdminCoupon } from '@/lib/api';
-import { formatDate, formatMoney } from '@/lib/orders/presentation';
+
 import {
   AdminPageHeader,
   AdminTable,
@@ -69,6 +70,8 @@ function day(value: string | null) {
   return value ? value.slice(0, 10) : '';
 }
 export function CouponsManager() {
+  const _copy = useCopy();
+
   const client = useQueryClient();
   const [editing, setEditing] = useState<AdminCoupon | null | undefined>(
     undefined,
@@ -158,58 +161,68 @@ export function CouponsManager() {
   return (
     <>
       <AdminPageHeader
-        title="Coupons"
-        description="Control discount codes, limits, minimum amounts, and availability."
-        action={<Button onClick={() => setEditing(null)}>Add Coupon</Button>}
+        title={_copy('Coupons')}
+        description={_copy(
+          'Control discount codes, limits, minimum amounts, and availability.',
+        )}
+        action={
+          <Button onClick={() => setEditing(null)}>
+            {_copy('Add Coupon')}
+          </Button>
+        }
       />
       <DataState
         loading={query.isPending}
-        error={query.error?.userMessage}
+        error={_copy(query.error?.userMessage)}
         empty={query.data?.items.length === 0}
       >
         <AdminTable>
-          <table className="w-full min-w-[900px] text-left text-sm">
+          <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Value</th>
-                <th className="px-4 py-3">Minimum</th>
-                <th className="px-4 py-3">Usage</th>
-                <th className="px-4 py-3">Expiration</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{_copy('Code')}</th>
+                <th className="px-4 py-3">{_copy('Type')}</th>
+                <th className="px-4 py-3">{_copy('Value')}</th>
+                <th className="px-4 py-3">{_copy('Minimum')}</th>
+                <th className="px-4 py-3">{_copy('Usage')}</th>
+                <th className="px-4 py-3">{_copy('Expiration')}</th>
+                <th className="px-4 py-3">{_copy('Status')}</th>
+                <th className="px-4 py-3">{_copy('Actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {query.data?.items.map((c) => (
                 <tr key={c.id}>
                   <td className="px-4 py-4 font-mono font-semibold text-primary">
-                    {c.code}
+                    {_copy(c.code)}
                   </td>
-                  <td className="px-4 py-4 capitalize">{c.discount_type}</td>
-                  <td className="px-4 py-4">
-                    {c.discount_type === 'percentage'
-                      ? `${Number(c.discount_value)}%`
-                      : formatMoney(c.discount_value)}
+                  <td className="px-4 py-4 capitalize">
+                    {_copy(c.discount_type)}
                   </td>
                   <td className="px-4 py-4">
-                    {formatMoney(c.min_order_amount ?? 0)}
+                    {_copy(
+                      c.discount_type === 'percentage'
+                        ? `${Number(c.discount_value)}%`
+                        : _copy.money(c.discount_value),
+                    )}
                   </td>
                   <td className="px-4 py-4">
-                    {c.times_used ?? 0}
-                    {c.usage_limit ? ` / ${c.usage_limit}` : ''}
+                    {_copy(_copy.money(c.min_order_amount ?? 0))}
+                  </td>
+                  <td className="px-4 py-4">
+                    {_copy(c.times_used ?? 0)}
+                    {_copy(c.usage_limit ? ` / ${c.usage_limit}` : '')}
                   </td>
                   <td className="px-4 py-4 text-muted-foreground">
-                    {c.end_date ? formatDate(c.end_date) : 'No expiry'}
+                    {_copy(c.end_date ? _copy.date(c.end_date) : 'No expiry')}
                   </td>
                   <td className="px-4 py-4">
-                    {c.is_active ? 'Active' : 'Inactive'}
+                    {_copy(c.is_active ? 'Active' : 'Inactive')}
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex gap-2">
                       <Button
-                        aria-label="Edit coupon"
+                        aria-label={_copy('Edit coupon')}
                         onClick={() => setEditing(c)}
                         size="icon"
                         variant="outline"
@@ -217,7 +230,7 @@ export function CouponsManager() {
                         <Pencil className="size-4" />
                       </Button>
                       <Button
-                        aria-label="Delete coupon"
+                        aria-label={_copy('Delete coupon')}
                         onClick={() => setDeleting(c)}
                         size="icon"
                         variant="outline"
@@ -240,15 +253,19 @@ export function CouponsManager() {
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit Coupon' : 'Add Coupon'}</DialogTitle>
+            <DialogTitle>
+              {_copy(editing ? 'Edit Coupon' : 'Add Coupon')}
+            </DialogTitle>
             <DialogDescription>
-              Coupon rules are validated again by the server during checkout.
+              {_copy(
+                'Coupon rules are validated again by the server during checkout.',
+              )}
             </DialogDescription>
           </DialogHeader>
           {save.error ? (
             <Alert
-              title="Could not save coupon"
-              description={save.error.userMessage}
+              title={_copy('Could not save coupon')}
+              description={_copy(save.error.userMessage)}
               variant="error"
             />
           ) : null}
@@ -257,21 +274,21 @@ export function CouponsManager() {
             onSubmit={handleSubmit((v) => save.mutate(v))}
           >
             <label className="grid gap-1 text-sm font-semibold">
-              Code
+              {_copy('Code')}
               <Input {...register('code')} invalid={Boolean(errors.code)} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Type
+              {_copy('Type')}
               <select
                 className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
                 {...register('type')}
               >
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed amount</option>
+                <option value="percentage">{_copy('Percentage')}</option>
+                <option value="fixed">{_copy('Fixed amount')}</option>
               </select>
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Value
+              {_copy('Value')}
               <Input
                 type="number"
                 step="0.01"
@@ -280,32 +297,32 @@ export function CouponsManager() {
               />
               {errors.value ? (
                 <span className="text-xs text-error">
-                  {errors.value.message}
+                  {_copy(errors.value.message)}
                 </span>
               ) : null}
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Minimum Amount
+              {_copy('Minimum Amount')}
               <Input type="number" step="0.01" {...register('minimum')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Max Discount (optional)
+              {_copy('Max Discount (optional)')}
               <Input type="number" step="0.01" {...register('maxDiscount')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Usage Limit (optional)
+              {_copy('Usage Limit (optional)')}
               <Input type="number" {...register('usageLimit')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Uses Per Customer
+              {_copy('Uses Per Customer')}
               <Input type="number" {...register('perUser')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              Start Date
+              {_copy('Start Date')}
               <Input type="date" {...register('startDate')} />
             </label>
             <label className="grid gap-1 text-sm font-semibold">
-              End Date
+              {_copy('End Date')}
               <Input
                 type="date"
                 {...register('endDate')}
@@ -317,14 +334,14 @@ export function CouponsManager() {
                 checked={active}
                 onCheckedChange={(v) => setValue('active', v)}
               />
-              Active
+              {_copy('Active')}
             </label>
             <DialogFooter className="sm:col-span-2">
               <Button onClick={() => setEditing(undefined)} variant="outline">
-                Cancel
+                {_copy('Cancel')}
               </Button>
               <Button loading={save.isPending} type="submit">
-                {save.isPending ? 'Saving...' : 'Save Coupon'}
+                {_copy(save.isPending ? 'Saving...' : 'Save Coupon')}
               </Button>
             </DialogFooter>
           </form>
@@ -335,8 +352,10 @@ export function CouponsManager() {
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title="Delete coupon?"
-        description="Used coupons are safely deactivated by the backend so purchase history remains intact."
+        title={_copy('Delete coupon?')}
+        description={_copy(
+          'Used coupons are safely deactivated by the backend so purchase history remains intact.',
+        )}
         confirmLabel="Delete coupon"
         destructive
         loading={remove.isPending}

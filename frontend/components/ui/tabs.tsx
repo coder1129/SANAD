@@ -1,4 +1,5 @@
 'use client';
+import { useLocale } from 'next-intl';
 
 import * as TabsPrimitive from '@radix-ui/react-tabs';
 import {
@@ -9,7 +10,14 @@ import {
 
 import { cn } from '@/lib/utils/cn';
 
-export const Tabs = TabsPrimitive.Root;
+export function Tabs(
+  props: ComponentPropsWithoutRef<typeof TabsPrimitive.Root>,
+) {
+  const locale = useLocale();
+  return (
+    <TabsPrimitive.Root dir={locale === 'ar' ? 'rtl' : 'ltr'} {...props} />
+  );
+}
 
 export const TabsList = forwardRef<
   ComponentRef<typeof TabsPrimitive.List>,

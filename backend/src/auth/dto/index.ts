@@ -130,6 +130,14 @@ export class PasswordlessRequestDto {
   @IsEmail()
   @MaxLength(255)
   email!: string;
+
+  @ApiPropertyOptional({
+    enum: ['sign_in', 'sign_up'],
+    description: 'Explicit customer authentication flow',
+  })
+  @IsOptional()
+  @IsIn(['sign_in', 'sign_up'])
+  flow?: 'sign_in' | 'sign_up';
 }
 
 export class PasswordlessVerifyDto {
@@ -142,6 +150,26 @@ export class PasswordlessVerifyDto {
   @IsString()
   @Length(6, 6)
   otp!: string;
+
+  @ApiPropertyOptional({
+    enum: ['sign_in', 'sign_up'],
+    description: 'Explicit customer authentication flow',
+  })
+  @IsOptional()
+  @IsIn(['sign_in', 'sign_up'])
+  flow?: 'sign_in' | 'sign_up';
+}
+
+export class GoogleAuthDto {
+  @ApiProperty({ description: 'Google Identity Services ID token' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(8192)
+  credential!: string;
+
+  @ApiProperty({ enum: ['sign_in', 'sign_up'] })
+  @IsIn(['sign_in', 'sign_up'])
+  flow!: 'sign_in' | 'sign_up';
 }
 
 export class PasswordlessCompleteProfileDto {

@@ -1,3 +1,4 @@
+import { useCopy } from '@/lib/i18n/use-copy';
 import type { HTMLAttributes, ReactNode } from 'react';
 
 import { cn } from '@/lib/utils/cn';
@@ -24,6 +25,8 @@ export function StatePanel({
   tone = 'neutral',
   ...props
 }: StatePanelProps) {
+  const _copy = useCopy();
+
   const Heading = headingLevel === 2 ? 'h2' : headingLevel === 3 ? 'h3' : 'h4';
 
   return (
@@ -42,14 +45,14 @@ export function StatePanel({
             tone === 'error' && 'bg-error/10 text-error',
           )}
         >
-          {icon}
+          {_copy(icon)}
         </div>
       ) : null}
-      <Heading className="type-h4">{title}</Heading>
+      <Heading className="type-h4">{_copy(title)}</Heading>
       <div className="mt-2 max-w-prose text-sm leading-6 text-muted-foreground">
-        {description}
+        {_copy(description)}
       </div>
-      {action ? <div className="mt-5">{action}</div> : null}
+      {action ? <div className="mt-5">{_copy(action)}</div> : null}
     </div>
   );
 }

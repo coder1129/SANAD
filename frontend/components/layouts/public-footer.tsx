@@ -1,21 +1,56 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 import {
   MotionAccentLine,
   MotionReveal,
 } from '@/components/motion/motion-reveal';
 import { BrandLogo } from '@/components/shared/brand-logo';
-import {
-  PUBLIC_FOOTER_GROUPS,
-  PUBLIC_LEGAL_LINKS,
-} from '@/constants/public-navigation';
 import { PublicSocialLinks } from './public-social-links';
 
 const footerLinkClassName =
   'inline-flex min-h-11 items-center text-sm leading-6 text-primary-foreground/75 transition-colors duration-200 hover:text-primary-foreground';
+const SUPPORT_EMAIL = 'saanadcv@gmail.com';
 
-export function PublicFooter() {
+export async function PublicFooter() {
+  const _copy = await getCopy();
+
   const year = new Date().getFullYear();
+  const t = await getTranslations();
+
+  const footerGroups = [
+    {
+      label: t('footer.explore'),
+      links: [
+        { href: '/', label: t('nav.home') },
+        { href: '/packages', label: t('nav.services') },
+        { href: '/#how-it-works', label: t('nav.howItWorks') },
+      ],
+    },
+    {
+      label: t('footer.company'),
+      links: [
+        { href: '/pages/about-us', label: t('nav.aboutUs') },
+        { href: '/feedback', label: t('nav.clientFeedback') },
+      ],
+    },
+    {
+      label: t('footer.support'),
+      links: [
+        { href: '/faq', label: t('nav.faq') },
+        { href: `mailto:${SUPPORT_EMAIL}`, label: SUPPORT_EMAIL },
+      ],
+    },
+  ];
+
+  const legalLinks = [
+    { href: '/pages/privacy-policy', label: t('footer.privacyPolicy') },
+    {
+      href: '/pages/terms-and-conditions',
+      label: t('footer.termsAndConditions'),
+    },
+  ];
 
   return (
     <footer className="border-t border-primary-foreground/10 bg-primary text-primary-foreground">
@@ -28,19 +63,19 @@ export function PublicFooter() {
             initialOpacity={0.6}
           >
             <Link
-              aria-label="SANAD home"
+              aria-label={_copy('SANAD home')}
               className="w-fit rounded-md bg-surface p-1.5 shadow-xs"
               href="/"
             >
               <BrandLogo size="md" />
             </Link>
             <p className="max-w-sm text-sm leading-7 text-primary-foreground/75">
-              Professional career services designed to help you stand out.
+              {_copy(t('footer.tagline'))}
             </p>
             <PublicSocialLinks className="pt-1" />
           </MotionReveal>
 
-          {PUBLIC_FOOTER_GROUPS.map((group, index) => (
+          {footerGroups.map((group, index) => (
             <MotionReveal
               delay={0.08 + index * 0.08}
               direction="up"
@@ -48,15 +83,20 @@ export function PublicFooter() {
               initialOpacity={0.6}
               key={group.label}
             >
-              <nav aria-label={`${group.label} links`}>
+              <nav
+                aria-label={_copy(
+                  `${group.label} links`,
+                  `روابط ${_copy(group.label)}`,
+                )}
+              >
                 <h2 className="text-sm font-semibold tracking-[0.08em] text-accent uppercase">
-                  {group.label}
+                  {_copy(group.label)}
                 </h2>
                 <ul className="mt-4 grid gap-1">
                   {group.links.map((item) => (
-                    <li key={item.label}>
+                    <li key={item.href}>
                       <Link className={footerLinkClassName} href={item.href}>
-                        {item.label}
+                        {_copy(item.label)}
                       </Link>
                     </li>
                   ))}
@@ -70,13 +110,13 @@ export function PublicFooter() {
 
         <MotionReveal delay={0.2} direction="none" initialOpacity={0.65}>
           <div className="flex flex-col gap-4 text-sm text-primary-foreground/70 sm:flex-row sm:items-center sm:justify-between">
-            <p>© {year} SANAD. All rights reserved.</p>
-            <nav aria-label="Legal links">
+            <p>{_copy(t('footer.copyright', { year }))}</p>
+            <nav aria-label={_copy(t('footer.legalLinks'))}>
               <ul className="flex flex-wrap gap-x-6 gap-y-1">
-                {PUBLIC_LEGAL_LINKS.map((item) => (
-                  <li key={item.label}>
+                {legalLinks.map((item) => (
+                  <li key={item.href}>
                     <Link className={footerLinkClassName} href={item.href}>
-                      {item.label}
+                      {_copy(item.label)}
                     </Link>
                   </li>
                 ))}

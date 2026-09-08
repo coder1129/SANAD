@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -48,6 +49,8 @@ export function AuthGate({
   preserveNext = false,
   redirectTo,
 }: InternalAuthGateProps) {
+  const _copy = useCopy();
+
   const router = useRouter();
   const shouldRedirect = !pending && !allowed && redirectTo !== undefined;
 
@@ -61,9 +64,9 @@ export function AuthGate({
     );
   }, [preserveNext, redirectTo, router, shouldRedirect]);
 
-  if (pending) return <>{fallback}</>;
-  if (allowed) return <>{children}</>;
+  if (pending) return <>{_copy(fallback)}</>;
+  if (allowed) return <>{_copy(children)}</>;
 
   // While the redirect is being applied the denied branch would only flash.
-  return <>{shouldRedirect ? fallback : denied}</>;
+  return <>{_copy(shouldRedirect ? fallback : denied)}</>;
 }

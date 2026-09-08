@@ -1,0 +1,96 @@
+Turnaround time depends on the selected service and the information provided. SANAD confirms the expected delivery timeline when your order is reviewed. Providing complete and accurate information at the start helps avoid delays.|تعتمد مدة التنفيذ على الخدمة والمعلومات المقدمة. تؤكد سند الموعد المتوقع عند مراجعة الطلب، وتساعد المعلومات الكاملة والدقيقة على تجنب التأخير.
+UAE (Dubai & Abu Dhabi)|الإمارات (دبي وأبوظبي)
+Unable to resend code. Please try again later.|تعذّر إعادة إرسال الرمز. حاول لاحقًا.
+Unable to send verification code. Please try again.|تعذّر إرسال رمز التحقق. حاول مجددًا.
+Unassigned service|خدمة غير محددة
+Under UAE Federal Decree-Law No. 45 of 2021 on Personal Data Protection and applicable international privacy frameworks, you have the right to access, correct, and delete your personal data. You may also withdraw consent for non-essential communications at any time.|بموجب المرسوم بقانون اتحادي إماراتي رقم ٤٥ لسنة ٢٠٢١ بشأن حماية البيانات الشخصية وأطر الخصوصية الدولية المعمول بها، يحق لك الوصول إلى بياناتك وتصحيحها وحذفها، وسحب موافقتك على الاتصالات غير الضرورية في أي وقت.
+Unlock|فتح القفل
+Unlock Customer|فتح حساب العميل
+Unlock account|فتح الحساب
+Update Review|تحديث التقييم
+Update status|تحديث الحالة
+Uploading...|جارٍ الرفع...
+Upon full payment and final delivery, you hold complete ownership of the documents produced for you. You are free to use, edit, print, and distribute them for your personal job-search purposes.|بعد إتمام الدفع والتسليم النهائي، تصبح المستندات ملكًا لك، ويمكنك استخدامها وتعديلها وطباعتها ومشاركتها لأغراض البحث عن عمل.
+Use a three-letter uppercase currency code.|استخدم رمز عملة من ثلاثة أحرف إنجليزية كبيرة.
+Use lowercase letters, numbers, and hyphens.|استخدم أحرفًا إنجليزية صغيرة وأرقامًا وشرطات.
+Use lowercase letters, numbers, underscores, or hyphens.|استخدم أحرفًا إنجليزية صغيرة وأرقامًا وشرطات عادية أو سفلية.
+Verification failed. Please try again.|فشل التحقق. حاول مجددًا.
+View career services|عرض الخدمات المهنية
+View services and contact options|عرض الخدمات وطرق التواصل
+Visa or Mastercard|فيزا أو ماستركارد
+We assess the current profile against your target professional direction.|نقيّم ملفك الحالي وفق توجهك المهني المستهدف.
+We confirm the type of opportunities and the application priorities relevant to your search.|نحدد نوع الفرص وأولويات التقديم المناسبة لبحثك.
+We could not start your order. Please try again.|تعذّر بدء طلبك. حاول مجددًا.
+You review the paired documents and use the included revision to refine the agreed content.|تراجع المستندين وتستخدم التعديل المشمول لتحسين المحتوى المتفق عليه.
+You review the work and request refinements within the included revision allowance.|تراجع العمل وتطلب التحسينات ضمن التعديلات المشمولة.
+Your CV, cover letter, and LinkedIn content are aligned for a consistent presentation.|ننسق السيرة وخطاب التقديم ومحتوى لينكدإن لعرض مهني متسق.
+Your LinkedIn profile link and a relevant job description if available|رابط لينكدإن ووصف وظيفي مناسب إن توفر
+Your LinkedIn profile link and examples of relevant vacancies|رابط لينكدإن وأمثلة للوظائف المناسبة
+Your LinkedIn profile link or current profile text|رابط لينكدإن أو النص الحالي للملف
+Your Rights|حقوقك
+Your application priorities and any relevant deadlines|أولويات التقديم وأي مواعيد نهائية ذات صلة
+Your current CV and available application documents|سيرتك الحالية ومستندات التقديم المتاحة
+Your current CV or a complete employment history|سيرتك الحالية أو سجل عملك الكامل
+Your current CV or a summary of your experience|سيرتك الحالية أو ملخص خبراتك
+Your current CV or complete career history|سيرتك الحالية أو مسارك المهني الكامل
+Your current CV or employment and education history|سيرتك الحالية أو تاريخ عملك وتعليمك
+Your current professional documents, if available|مستنداتك المهنية الحالية إن توفرت
+Your email address has been verified.|تم تأكيد بريدك الإلكتروني.
+Your employment, education, and qualification details|تفاصيل العمل والتعليم والمؤهلات
+Your existing CV, if available|سيرتك الحالية إن توفرت
+Your experience is rewritten and organized for clarity, relevance, and easier scanning.|نعيد صياغة وتنظيم خبراتك لتكون أوضح وأكثر ملاءمة وأسهل قراءة.
+Your information is used exclusively to deliver the career-document services you have requested: writing and formatting CVs, optimising LinkedIn profiles, developing cover letters, and communicating revision feedback.|نستخدم معلوماتك فقط لتنفيذ الخدمات المطلوبة: كتابة وتنسيق السير الذاتية وتحسين لينكدإن وإعداد خطابات التقديم والتواصل بشأن التعديلات.
+Your session is no longer valid. Please sign in again.|انتهت صلاحية جلستك. سجّل الدخول مجددًا.
+Your target role or a representative job description|الوظيفة المستهدفة أو وصف وظيفي نموذجي
+Your target role, industry, or a representative vacancy|الوظيفة أو القطاع المستهدف أو إعلان وظيفي نموذجي
+Your target roles and preferred industries|الوظائف المستهدفة والقطاعات المفضلة
+Your target roles, industries, and professional direction|الوظائف والقطاعات المستهدفة والتوجه المهني
+Your verification session has expired. Please sign in again.|انتهت جلسة التحقق. سجّل الدخول مجددًا.
+English Name|الاسم بالإنجليزية
+Arabic Name|الاسم بالعربية
+English Description|الوصف بالإنجليزية
+Arabic Description|الوصف بالعربية
+English Features|المميزات بالإنجليزية
+Arabic Features|المميزات بالعربية
+English Title|العنوان بالإنجليزية
+Arabic Title|العنوان بالعربية
+English Content|المحتوى بالإنجليزية
+Arabic Content|المحتوى بالعربية
+English Meta Description|وصف محركات البحث بالإنجليزية
+Arabic Meta Description|وصف محركات البحث بالعربية
+Manage content in Arabic and English.|إدارة المحتوى بالعربية والإنجليزية.
+revision|تعديل
+revisions|تعديلات
+review|تقييم
+reviews|تقييمات
+buyer|مشترٍ
+buyers|مشترين
+Substance Before Decoration|المحتوى قبل الزخرفة
+Professional CV|السيرة الذاتية الاحترافية
+LinkedIn Optimization|تحسين لينكدإن
+CV + Cover Letter|السيرة الذاتية وخطاب التقديم
+Pending Payment|في انتظار الدفع
+Awaiting Information|بانتظار المعلومات
+Received|تم الاستلام
+Under Review|قيد المراجعة
+Ready|جاهز
+Hidden|مخفي
+Locked|مقفل
+Super Admin|مدير عام
+Digit {0} of {1}|الرقم {0} من {1}
+Step {0} of 3|الخطوة {0} من ٣
+{0} out of 5 stars|{0} من ٥ نجوم
+{0} star{1}|{0} نجوم
+{0} customer account?|{0} حساب العميل؟
+Move this order to {0}? This change is recorded in the activity log.|تغيير حالة الطلب إلى {0}؟ سيُسجل التغيير في سجل الأنشطة.
+Edit {0}|تعديل {0}
+{0} package?|{0} الباقة؟
+{0} review?|{0} التقييم؟
+{0} links|روابط {0}
+View {0}|عرض {0}
+Explore {0}|استكشف {0}
+{0} service preview|معاينة خدمة {0}
+{0} image gallery|معرض صور {0}
+Enlarge {0} illustration|تكبير صورة {0}
+Show {0}|عرض {0}
+Professional presentation for {0}|عرض احترافي لخدمة {0}

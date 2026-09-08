@@ -1,36 +1,42 @@
+import { getCopy } from '@/lib/i18n/server-copy';
 import { CheckCircle2, Clock, Sparkles, TrendingUp } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
 
-const stats = [
-  {
-    icon: Sparkles,
-    value: '98%',
-    label: 'ATS Pass Rate',
-    description: 'Screening compliant for UAE & Gulf employers',
-  },
-  {
-    icon: TrendingUp,
-    value: '3.2x',
-    label: 'More Interview Calls',
-    description: 'Reported by clients within first 30 days',
-  },
-  {
-    icon: Clock,
-    value: '48-72h',
-    label: 'Standard Delivery',
-    description: 'Fast turnaround with dedicated review rounds',
-  },
-  {
-    icon: CheckCircle2,
-    value: '500+',
-    label: 'Professionals Placed',
-    description: 'Across Dubai, Abu Dhabi, Riyadh & Doha',
-  },
-] as const;
+export async function StatsBanner() {
+  const _copy = await getCopy();
 
-export function StatsBanner() {
+  const t = await getTranslations('home.stats');
+
+  const stats = [
+    {
+      icon: Sparkles,
+      value: t('atsValue'),
+      label: t('atsLabel'),
+      description: t('atsDesc'),
+    },
+    {
+      icon: TrendingUp,
+      value: t('interviewValue'),
+      label: t('interviewLabel'),
+      description: t('interviewDesc'),
+    },
+    {
+      icon: Clock,
+      value: t('deliveryValue'),
+      label: t('deliveryLabel'),
+      description: t('deliveryDesc'),
+    },
+    {
+      icon: CheckCircle2,
+      value: t('placedValue'),
+      label: t('placedLabel'),
+      description: t('placedDesc'),
+    },
+  ];
+
   return (
     <section
-      aria-label="SANAD Performance Metrics"
+      aria-label={_copy(t('ariaLabel'))}
       className="border-b border-border bg-surface py-8 sm:py-10"
     >
       <div className="layout-container">
@@ -39,7 +45,7 @@ export function StatsBanner() {
             const Icon = stat.icon;
             return (
               <div
-                className="flex flex-col items-center text-center sm:items-start sm:text-left"
+                className="flex flex-col items-center text-center sm:items-start sm:text-start"
                 key={stat.label}
               >
                 <div className="flex items-center gap-2">
@@ -51,14 +57,14 @@ export function StatsBanner() {
                     />
                   </span>
                   <span className="font-display text-2xl font-bold tracking-tight text-primary sm:text-3xl lg:text-4xl">
-                    {stat.value}
+                    {_copy(stat.value)}
                   </span>
                 </div>
                 <p className="mt-2 text-xs font-bold tracking-wide text-primary uppercase sm:text-sm">
-                  {stat.label}
+                  {_copy(stat.label)}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  {stat.description}
+                  {_copy(stat.description)}
                 </p>
               </div>
             );

@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import * as React from 'react';
 
@@ -19,6 +20,8 @@ export function OtpInput({
   hasError = false,
   autoFocus = true,
 }: OtpInputProps) {
+  const _copy = useCopy();
+
   const length = 6;
   const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
 
@@ -116,7 +119,7 @@ export function OtpInput({
       dir="ltr"
       className="flex items-center justify-center gap-2 sm:gap-3"
       role="group"
-      aria-label="Verification code input"
+      aria-label={_copy('Verification code input')}
     >
       {digits.map((digit, index) => {
         const isFilled = Boolean(digit);
@@ -134,7 +137,10 @@ export function OtpInput({
               value={digit}
               disabled={disabled}
               aria-invalid={hasError || undefined}
-              aria-label={`Digit ${index + 1} of ${length}`}
+              aria-label={_copy(
+                `Digit ${index + 1} of ${length}`,
+                `الرقم ${index + 1} من ${length}`,
+              )}
               onChange={(e) => handleChange(index, e)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}

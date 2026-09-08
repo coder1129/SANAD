@@ -19,6 +19,29 @@ test('home page and accessible sign-in dialog work', async ({ page }) => {
   await expect(signIn).toBeFocused();
 });
 
+test('sign-up is separate and collects the complete customer profile', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Sign Up' }).first().click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await expect(
+    dialog.getByRole('heading', { name: 'Create a new account' }),
+  ).toBeVisible();
+  await expect(dialog.getByLabel('First name')).toBeVisible();
+  await expect(dialog.getByLabel('Last name')).toBeVisible();
+  await expect(dialog.getByLabel('Email address')).toBeVisible();
+  await expect(dialog.getByLabel('Phone number')).toBeVisible();
+  await expect(dialog.getByLabel('Gender')).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Sign In' }).click();
+  await expect(
+    dialog.getByRole('heading', { name: 'Welcome back' }),
+  ).toBeVisible();
+});
+
 test('metadata routes are served', async ({ request }) => {
   for (const path of ['/robots.txt', '/sitemap.xml', '/manifest.webmanifest']) {
     const response = await request.get(path);

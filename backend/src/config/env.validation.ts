@@ -161,6 +161,13 @@ class EnvironmentVariables {
   DEMO_OTP_CODE?: string;
 
   @IsString()
+  @IsOptional()
+  @Matches(/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/i, {
+    message: 'GOOGLE_CLIENT_ID must be a valid Google OAuth web client ID',
+  })
+  GOOGLE_CLIENT_ID?: string;
+
+  @IsString()
   @IsIn(['mock', 'bypass'])
   PAYMENT_PROVIDER: string = 'mock';
 
@@ -313,7 +320,11 @@ export function validate(config: Record<string, unknown>) {
         throw new Error(`Production ${name} must be a valid HTTPS URL`);
       }
     }
-    if (!validatedConfig.SMTP_HOST && !validatedConfig.RESEND_API_KEY) {
+    if (
+      !validatedConfig.SMTP_HOST &&
+      (!validatedConfig.RESEND_API_KEY ||
+        validatedConfig.RESEND_API_KEY === 're_placeholder')
+    ) {
       throw new Error('Production requires SMTP_HOST or RESEND_API_KEY');
     }
     if (validatedConfig.PAYMENT_PROVIDER === 'mock') {

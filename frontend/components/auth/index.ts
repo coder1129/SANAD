@@ -7,6 +7,7 @@ export type { RequireRoleProps } from './require-role';
 export { OtpInput } from './otp-input';
 export type { OtpInputProps } from './otp-input';
 export { SignInFlow } from './sign-in-flow';
+export { SignUpFlow } from './sign-up-flow';
 export { AuthModalProvider, useAuthModal } from './auth-modal';
 export { AccountNavigation } from './account-navigation';
 export { AuthModalTrigger } from './auth-modal-trigger';

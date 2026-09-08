@@ -1,4 +1,5 @@
 'use client';
+import { useCopy } from '@/lib/i18n/use-copy';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Textarea } from '@/components/ui/textarea';
 import { reviewKeys, reviewsApi } from '@/lib/api';
-import { formatStatus, statusIntent } from '@/lib/orders/presentation';
+import { statusIntent } from '@/lib/orders/presentation';
 
 const schema = z.object({
   rating: z.number().int().min(1, 'Choose a rating.').max(5),
@@ -24,6 +25,8 @@ const schema = z.object({
 type Values = z.infer<typeof schema>;
 
 export function ReviewForm({ orderId }: { orderId: number }) {
+  const _copy = useCopy();
+
   const queryClient = useQueryClient();
   const reviewQuery = useQuery({
     queryKey: reviewKeys.order(orderId),
@@ -62,14 +65,14 @@ export function ReviewForm({ orderId }: { orderId: number }) {
   if (reviewQuery.isPending)
     return (
       <p className="text-sm text-muted-foreground" role="status">
-        Checking review eligibility...
+        {_copy('Checking review eligibility...')}
       </p>
     );
   if (reviewQuery.error)
     return (
       <Alert
-        title="Review unavailable"
-        description={reviewQuery.error.userMessage}
+        title={_copy('Review unavailable')}
+        description={_copy(reviewQuery.error.userMessage)}
         variant="error"
       />
     );
@@ -77,43 +80,52 @@ export function ReviewForm({ orderId }: { orderId: number }) {
     <form onSubmit={handleSubmit((values) => mutation.mutate(values))}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="type-h3 text-primary">Rate Your Experience</h2>
+          <h2 className="type-h3 text-primary">
+            {_copy('Rate Your Experience')}
+          </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your review is checked by SANAD before it appears publicly.
+            {_copy(
+              'Your review is checked by SANAD before it appears publicly.',
+            )}
           </p>
         </div>
         {reviewQuery.data ? (
           <StatusBadge intent={statusIntent(reviewQuery.data.status)}>
-            {formatStatus(reviewQuery.data.status)}
+            {_copy(_copy.status(reviewQuery.data.status))}
           </StatusBadge>
         ) : null}
       </div>
       {mutation.error ? (
         <Alert
           className="mt-5"
-          title="Could not save review"
-          description={mutation.error.userMessage}
+          title={_copy('Could not save review')}
+          description={_copy(mutation.error.userMessage)}
           variant="error"
         />
       ) : null}
       {mutation.isSuccess ? (
         <Alert
           className="mt-5"
-          title="Review saved"
-          description="Thank you. Your review is now pending moderation."
+          title={_copy('Review saved')}
+          description={_copy(
+            'Thank you. Your review is now pending moderation.',
+          )}
           variant="success"
         />
       ) : null}
       <fieldset className="mt-6">
-        <legend className="text-sm font-semibold">Rating</legend>
+        <legend className="text-sm font-semibold">{_copy('Rating')}</legend>
         <div
           className="mt-2 flex gap-1"
           role="radiogroup"
-          aria-label="Rating from 1 to 5"
+          aria-label={_copy('Rating from 1 to 5')}
         >
           {[1, 2, 3, 4, 5].map((value) => (
             <button
-              aria-label={`${value} star${value === 1 ? '' : 's'}`}
+              aria-label={_copy(
+                `${value} star${value === 1 ? '' : 's'}`,
+                `${value} ${value === 1 ? 'نجمة' : value === 2 ? 'نجمتان' : 'نجوم'}`,
+              )}
               aria-checked={rating === value}
               className="rounded p-1 text-accent hover:bg-surface-muted"
               key={value}
@@ -131,31 +143,37 @@ export function ReviewForm({ orderId }: { orderId: number }) {
           ))}
         </div>
         {errors.rating ? (
-          <p className="mt-1 text-sm text-error">{errors.rating.message}</p>
+          <p className="mt-1 text-sm text-error">
+            {_copy(errors.rating.message)}
+          </p>
         ) : null}
       </fieldset>
       <label className="mt-5 grid gap-2 text-sm font-semibold">
-        Comment
+        {_copy('Comment')}
         <Textarea
           {...register('comment')}
           invalid={Boolean(errors.comment)}
-          placeholder="Share what SANAD helped you accomplish."
+          placeholder={_copy('Share what SANAD helped you accomplish.')}
         />
         {errors.comment ? (
-          <span className="text-sm text-error">{errors.comment.message}</span>
+          <span className="text-sm text-error">
+            {_copy(errors.comment.message)}
+          </span>
         ) : null}
       </label>
       <Button
         className="mt-5"
         loading={mutation.isPending}
-        loadingLabel="Saving review"
+        loadingLabel={_copy('Saving review')}
         type="submit"
       >
-        {mutation.isPending
-          ? 'Saving...'
-          : reviewQuery.data
-            ? 'Update Review'
-            : 'Submit Review'}
+        {_copy(
+          mutation.isPending
+            ? 'Saving...'
+            : reviewQuery.data
+              ? 'Update Review'
+              : 'Submit Review',
+        )}
       </Button>
     </form>
   );
