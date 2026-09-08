@@ -23,6 +23,7 @@ html[data-theme='dark'] {
   --border: #34465b;
   --input: #34465b;
   --control-border: #637b95;
+  --control-thumb: #edf2f7;
   --ring: #d8b574;
   --success: #76d4a5;
   --success-foreground: #102c20;
@@ -97,6 +98,7 @@ html[data-theme='dark']
   --border: var(--sanad-border);
   --input: var(--sanad-border);
   --control-border: color-mix(in srgb, var(--primary) 55%, var(--surface));
+  --control-thumb: var(--sanad-white);
   --ring: var(--sanad-navy);
 
   --success: #1f6b4f;

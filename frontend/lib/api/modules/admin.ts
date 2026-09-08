@@ -274,10 +274,39 @@ export const adminKeys = {
 
 export const adminApi = {
   administrators: {
-    list: async () => array<Administrator>(await api.get<unknown>('/admin/administrators'), 'GET /admin/administrators'),
-    create: async (input: { name: string; email: string; password: string; role: 'admin' | 'super_admin' }) => object<Administrator>(await api.post<unknown>('/admin/administrators', input), 'POST /admin/administrators'),
-    update: async (id: number, input: { role?: 'admin' | 'super_admin'; active?: boolean }) => object<Administrator>(await api.patch<unknown>(`/admin/administrators/${id}`, input), 'PATCH /admin/administrators/:id'),
-    resetPassword: async (id: number, password: string) => api.post<unknown>(`/admin/administrators/${id}/reset-password`, { password }),
+    list: async () =>
+      array<Administrator>(
+        await api.get<unknown>('/admin/administrators'),
+        'GET /admin/administrators',
+      ),
+    create: async (input: {
+      name: string;
+      email: string;
+      password: string;
+      role: 'admin' | 'super_admin';
+    }) =>
+      object<Administrator>(
+        await api.post<unknown>('/admin/administrators', input),
+        'POST /admin/administrators',
+      ),
+    update: async (
+      id: number,
+      input: {
+        name?: string;
+        role?: 'admin' | 'super_admin';
+        active?: boolean;
+      },
+    ) =>
+      object<Administrator>(
+        await api.patch<unknown>(`/admin/administrators/${id}`, input),
+        'PATCH /admin/administrators/:id',
+      ),
+    remove: async (id: number) =>
+      api.delete<unknown>(`/admin/administrators/${id}`),
+    resetPassword: async (id: number, password: string) =>
+      api.post<unknown>(`/admin/administrators/${id}/reset-password`, {
+        password,
+      }),
   },
   dashboard: async (options: Options = {}) =>
     object<DashboardData>(

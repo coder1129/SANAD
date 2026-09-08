@@ -62,8 +62,6 @@ const schema = z
   });
 type Values = z.infer<typeof schema>;
 const labels: Record<string, string> = {
-  site_name: 'Site Name (Arabic)',
-  site_name_en: 'Site Name (English)',
   support_email: 'Support Email',
   support_phone: 'Support Phone',
   whatsapp_number: 'WhatsApp Number',
@@ -72,13 +70,22 @@ const labels: Record<string, string> = {
   twitter_url: 'X / Twitter URL',
   linkedin_url: 'LinkedIn URL',
   instagram_url: 'Instagram URL',
+  hero_title_ar: 'Home Page Title (Arabic)',
+  hero_title_en: 'Home Page Title (English)',
+  hero_subtitle_ar: 'Home Page Subtitle (Arabic)',
+  hero_subtitle_en: 'Home Page Subtitle (English)',
 };
 
+const siteSettingKeys = Object.keys(labels);
+
 function settingsFields(existing: SiteSetting[]): SiteSetting[] {
-  const existingKeys = new Set(existing.map((item) => item.setting_key));
+  const siteSettings = existing.filter((item) =>
+    siteSettingKeys.includes(item.setting_key),
+  );
+  const existingKeys = new Set(siteSettings.map((item) => item.setting_key));
   return [
-    ...existing,
-    ...Object.keys(labels)
+    ...siteSettings,
+    ...siteSettingKeys
       .filter((key) => !existingKeys.has(key))
       .map((key, index) => ({
         id: -(index + 1),
@@ -133,7 +140,7 @@ export function SettingsForm() {
       <AdminPageHeader
         title={_copy('Settings')}
         description={_copy(
-          'Edit the system settings that already exist. WhatsApp handoff reads the central whatsapp_number value here.',
+          'Update your contact details, social links, and website content.',
         )}
       />
       <DataState
@@ -184,11 +191,6 @@ export function SettingsForm() {
                       {_copy(String(errors[item.setting_key]?.message))}
                     </span>
                   ) : null}
-                  <span className="font-normal text-xs text-muted-foreground">
-                    {_copy(
-                      item.description ?? item.setting_type ?? 'Setting value',
-                    )}
-                  </span>
                 </label>
               ))}
             </div>

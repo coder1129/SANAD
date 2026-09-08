@@ -14,6 +14,9 @@ export type ServiceCategory = (typeof serviceCategories)[number]['value'];
 // Explicit published service names avoid classifying a CV as application
 // support just because its description mentions a job search.
 const categoriesByName: Record<string, Exclude<ServiceCategory, 'all'>> = {
+  'professional package': 'bundles',
+  'full package': 'bundles',
+  'premium full package': 'bundles',
   'professional distinction package': 'bundles',
   'career excellence package': 'bundles',
   'golden signature package': 'bundles',

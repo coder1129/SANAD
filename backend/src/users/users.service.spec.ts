@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -12,6 +16,7 @@ describe('UsersService', () => {
       users: {
         findUnique: vi.fn(),
         create: vi.fn(),
+        delete: vi.fn(),
         update: vi.fn(),
       },
     };
@@ -125,6 +130,32 @@ describe('UsersService', () => {
           data: { name: 'Mostafa' },
         }),
       );
+    });
+
+    it('does not allow a super admin to change their own role', async () => {
+      prisma.users.findUnique.mockResolvedValue({ id: 7, role: 'super_admin' });
+
+      await expect(
+        service.updateAdministrator(7, { role: 'admin' }, 7),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.users.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteAdministrator', () => {
+    it('does not allow an administrator to delete their own account', async () => {
+      await expect(service.deleteAdministrator(7, 7)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+      expect(prisma.users.delete).not.toHaveBeenCalled();
+    });
+
+    it('deletes another administrator account', async () => {
+      prisma.users.findUnique.mockResolvedValue({ id: 7, role: 'admin' });
+
+      await service.deleteAdministrator(7, 1);
+
+      expect(prisma.users.delete).toHaveBeenCalledWith({ where: { id: 7 } });
     });
   });
 });

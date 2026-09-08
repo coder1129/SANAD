@@ -22,14 +22,22 @@ export function PackagePrice({
 
   const offer = getBestPackageOffer(packageItem);
   const currentPrice = getPackageCurrentPrice(packageItem);
+  const offerNameIncludesDiscount = offer
+    ? offer.name.includes(`${offer.discountPercentage}%`)
+    : false;
 
   return (
     <div className={className}>
       {offer ? (
         <Badge className="mb-3" variant="warning">
-          {_copy(offer.name)} {_copy('·')}
-          {_copy(offer.discountPercentage)}
-          {_copy('% off')}
+          {_copy(offer.name, offer.nameAr)}
+          {!offerNameIncludesDiscount ? (
+            <>
+              {_copy(' · ')}
+              {_copy(offer.discountPercentage)}
+              {_copy('% off')}
+            </>
+          ) : null}
         </Badge>
       ) : null}
 

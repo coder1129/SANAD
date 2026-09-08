@@ -33,7 +33,7 @@ interface CheckoutExperienceProps {
 }
 
 interface CheckoutFormState {
-  phone: string;
+  phone: string | null;
   targetJobTitle: string;
   targetIndustry: string;
   careerGoals: string;
@@ -72,7 +72,7 @@ const PAYMENT_METHODS: Array<{
 
 function validateForm(form: CheckoutFormState): FieldErrors {
   const errors: FieldErrors = {};
-  const phone = form.phone.trim();
+  const phone = (form.phone ?? '').trim();
 
   if (!phone)
     errors.phone = 'Please add a phone number for WhatsApp follow-up.';
@@ -114,7 +114,7 @@ export function CheckoutExperience({
   const openAuthModal = useAuthModal();
   const { user, isAuthenticated, isInitializing } = useAuth();
   const [form, setForm] = useState<CheckoutFormState>({
-    phone: user?.phone ?? '',
+    phone: user?.phone ?? null,
     targetJobTitle: '',
     targetIndustry: '',
     careerGoals: '',
@@ -192,7 +192,7 @@ export function CheckoutExperience({
     event.preventDefault();
     const submittedForm = {
       ...form,
-      phone: form.phone || user?.phone || '',
+      phone: form.phone ?? user?.phone ?? '',
     };
     const errors = validateForm(submittedForm);
     if (Object.keys(errors).length > 0) {
@@ -382,7 +382,7 @@ export function CheckoutExperience({
                 id="checkout-phone"
                 onChange={(event) => updateField('phone', event.target.value)}
                 placeholder={_copy('+966 5X XXX XXXX')}
-                value={form.phone || user.phone || ''}
+                value={form.phone ?? user.phone ?? ''}
               />
             </div>
             {fieldErrors.phone ? (

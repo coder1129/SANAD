@@ -21,6 +21,16 @@ const PUBLIC_SETTING_KEYS = [
   'hero_subtitle_en',
 ];
 
+const ADMIN_EDITABLE_SETTING_KEYS = PUBLIC_SETTING_KEYS.filter(
+  (key) =>
+    ![
+      'site_name',
+      'site_name_en',
+      'site_description_ar',
+      'site_description_en',
+    ].includes(key),
+);
+
 const SOCIAL_URL_SETTING_KEYS = new Set([
   'facebook_url',
   'twitter_url',
@@ -57,7 +67,7 @@ export class SettingsService {
   // and developer configuration must never be exposed in the admin UI.
   async getAllAdmin() {
     return this.prisma.settings.findMany({
-      where: { setting_key: { in: PUBLIC_SETTING_KEYS } },
+      where: { setting_key: { in: ADMIN_EDITABLE_SETTING_KEYS } },
       orderBy: { setting_key: 'asc' },
     });
   }
@@ -154,7 +164,7 @@ export class SettingsService {
   }
 
   private assertAdminSettingKey(key: string) {
-    if (!PUBLIC_SETTING_KEYS.includes(key)) {
+    if (!ADMIN_EDITABLE_SETTING_KEYS.includes(key)) {
       throw new BadRequestException('This setting is not available in admin');
     }
   }

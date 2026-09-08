@@ -46,11 +46,8 @@ function service(
   };
 }
 const packages = [
-  service(1, 'Professional Distinction Package', 299, [
-    'Professional CV',
-    'Cover Letter',
-  ]),
-  service(2, 'Career Excellence Package', 499, [
+  service(1, 'Professional Package', 250, ['Professional CV', 'Cover Letter']),
+  service(2, 'Full Package', 650, [
     'Professional CV',
     'Cover Letter',
     'LinkedIn Profile Optimization',
@@ -87,8 +84,8 @@ describe('Package selection experience', () => {
     ).toHaveAttribute('aria-pressed', 'true');
     const cards = screen.getAllByRole('heading', { level: 3 });
     expect(cards.map((card) => card.textContent)).toEqual([
-      'Career Excellence Package',
-      'Professional Distinction Package',
+      'Full Package',
+      'Professional Package',
     ]);
   });
 

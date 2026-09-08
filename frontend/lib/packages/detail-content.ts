@@ -23,7 +23,7 @@ type PackageSpecificContent = Omit<PackageDetailContent, 'faqs'> & {
 };
 
 const PACKAGE_CONTENT: Record<string, PackageSpecificContent> = {
-  'golden signature package': {
+  'premium full package': {
     bestFor:
       'Professionals who want their CV, cover letter, LinkedIn profile, and application materials to present one coordinated career story.',
     preparation: [
@@ -52,7 +52,7 @@ const PACKAGE_CONTENT: Record<string, PackageSpecificContent> = {
     importantNote:
       'The exact handling of job-application submissions is confirmed with SANAD before work begins. Never send account passwords through an enquiry message.',
   },
-  'career excellence package': {
+  'full package': {
     bestFor:
       'Professionals who need a coordinated CV, cover letter, and LinkedIn profile without the additional job-application file.',
     preparation: [
@@ -79,7 +79,7 @@ const PACKAGE_CONTENT: Record<string, PackageSpecificContent> = {
       },
     ],
   },
-  'professional distinction package': {
+  'professional package': {
     bestFor:
       'Professionals who want a focused CV and matching cover letter for a clear, consistent application.',
     preparation: [
@@ -192,6 +192,14 @@ const PACKAGE_CONTENT: Record<string, PackageSpecificContent> = {
       'The number of opportunities, service period, platforms, and any submission assistance are confirmed before work begins. Never share account passwords by WhatsApp or an unsecured form.',
   },
 };
+
+// Keep detail content available during deployments where the database still
+// contains one of the previous catalog names.
+PACKAGE_CONTENT['golden signature package'] =
+  PACKAGE_CONTENT['premium full package'];
+PACKAGE_CONTENT['career excellence package'] = PACKAGE_CONTENT['full package'];
+PACKAGE_CONTENT['professional distinction package'] =
+  PACKAGE_CONTENT['professional package'];
 
 function getCommonFaqs(packageItem: CareerPackage): PackageFaqItem[] {
   const revisionText =

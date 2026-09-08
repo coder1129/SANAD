@@ -27,7 +27,7 @@ describe('Public catalog availability', () => {
       </NextIntlClientProvider>,
     );
     expect(html).toContain('Available services: 0');
-    expect(html).not.toContain('Golden Signature Package');
+    expect(html).not.toContain('Premium Full Package');
   });
 
   it('passes an outage to the route error boundary instead of displaying static prices', async () => {

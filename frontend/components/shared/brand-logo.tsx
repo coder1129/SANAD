@@ -31,7 +31,6 @@ export function BrandLogo({
       height={880}
       loading={loading}
       src="/brand/sanad-logo.jpg"
-      style={{ height: 'auto' }}
       unoptimized
       width={1195}
     />

@@ -6,25 +6,27 @@ const prisma = new PrismaClient();
 
 const packageCatalog = [
   {
-    legacyName: 'Complete Package',
-    nameAr: 'باقة التوقيع الذهبي',
-    nameEn: 'Golden Signature Package',
+    legacyNames: ['Golden Signature Package', 'Complete Package'],
+    nameAr: 'الباقة المتكاملة المميزة',
+    nameEn: 'Premium Full Package',
     descriptionAr:
-      'حل متكامل يجمع أهم مستنداتك المهنية في ملف واحد متناسق وجاهز للفرص الجديدة.',
+      'باقة مهنية متكاملة باللغتين العربية والإنجليزية تشمل السيرة الذاتية وخطاب التقديم وتحسين ملف لينكدإن وملفات وخدمة التقديم على الوظائف.',
     descriptionEn:
-      'A complete, coordinated career-document suite for presenting one clear professional story across every application touchpoint.',
-    price: 799,
+      'A premium bilingual career package covering your CV, cover letter, LinkedIn profile, job application file, and job application service.',
+    price: 800,
     featuresAr: [
-      'سيرة ذاتية احترافية',
-      'خطاب تعريفي',
-      'تحسين الملف الشخصي على لينكدإن',
-      'ملف التقديم على الوظائف',
+      'السيرة الذاتية (العربية + الإنجليزية) — 300 درهم',
+      'خطاب التقديم (العربية + الإنجليزية) — 200 درهم',
+      'تحسين ملف لينكدإن — 150 درهم',
+      'ملف التقديم على الوظائف — 50 درهم',
+      'خدمة التقديم على الوظائف — 100 درهم',
     ],
     featuresEn: [
-      'Professional CV',
-      'Cover Letter',
-      'LinkedIn Profile Optimization',
-      'Job Application File',
+      'CV (English + Arabic) — 300 AED',
+      'Cover Letter (English + Arabic) — 200 AED',
+      'LinkedIn Profile Optimization — 150 AED',
+      'Job Application File — 50 AED',
+      'Job Application — 100 AED',
     ],
     deliveryDays: 10,
     maxRevisions: 3,
@@ -33,23 +35,23 @@ const packageCatalog = [
       'Premium coordinated collection of professional career documents on an executive desk',
   },
   {
-    legacyName: 'Advanced Package',
-    nameAr: 'باقة التفوق المهني',
-    nameEn: 'Career Excellence Package',
+    legacyNames: ['Career Excellence Package', 'Advanced Package'],
+    nameAr: 'الباقة المتكاملة',
+    nameEn: 'Full Package',
     descriptionAr:
-      'مجموعة مهنية متناسقة توحّد سيرتك الذاتية وخطابك التعريفي وملفك على لينكدإن.',
+      'باقة متكاملة باللغتين العربية والإنجليزية تجمع السيرة الذاتية وخطاب التقديم وتحسين ملف لينكدإن.',
     descriptionEn:
-      'A coordinated CV, cover letter, and professional profile package designed to keep your positioning consistent.',
-    price: 499,
+      'A bilingual package combining your CV, cover letter, and LinkedIn profile optimization in one coordinated service.',
+    price: 650,
     featuresAr: [
-      'سيرة ذاتية احترافية',
-      'خطاب تعريفي',
-      'تحسين الملف الشخصي على لينكدإن',
+      'السيرة الذاتية (العربية + الإنجليزية) — 300 درهم',
+      'خطاب التقديم (العربية + الإنجليزية) — 200 درهم',
+      'تحسين ملف لينكدإن — 150 درهم',
     ],
     featuresEn: [
-      'Professional CV',
-      'Cover Letter',
-      'LinkedIn Profile Optimization',
+      'CV (English + Arabic) — 300 AED',
+      'Cover Letter (English + Arabic) — 200 AED',
+      'LinkedIn Profile Optimization — 150 AED',
     ],
     deliveryDays: 7,
     maxRevisions: 2,
@@ -58,16 +60,22 @@ const packageCatalog = [
       'Coordinated CV, cover letter, and professional profile planning set in a modern office',
   },
   {
-    legacyName: 'Basic Package',
-    nameAr: 'باقة التميز الاحترافي',
-    nameEn: 'Professional Distinction Package',
+    legacyNames: ['Professional Distinction Package', 'Basic Package'],
+    nameAr: 'الباقة الاحترافية',
+    nameEn: 'Professional Package',
     descriptionAr:
-      'سيرة ذاتية وخطاب تعريفي متطابقان لتقديم خبرتك المهنية بصورة واضحة ومتسقة.',
+      'سيرة ذاتية وخطاب تقديم متناسقان باللغة العربية أو الإنجليزية حسب اختيارك.',
     descriptionEn:
-      'A focused CV and matching cover letter pair for a clear, consistent professional presentation.',
-    price: 299,
-    featuresAr: ['سيرة ذاتية احترافية', 'خطاب تعريفي'],
-    featuresEn: ['Professional CV', 'Cover Letter'],
+      'A focused CV and matching cover letter in either English or Arabic, based on your preferred language.',
+    price: 250,
+    featuresAr: [
+      'السيرة الذاتية (العربية أو الإنجليزية) — 150 درهم',
+      'خطاب التقديم (العربية أو الإنجليزية) — 100 درهم',
+    ],
+    featuresEn: [
+      'CV (English or Arabic) — 150 AED',
+      'Cover Letter (English or Arabic) — 100 AED',
+    ],
     deliveryDays: 5,
     maxRevisions: 1,
     imagePath: '/images/packages/professional-distinction-package.png',
@@ -149,7 +157,7 @@ const packageCatalog = [
 ];
 
 async function findExistingPackage(item) {
-  const candidateNames = [item.nameEn, item.legacyName].filter(Boolean);
+  const candidateNames = [item.nameEn, ...(item.legacyNames ?? [])];
 
   return prisma.packages.findFirst({
     where: { name_en: { in: candidateNames } },
@@ -213,16 +221,92 @@ async function main() {
     activePackageIds.push(saved.id);
   }
 
+  const offerStartDate = new Date();
+  const offerEndDate = new Date(offerStartDate);
+  offerEndDate.setDate(offerEndDate.getDate() + 30);
+
+  for (const packageId of activePackageIds.slice(0, 3)) {
+    const existingOffer = await prisma.offers.findFirst({
+      where: {
+        package_id: packageId,
+        offer_type: 'standard',
+        name_en: { in: ['50% OFF (Limited Offer)', 'Limited Offer'] },
+      },
+      orderBy: { id: 'asc' },
+    });
+    const offerData = {
+      package_id: packageId,
+      offer_type: 'standard',
+      name_ar: 'خصم 50% (عرض محدود)',
+      name_en: '50% OFF (Limited Offer)',
+      description_ar: 'خصم محدود بنسبة 50% على السعر الأساسي للباقة.',
+      description_en: 'Limited-time 50% discount on the package base price.',
+      discount_percentage: 50,
+    };
+
+    if (existingOffer) {
+      await prisma.offers.update({
+        where: { id: existingOffer.id },
+        data: offerData,
+      });
+    } else {
+      await prisma.offers.create({
+        data: {
+          ...offerData,
+          start_date: offerStartDate,
+          end_date: offerEndDate,
+          is_active: true,
+        },
+      });
+    }
+  }
+
   const defaultSettings = [
-    { setting_key: 'whatsapp_number', setting_value: '+971500000000', description: 'WhatsApp contact number' },
-    { setting_key: 'support_email', setting_value: 'saanadcv@gmail.com', description: 'Support email address' },
-    { setting_key: 'currency', setting_value: 'AED', description: 'System currency code' },
-    { setting_key: 'site_name', setting_value: 'سند | المنصة الأولى للخدمات المهنية', description: 'Site name (Arabic)' },
-    { setting_key: 'site_name_en', setting_value: 'SANAD | Professional Career Services', description: 'Site name (English)' },
-    { setting_key: 'facebook_url', setting_value: 'https://facebook.com', description: 'Facebook page URL' },
-    { setting_key: 'instagram_url', setting_value: 'https://instagram.com', description: 'Instagram profile URL' },
-    { setting_key: 'linkedin_url', setting_value: 'https://linkedin.com', description: 'LinkedIn company URL' },
-    { setting_key: 'twitter_url', setting_value: 'https://x.com', description: 'X / Twitter profile URL' },
+    {
+      setting_key: 'whatsapp_number',
+      setting_value: '+971500000000',
+      description: 'WhatsApp contact number',
+    },
+    {
+      setting_key: 'support_email',
+      setting_value: 'saanadcv@gmail.com',
+      description: 'Support email address',
+    },
+    {
+      setting_key: 'currency',
+      setting_value: 'AED',
+      description: 'System currency code',
+    },
+    {
+      setting_key: 'site_name',
+      setting_value: 'سند | المنصة الأولى للخدمات المهنية',
+      description: 'Site name (Arabic)',
+    },
+    {
+      setting_key: 'site_name_en',
+      setting_value: 'SANAD | Professional Career Services',
+      description: 'Site name (English)',
+    },
+    {
+      setting_key: 'facebook_url',
+      setting_value: 'https://facebook.com',
+      description: 'Facebook page URL',
+    },
+    {
+      setting_key: 'instagram_url',
+      setting_value: 'https://instagram.com',
+      description: 'Instagram profile URL',
+    },
+    {
+      setting_key: 'linkedin_url',
+      setting_value: 'https://linkedin.com',
+      description: 'LinkedIn company URL',
+    },
+    {
+      setting_key: 'twitter_url',
+      setting_value: 'https://x.com',
+      description: 'X / Twitter profile URL',
+    },
   ];
 
   for (const s of defaultSettings) {
@@ -239,7 +323,7 @@ async function main() {
   }
 
   process.stdout.write(
-    `Seeded ${activePackageIds.length} active SANAD career services and default settings.\n`,
+    `Seeded ${activePackageIds.length} active SANAD career services, limited offers, and default settings.\n`,
   );
 }
 

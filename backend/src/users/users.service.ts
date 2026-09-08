@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -127,10 +128,19 @@ export class UsersService {
     });
   }
 
-  async updateAdministrator(id: number, dto: UpdateAdministratorDto) {
+  async updateAdministrator(
+    id: number,
+    dto: UpdateAdministratorDto,
+    requesterId?: number,
+  ) {
     const user = await this.prisma.users.findUnique({ where: { id } });
     if (!user || !['admin', 'super_admin'].includes(user.role))
       throw new NotFoundException('Administrator not found');
+    if (id === requesterId && dto.role && dto.role !== user.role) {
+      throw new BadRequestException(
+        'You cannot change your own administrator role',
+      );
+    }
     return this.prisma.users.update({
       where: { id },
       data: {
@@ -149,6 +159,22 @@ export class UsersService {
         account_locked: true,
       },
     });
+  }
+
+  async deleteAdministrator(id: number, requesterId: number) {
+    if (id === requesterId) {
+      throw new BadRequestException(
+        'You cannot delete your own administrator account',
+      );
+    }
+
+    const user = await this.prisma.users.findUnique({ where: { id } });
+    if (!user || !['admin', 'super_admin'].includes(user.role)) {
+      throw new NotFoundException('Administrator not found');
+    }
+
+    await this.prisma.users.delete({ where: { id } });
+    return { message: 'Administrator deleted successfully' };
   }
 
   async resetAdministratorPassword(

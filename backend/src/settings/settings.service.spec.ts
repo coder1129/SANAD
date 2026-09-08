@@ -56,6 +56,10 @@ describe('SettingsService', () => {
       const keys = prisma.settings.findMany.mock.calls[0][0].where.setting_key
         .in as string[];
       expect(keys).toContain('support_email');
+      expect(keys).not.toContain('site_name');
+      expect(keys).not.toContain('site_name_en');
+      expect(keys).not.toContain('site_description_ar');
+      expect(keys).not.toContain('site_description_en');
       expect(keys).not.toContain('payment_secret_key');
       expect(keys).not.toContain('smtp_password');
     });
@@ -137,7 +141,7 @@ describe('SettingsService', () => {
 
     it('upserts every valid entry inside one transaction', async () => {
       await service.bulkUpdate({
-        settings: { site_name: 'SANAD', currency: 'AED' },
+        settings: { support_phone: '+971500000000', currency: 'AED' },
       } as never);
 
       expect(prisma.settings.upsert).toHaveBeenCalledTimes(2);

@@ -5,15 +5,15 @@ const questions: Record<string, string[]> = {
     'Which language, file formats and page count are included?',
     'Does the scope cover writing from scratch, updating an existing CV, or both?',
   ],
-  'professional distinction package': [
+  'professional package': [
     'Is the cover letter tailored to one vacancy or provided as a reusable template?',
     'How does the included revision round apply across the CV and cover letter?',
   ],
-  'career excellence package': [
+  'full package': [
     'How does the scope differ from ordering CV + Cover Letter and LinkedIn separately?',
     'Do you receive LinkedIn text to add yourself, or is implementation included?',
   ],
-  'golden signature package': [
+  'premium full package': [
     'What exactly is included in the Job Application File?',
     'How does that file differ from the standalone Job Application Service?',
     'Is submission assistance included, and if so, for how many opportunities?',
@@ -28,6 +28,13 @@ const questions: Record<string, string[]> = {
     'What application tracking or follow-up deliverable will you receive?',
   ],
 };
+
+// Preserve the questions while an existing database is being updated from
+// the previous package names.
+questions['professional distinction package'] =
+  questions['professional package'];
+questions['career excellence package'] = questions['full package'];
+questions['golden signature package'] = questions['premium full package'];
 
 export function getScopeQuestions(packageItem: CareerPackage): string[] {
   return (

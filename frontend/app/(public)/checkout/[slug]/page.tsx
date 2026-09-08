@@ -110,7 +110,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             {_copy('Secure checkout')}
           </p>
           <h1 className="type-h1 mt-3 max-w-3xl text-primary">
-            {_copy('Complete your')}
+            {_copy('Complete your')}{' '}
             {_copy(packageItem.name, packageItem.nameAr)} {_copy('order')}
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
