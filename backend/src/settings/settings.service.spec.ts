@@ -49,6 +49,18 @@ describe('SettingsService', () => {
     });
   });
 
+  describe('getAllAdmin', () => {
+    it('does not expose developer or infrastructure settings', async () => {
+      await service.getAllAdmin();
+
+      const keys = prisma.settings.findMany.mock.calls[0][0].where.setting_key
+        .in as string[];
+      expect(keys).toContain('support_email');
+      expect(keys).not.toContain('payment_secret_key');
+      expect(keys).not.toContain('smtp_password');
+    });
+  });
+
   describe('bulkUpdate', () => {
     it('rejects more than 100 settings in one request', async () => {
       const settings: Record<string, string> = {};
@@ -65,6 +77,15 @@ describe('SettingsService', () => {
     it('rejects a key that is not a lowercase identifier', async () => {
       await expect(
         service.bulkUpdate({ settings: { 'Site Name': 'SANAD' } } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('rejects a developer setting key', async () => {
+      await expect(
+        service.bulkUpdate({
+          settings: { payment_secret_key: 'not-allowed' },
+        } as never),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });

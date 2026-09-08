@@ -53,9 +53,11 @@ export class SettingsService {
     return result;
   }
 
-  // Admin: get all settings
+  // Admin: return only business-facing site settings. Infrastructure secrets
+  // and developer configuration must never be exposed in the admin UI.
   async getAllAdmin() {
     return this.prisma.settings.findMany({
+      where: { setting_key: { in: PUBLIC_SETTING_KEYS } },
       orderBy: { setting_key: 'asc' },
     });
   }
@@ -68,7 +70,10 @@ export class SettingsService {
         'At most 100 settings can be updated at once',
       );
     }
-    for (const [key, value] of entries) this.validateSetting(key, value);
+    for (const [key, value] of entries) {
+      this.assertAdminSettingKey(key);
+      this.validateSetting(key, value);
+    }
 
     const updates = entries.map(([key, value]) =>
       this.prisma.settings.upsert({
@@ -84,6 +89,7 @@ export class SettingsService {
 
   // Admin: upsert single setting
   async upsertOne(dto: CreateOrUpdateSettingDto) {
+    this.assertAdminSettingKey(dto.setting_key);
     this.validateSetting(dto.setting_key, dto.setting_value ?? '');
     return this.prisma.settings.upsert({
       where: { setting_key: dto.setting_key },
@@ -144,6 +150,12 @@ export class SettingsService {
           `${key} must be a complete http or https URL`,
         );
       }
+    }
+  }
+
+  private assertAdminSettingKey(key: string) {
+    if (!PUBLIC_SETTING_KEYS.includes(key)) {
+      throw new BadRequestException('This setting is not available in admin');
     }
   }
 }

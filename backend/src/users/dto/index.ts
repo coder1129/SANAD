@@ -52,6 +52,7 @@ export class CreateAdministratorDto {
 }
 
 export class UpdateAdministratorDto {
+  @IsOptional() @IsString() @MinLength(2) @MaxLength(255) name?: string;
   @IsOptional() @IsIn(['admin', 'super_admin']) role?: 'admin' | 'super_admin';
   @IsOptional() @IsBoolean() active?: boolean;
 }

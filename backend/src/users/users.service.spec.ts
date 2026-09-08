@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -11,6 +11,7 @@ describe('UsersService', () => {
     prisma = {
       users: {
         findUnique: vi.fn(),
+        create: vi.fn(),
         update: vi.fn(),
       },
     };
@@ -91,6 +92,39 @@ describe('UsersService', () => {
       expect(prisma.users.update.mock.calls[0][0].data).toEqual({
         name: 'Updated',
       });
+    });
+  });
+
+  describe('createAdministrator', () => {
+    it('reports a duplicate administrator email as a conflict', async () => {
+      prisma.users.findUnique.mockResolvedValue({ id: 7 });
+
+      await expect(
+        service.createAdministrator({
+          name: 'Mostafa',
+          email: 'elsrogy498@gmail.com',
+          password: 'secure-password',
+          role: 'super_admin',
+        }),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(prisma.users.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateAdministrator', () => {
+    it('allows a super admin to update an administrator name', async () => {
+      prisma.users.findUnique.mockResolvedValue({ id: 7, role: 'super_admin' });
+      prisma.users.update.mockResolvedValue({ id: 7, name: 'Mostafa' });
+
+      await service.updateAdministrator(7, { name: ' Mostafa ' });
+
+      expect(prisma.users.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 7 },
+          data: { name: 'Mostafa' },
+        }),
+      );
     });
   });
 });
