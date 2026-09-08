@@ -48,9 +48,12 @@ export function AdminSignInForm() {
           router.replace('/admin');
         } catch (requestError) {
           setError(
-            isApiError(requestError)
-              ? requestError.userMessage
-              : 'Sign in failed. Please try again.',
+            isApiError(requestError) &&
+              requestError.code === 'INVALID_CREDENTIALS'
+              ? 'Invalid email or password.'
+              : isApiError(requestError)
+                ? requestError.userMessage
+                : 'Sign in failed. Please try again.',
           );
         }
       })}

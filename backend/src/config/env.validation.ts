@@ -1,4 +1,4 @@
-import { plainToInstance } from 'class-transformer';
+import { plainToInstance, Transform } from 'class-transformer';
 import {
   IsEnum,
   IsIn,
@@ -20,6 +20,19 @@ enum Environment {
 
 const DURATION_MESSAGE =
   'must be a duration such as 30s, 15m, 12h, or 30d (digits followed by s, m, h, or d)';
+
+/**
+ * Hosting dashboards sometimes preserve quotes pasted into a variable value
+ * (for example `'false'`). Normalize only boolean-style values before the
+ * strict validator runs; unrelated invalid values remain rejected.
+ */
+function normalizeBooleanEnvironmentValue(value: unknown): unknown {
+  if (typeof value === 'boolean') return String(value);
+  if (typeof value !== 'string') return value;
+
+  const normalized = value.trim().replace(/^['"](true|false)['"]$/i, '$1');
+  return /^(true|false)$/i.test(normalized) ? normalized.toLowerCase() : value;
+}
 
 class EnvironmentVariables {
   @IsEnum(Environment)
@@ -69,6 +82,7 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => normalizeBooleanEnvironmentValue(value))
   @IsIn(['true', 'false'])
   SWAGGER_ENABLED: string = 'false';
 
@@ -82,6 +96,7 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  @Transform(({ value }) => normalizeBooleanEnvironmentValue(value))
   @IsIn(['true', 'false'])
   REQUIRE_EMAIL_VERIFICATION: string = 'false';
 
