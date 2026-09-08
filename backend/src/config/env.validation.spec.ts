@@ -70,10 +70,10 @@ describe('environment validation', () => {
     ).toContain('10.0.0.0');
   });
 
-  it('requires external storage and email delivery in production', () => {
+  it('requires email delivery in production', () => {
     expect(() =>
       validate({ ...valid, NODE_ENV: 'production', TRUST_PROXY: 'false' }),
-    ).toThrow(/R2\/S3/);
+    ).toThrow(/SMTP_HOST or RESEND_API_KEY/);
   });
 
   it('requires an explicit trust-proxy decision in production', () => {
@@ -143,17 +143,27 @@ describe('environment validation', () => {
     ).toThrow(/SWAGGER_ENABLED=false/);
   });
 
-  it('rejects incomplete or insecure production object storage', () => {
-    expect(() =>
+  it('allows Railway local storage but rejects incomplete R2/S3 configuration', () => {
+    expect(
       validate({
         ...valid,
-        ...productionServices,
         NODE_ENV: 'production',
         TRUST_PROXY: '1',
         PAYMENT_PROVIDER: 'bypass',
-        R2_PUBLIC_URL: '',
+        RESEND_API_KEY: 'resend-key',
       }),
-    ).toThrow(/complete R2\/S3 configuration/);
+    ).toMatchObject({ NODE_ENV: 'production' });
+
+    expect(() =>
+      validate({
+        ...valid,
+        NODE_ENV: 'production',
+        TRUST_PROXY: '1',
+        PAYMENT_PROVIDER: 'bypass',
+        RESEND_API_KEY: 'resend-key',
+        R2_PUBLIC_URL: 'https://media.sanad.example',
+      }),
+    ).toThrow(/R2\/S3 configuration is incomplete/);
 
     expect(() =>
       validate({

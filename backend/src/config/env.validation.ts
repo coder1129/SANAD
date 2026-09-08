@@ -22,16 +22,17 @@ const DURATION_MESSAGE =
   'must be a duration such as 30s, 15m, 12h, or 30d (digits followed by s, m, h, or d)';
 
 /**
- * Hosting dashboards sometimes preserve quotes pasted into a variable value
- * (for example `'false'`). Normalize only boolean-style values before the
- * strict validator runs; unrelated invalid values remain rejected.
+ * Swagger is never enabled in production. Hosting dashboards sometimes expose
+ * an empty, quoted, or templated value, so every value other than an explicit
+ * `true` safely becomes `false` before validation. Production still rejects
+ * an explicit `true` below.
  */
 function normalizeBooleanEnvironmentValue(value: unknown): unknown {
   if (typeof value === 'boolean') return String(value);
   if (typeof value !== 'string') return value;
 
   const normalized = value.trim().replace(/^['"](true|false)['"]$/i, '$1');
-  return /^(true|false)$/i.test(normalized) ? normalized.toLowerCase() : value;
+  return normalized.toLowerCase() === 'true' ? 'true' : 'false';
 }
 
 class EnvironmentVariables {
@@ -311,28 +312,46 @@ export function validate(config: Record<string, unknown>) {
     if (validatedConfig.SWAGGER_ENABLED === 'true') {
       throw new Error('Production must keep SWAGGER_ENABLED=false');
     }
+    const storageValues = [
+      validatedConfig.R2_ACCOUNT_ID,
+      validatedConfig.R2_ENDPOINT,
+      validatedConfig.R2_ACCESS_KEY_ID,
+      validatedConfig.R2_SECRET_ACCESS_KEY,
+      validatedConfig.R2_BUCKET,
+      validatedConfig.R2_PUBLIC_URL,
+    ];
+    const hasStorageConfiguration = storageValues.some((value) =>
+      Boolean(value?.trim()),
+    );
+
+    // Railway can persist the built-in local storage by mounting `/app/uploads`.
+    // R2/S3 remains optional, but when it is configured every field must be
+    // present so a half-configured client can never start accepting uploads.
     if (
-      (!validatedConfig.R2_ACCOUNT_ID && !validatedConfig.R2_ENDPOINT) ||
-      !validatedConfig.R2_ACCESS_KEY_ID ||
-      !validatedConfig.R2_SECRET_ACCESS_KEY ||
-      !validatedConfig.R2_BUCKET ||
-      !validatedConfig.R2_PUBLIC_URL
+      hasStorageConfiguration &&
+      ((!validatedConfig.R2_ACCOUNT_ID && !validatedConfig.R2_ENDPOINT) ||
+        !validatedConfig.R2_ACCESS_KEY_ID ||
+        !validatedConfig.R2_SECRET_ACCESS_KEY ||
+        !validatedConfig.R2_BUCKET ||
+        !validatedConfig.R2_PUBLIC_URL)
     ) {
       throw new Error(
-        'Production requires complete R2/S3 configuration: account ID or endpoint, access key, secret, bucket, and public URL',
+        'R2/S3 configuration is incomplete: provide account ID or endpoint, access key, secret, bucket, and public URL; or remove all R2_* variables to use Railway local storage.',
       );
     }
-    for (const [name, value] of [
-      ['R2_PUBLIC_URL', validatedConfig.R2_PUBLIC_URL],
-      ...(validatedConfig.R2_ENDPOINT
-        ? [['R2_ENDPOINT', validatedConfig.R2_ENDPOINT] as const]
-        : []),
-    ] as const) {
-      try {
-        const parsed = new URL(value);
-        if (parsed.protocol !== 'https:') throw new Error();
-      } catch {
-        throw new Error(`Production ${name} must be a valid HTTPS URL`);
+    if (hasStorageConfiguration) {
+      for (const [name, value] of [
+        ['R2_PUBLIC_URL', validatedConfig.R2_PUBLIC_URL],
+        ...(validatedConfig.R2_ENDPOINT
+          ? [['R2_ENDPOINT', validatedConfig.R2_ENDPOINT] as const]
+          : []),
+      ] as const) {
+        try {
+          const parsed = new URL(value);
+          if (parsed.protocol !== 'https:') throw new Error();
+        } catch {
+          throw new Error(`Production ${name} must be a valid HTTPS URL`);
+        }
       }
     }
     if (

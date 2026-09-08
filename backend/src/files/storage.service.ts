@@ -66,7 +66,7 @@ export class StorageService {
       this.isS3Configured = false;
       fs.mkdirSync(this.localStorageDir, { recursive: true });
       this.logger.warn(
-        'R2 credentials not provided. Using local disk fallback storage for development.',
+        'R2 credentials not provided. Using local disk storage; mount /app/uploads on Railway to preserve files across deployments.',
       );
     }
   }

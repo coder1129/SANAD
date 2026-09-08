@@ -48,7 +48,7 @@ npm run start:dev
 - Swagger: `http://localhost:3001/api/docs` عند `SWAGGER_ENABLED=true` خارج الإنتاج
 - health: `GET /api/v1/health`
 
-في الإنتاج يجب إعداد R2/S3 ومزوّد بريد (`RESEND_API_KEY` أو SMTP)، وتحديد CORS صراحةً. التطبيق يرفض الأسرار القصيرة أو الافتراضية عند الإقلاع.
+في الإنتاج يجب إعداد مزوّد بريد (`RESEND_API_KEY` أو SMTP)، وتحديد CORS صراحةً. يمكن استخدام R2/S3 للملفات أو التخزين المحلي مع Volume دائم مركّب على `/app/uploads`؛ لا تضع إعدادات R2 جزئية. التطبيق يرفض الأسرار القصيرة أو الافتراضية عند الإقلاع.
 
 للنشر على Railway مع واجهة Vercel راجع [`../DEPLOYMENT.md`](../DEPLOYMENT.md).
 
