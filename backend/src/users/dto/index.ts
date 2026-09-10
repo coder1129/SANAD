@@ -6,8 +6,23 @@ import {
   IsIn,
   IsEmail,
   IsBoolean,
+  IsObject,
+  ValidateNested,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+
+export class CareerProfileDto {
+  @IsOptional() @IsString() @MaxLength(255) target_job_title?: string;
+  @IsOptional() @IsString() @MaxLength(255) target_industry?: string;
+  @IsOptional() @IsString() @MaxLength(100) years_of_experience?: string;
+  @IsOptional() @IsString() @MaxLength(500) education?: string;
+  @IsOptional() @IsString() @MaxLength(1000) key_skills?: string;
+  @IsOptional() @IsString() @MaxLength(500) linkedin_url?: string;
+  @IsOptional() @IsString() @MaxLength(500) portfolio_url?: string;
+  @IsOptional() @IsString() @MaxLength(255) target_country?: string;
+  @IsOptional() @IsString() @MaxLength(2000) career_goals?: string;
+}
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({ example: 'عبدالله محمد' })
@@ -42,6 +57,13 @@ export class UpdateProfileDto {
   @IsString()
   @IsIn(['male', 'female'])
   gender?: string;
+
+  @ApiPropertyOptional({ type: CareerProfileDto })
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => CareerProfileDto)
+  career_profile?: CareerProfileDto;
 }
 
 export class CreateAdministratorDto {

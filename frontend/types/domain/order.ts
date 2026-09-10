@@ -8,8 +8,32 @@ export interface CreateOrderInput {
   requirements?: {
     targetJobTitle?: string;
     targetIndustry?: string;
+    targetCountry?: string;
+    yearsOfExperience?: string;
+    education?: string;
+    keySkills?: string;
     careerGoals?: string;
+    linkedinUrl?: string;
+    portfolioUrl?: string;
+    targetCompany?: string;
+    jobPostingUrl?: string;
+    firstCv?: boolean;
   };
+}
+
+export interface OrderRequirements {
+  targetJobTitle?: string;
+  targetIndustry?: string;
+  targetCountry?: string;
+  yearsOfExperience?: string;
+  education?: string;
+  keySkills?: string;
+  careerGoals?: string;
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  targetCompany?: string;
+  jobPostingUrl?: string;
+  firstCv?: boolean;
 }
 
 export interface CustomerOrder {
@@ -18,12 +42,17 @@ export interface CustomerOrder {
   packageId: number | null;
   packageName: string | null;
   packageNameAr?: string | null;
+  secondaryPackageId: number | null;
+  secondaryPackageName: string | null;
+  secondaryPackageNameAr?: string | null;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
   status: string;
   originalAmount: number;
   discountAmount: number;
+  secondaryOriginalAmount: number;
+  secondaryDiscountAmount: number;
   totalAmount: number;
   finalAmount: number;
   couponCode: string | null;
@@ -35,6 +64,8 @@ export interface CustomerOrder {
   offerNameAr?: string | null;
   payments: OrderPayment[];
   statusHistory: OrderStatusHistory[];
+  requirements: OrderRequirements;
+  notes: string | null;
 }
 
 export interface OrderPayment {

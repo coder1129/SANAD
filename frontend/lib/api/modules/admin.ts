@@ -48,6 +48,11 @@ export interface AdminOffer {
   end_date: string;
   is_active: boolean | null;
   package: { id: number; name_en: string; name_ar?: string | null } | null;
+  trigger_package?: {
+    id: number;
+    name_en: string;
+    name_ar?: string | null;
+  } | null;
 }
 
 export interface AdminCoupon {
@@ -85,12 +90,20 @@ export interface AdminOrder {
   status: string;
   original_amount: DecimalValue;
   discount_amount: DecimalValue | null;
+  secondary_original_amount?: DecimalValue | null;
+  secondary_discount_amount?: DecimalValue | null;
   final_amount: DecimalValue;
   coupon_code: string | null;
   admin_notes?: string | null;
   notes?: string | null;
+  requirements?: Record<string, unknown> | null;
   created_at: string | null;
   package: { id: number; name_en: string; name_ar?: string | null } | null;
+  secondary_package?: {
+    id: number;
+    name_en: string;
+    name_ar?: string | null;
+  } | null;
   user?: {
     id: number;
     name: string;
@@ -153,6 +166,11 @@ export interface AdminPayment {
     customer_email: string;
     status: string;
   };
+}
+
+export interface BulkCompleteOrdersResult {
+  completed_count: number;
+  order_ids: number[];
 }
 
 export interface CmsPage {
@@ -387,6 +405,13 @@ export const adminApi = {
           note,
         }),
         'PATCH /admin/orders/:id/status',
+      ),
+    completeBulk: async (orderIds: number[]) =>
+      object<BulkCompleteOrdersResult>(
+        await api.patch<unknown>('/admin/orders/bulk/complete', {
+          order_ids: orderIds,
+        }),
+        'PATCH /admin/orders/bulk/complete',
       ),
     confirmManualPayment: async (
       id: number,

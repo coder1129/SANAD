@@ -98,6 +98,28 @@ describe('UsersService', () => {
         name: 'Updated',
       });
     });
+
+    it('merges trimmed career fields without deleting existing profile data', async () => {
+      prisma.users.findUnique.mockResolvedValue({
+        id: 7,
+        career_profile: { target_country: 'UAE', education: 'BSc' },
+      });
+      prisma.users.update.mockResolvedValue({ id: 7 });
+
+      await service.updateProfile(7, {
+        career_profile: {
+          target_job_title: '  Product Manager  ',
+          key_skills: ' Strategy, Analytics ',
+        },
+      });
+
+      expect(prisma.users.update.mock.calls[0][0].data.career_profile).toEqual({
+        target_country: 'UAE',
+        education: 'BSc',
+        target_job_title: 'Product Manager',
+        key_skills: 'Strategy, Analytics',
+      });
+    });
   });
 
   describe('createAdministrator', () => {

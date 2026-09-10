@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@/test/render';
 import { NextIntlClientProvider } from 'next-intl';
 import { translateCopy } from './copy';
+import { createCopy } from './create-copy';
 import { useCopy } from './use-copy';
 import arabicMessages from '@/messages/interface-ar.json';
 
@@ -23,6 +24,16 @@ describe('i18n copy and next-intl context integration', () => {
   it('preserves English copy when locale is en', () => {
     const result = translateCopy('Home', 'en');
     expect(result).toBe('Home');
+  });
+
+  it('uses Arabic-Indic numerals for Arabic UI numbers', () => {
+    expect(
+      createCopy('ar').number(4, {
+        minimumIntegerDigits: 2,
+        useGrouping: false,
+      }),
+    ).toBe('٠٤');
+    expect(createCopy('en').number(4, { minimumIntegerDigits: 2 })).toBe('04');
   });
 
   it('uses Arabic content even when the English field is null', () => {

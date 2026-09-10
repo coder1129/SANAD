@@ -33,6 +33,9 @@ export function PackageOrderCard({
   const _copy = useCopy();
 
   const bestOffer = getBestPackageOffer(packageItem);
+  const companionOffers = [...(packageItem.companionOffers ?? [])].sort(
+    (first, second) => second.discountPercentage - first.discountPercentage,
+  );
   const revisions = `${packageItem.maxRevisions} ${
     packageItem.maxRevisions === 1 ? 'revision' : 'revisions'
   }`;
@@ -123,6 +126,40 @@ export function PackageOrderCard({
             </p>
           </>
         )}
+
+        {companionOffers.length > 0 ? (
+          <div className="mt-5 rounded-md border border-accent/35 bg-accent/10 p-4">
+            <p className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <Tag aria-hidden="true" className="size-4 text-accent" />
+              {_copy(
+                'Offers unlocked with this service',
+                'عروض متاحة مع هذه الخدمة',
+              )}
+            </p>
+            <ul className="mt-2 grid gap-2 text-sm leading-6 text-foreground">
+              {companionOffers.map((offer) => (
+                <li key={offer.id}>
+                  <strong>{_copy(offer.discountPercentage)}%</strong>{' '}
+                  {_copy('off', 'خصم على')}{' '}
+                  {_copy(
+                    offer.type === 'cross_service_any'
+                      ? 'any second service'
+                      : (offer.packageName ?? 'the selected second service'),
+                    offer.type === 'cross_service_any'
+                      ? 'أي خدمة ثانية'
+                      : offer.packageNameAr,
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs text-muted-foreground">
+              {_copy(
+                'Choose the second service during checkout.',
+                'اختر الخدمة الثانية أثناء إتمام الطلب.',
+              )}
+            </p>
+          </div>
+        ) : null}
 
         <dl className="mt-5 grid grid-cols-2 gap-4">
           <div>

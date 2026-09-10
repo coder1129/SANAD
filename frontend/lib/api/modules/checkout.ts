@@ -74,7 +74,9 @@ export const checkoutApi = {
           ? {}
           : { secondary_package_id: input.secondaryPackageId }),
       },
-      { authMode: 'none', signal: options.signal },
+      // The endpoint remains public, but sending a session when one exists
+      // lets the server validate per-user coupon limits during preview.
+      { authMode: 'session', signal: options.signal },
     );
     const result = pricingPayloadSchema.safeParse(payload);
 

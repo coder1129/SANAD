@@ -72,7 +72,7 @@ const principles = [
     number: '04',
     title: 'Confidentiality by Default',
     description:
-      'Every engagement operates under strict non-disclosure. Your documents and career plans stay between you and your assigned writer.',
+      'Your documents and career plans are handled confidentially and shared only with the SANAD team members needed to fulfil your order.',
   },
 ] as const;
 
@@ -132,7 +132,7 @@ export default async function AboutUsPage() {
                 </p>
                 <p>
                   {_copy(
-                    'The process is straightforward: choose a service, share your career context, and receive polished deliverables within 48–72 business hours. Unlimited revisions are included within 14 days of the first draft so the final result reflects your voice and goals accurately.',
+                    'The process is straightforward: choose a service, share your career context through the official WhatsApp channel, and receive the agreed deliverables within the timeline listed for your package. Revision rounds follow the allowance published for the selected service.',
                   )}
                 </p>
               </>
@@ -163,7 +163,7 @@ export default async function AboutUsPage() {
                   {_copy('Turnaround')}
                 </dt>
                 <dd className="mt-1 text-muted-foreground">
-                  {_copy('48–72 business hours, standard delivery')}
+                  {_copy('According to the timeline listed in each package')}
                 </dd>
               </div>
               <Separator />
@@ -172,7 +172,7 @@ export default async function AboutUsPage() {
                   {_copy('Revisions')}
                 </dt>
                 <dd className="mt-1 text-muted-foreground">
-                  {_copy('Unlimited within 14 days of first draft')}
+                  {_copy('According to the allowance listed in each package')}
                 </dd>
               </div>
             </dl>
@@ -203,7 +203,10 @@ export default async function AboutUsPage() {
                   aria-hidden="true"
                   className="font-display text-2xl leading-none text-accent sm:pt-0.5 sm:text-3xl"
                 >
-                  {_copy(number)}
+                  {_copy.number(Number(number), {
+                    minimumIntegerDigits: 2,
+                    useGrouping: false,
+                  })}
                 </span>
                 <div>
                   <h3 className="type-h4 text-primary">{_copy(title)}</h3>

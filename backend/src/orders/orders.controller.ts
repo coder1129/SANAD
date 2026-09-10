@@ -15,6 +15,7 @@ import {
   OrderFilterDto,
   UpdateOrderStatusDto,
   UpdateOrderAdminDto,
+  BulkCompleteOrdersDto,
 } from './dto';
 import { CurrentUser, Roles } from '../common/decorators';
 import { UserRole } from '../common/enums';
@@ -89,6 +90,17 @@ export class AdminOrdersController {
   @ApiOperation({ summary: 'Get complete order details (Admin)' })
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ordersService.findOneAdmin(id);
+  }
+
+  @Patch('bulk/complete')
+  @ApiOperation({
+    summary: 'Mark up to 100 paid active orders as completed (Admin)',
+  })
+  async completeBulk(
+    @CurrentUser('id') adminId: number,
+    @Body() dto: BulkCompleteOrdersDto,
+  ) {
+    return this.ordersService.completeBulkAdmin(dto.order_ids, adminId);
   }
 
   @Patch(':id/status')

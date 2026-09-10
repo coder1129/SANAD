@@ -72,14 +72,14 @@ const sections = [
     id: 'delivery',
     title: 'Delivery & Timelines',
     content: [
-      'Standard delivery is 48–72 business hours from the point we receive all required information. If a complex brief or supplementary consultation is needed, we will notify you of any adjusted timeline before work begins.',
+      'The delivery estimate stated in the selected package begins after we receive all required information through the agreed WhatsApp channel. If a complex brief or supplementary consultation is needed, we will notify you of any adjusted timeline before work begins.',
     ],
   },
   {
     id: 'revisions',
     title: 'Revisions',
     content: [
-      'We offer unlimited revisions within 14 calendar days of the first draft delivery. Revisions cover tone, wording, emphasis, and structural changes within the scope of the original target role.',
+      'Each service includes the number of revision rounds stated in the selected package. Revisions cover refinements within the agreed scope and must be requested through the official WhatsApp conversation for the order.',
       'Requests that represent a substantial career pivot—targeting an entirely different industry or seniority level—may be treated as a new order or incur an adaptation fee, which will be communicated and agreed upon before any additional work begins.',
     ],
   },
@@ -87,14 +87,14 @@ const sections = [
     id: 'intellectual-property',
     title: 'Intellectual Property',
     content: [
-      'Upon full payment and final delivery, you hold complete ownership of the documents produced for you. You are free to use, edit, print, and distribute them for your personal job-search purposes.',
+      'Upon full payment and final delivery through the agreed WhatsApp channel, you hold complete ownership of the documents produced for you. You are free to use, edit, print, and distribute them for your personal job-search purposes.',
     ],
   },
   {
     id: 'fees-and-refunds',
     title: 'Fees & Refunds',
     content: [
-      'All prices are displayed in the listed currency before checkout. Orders may be cancelled for a full refund before a writer has been assigned. Once drafting has commenced, we resolve concerns through our revision process rather than immediate refunds.',
+      'All prices are displayed in the listed currency before you submit a request. Payment is arranged directly with the SANAD team through the official WhatsApp number; no payment is collected on the website. Cancellation or refund eligibility depends on whether work has started and is confirmed through the same official conversation.',
     ],
   },
   {
@@ -168,7 +168,7 @@ export default async function TermsAndConditionsPage() {
               {sections.map(({ content, id, title }, index) => (
                 <section id={id} key={id}>
                   <h2 className="type-h4 text-primary">
-                    {_copy(index + 1)}
+                    {_copy.number(index + 1, { useGrouping: false })}
                     {_copy('.')}
                     {_copy(title)}
                   </h2>

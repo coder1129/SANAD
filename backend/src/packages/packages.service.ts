@@ -100,6 +100,7 @@ export class PackagesService {
                 select: { id: true, name_en: true, name_ar: true, price: true },
               },
             },
+            orderBy: [{ discount_percentage: 'desc' }, { created_at: 'desc' }],
           },
           package_reviews: {
             where: { status: 'published' },
@@ -155,6 +156,7 @@ export class PackagesService {
               select: { id: true, name_en: true, name_ar: true, price: true },
             },
           },
+          orderBy: [{ discount_percentage: 'desc' }, { created_at: 'desc' }],
         },
         package_reviews: {
           where: { status: 'published' },

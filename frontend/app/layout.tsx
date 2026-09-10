@@ -2,12 +2,14 @@ import { getLocalizedMetadata } from '@/lib/i18n/metadata';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Cairo, Merriweather } from 'next/font/google';
-import { NextIntlClientProvider } from 'next-intl';
-import { getLocale, getMessages } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { cookies } from 'next/headers';
 
 import { AppProviders } from '@/components/providers/app-providers';
+import { LocaleProvider, type AppLocale } from '@/components/providers/locale-provider';
 import { getSiteUrl } from '@/lib/env/public-env';
+import arabicMessages from '@/messages/ar.json';
+import englishMessages from '@/messages/en.json';
 
 import './globals.css';
 
@@ -67,8 +69,7 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
+  const locale = (await getLocale()) as AppLocale;
   const isRtl = locale === 'ar';
   const theme = (await cookies()).get('SANAD_THEME')?.value;
 
@@ -88,9 +89,12 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <LocaleProvider
+          initialLocale={locale}
+          messagesByLocale={{ ar: arabicMessages, en: englishMessages }}
+        >
           <AppProviders>{children}</AppProviders>
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

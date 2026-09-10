@@ -15,18 +15,47 @@ const orderPayloadSchema = z.object({
   id: z.number().int().positive(),
   order_number: z.string().min(1),
   package_id: z.number().int().positive().nullish(),
+  secondary_package_id: z.number().int().positive().nullish(),
   customer_name: z.string(),
   customer_email: z.string().email(),
   customer_phone: z.string().nullish(),
   status: z.string().min(1),
   original_amount: decimalSchema,
   discount_amount: decimalSchema,
+  secondary_original_amount: decimalSchema.nullish(),
+  secondary_discount_amount: decimalSchema.nullish(),
   total_amount: decimalSchema,
   final_amount: decimalSchema,
   coupon_code: z.string().nullish(),
   created_at: z.string().nullish(),
   updated_at: z.string().nullish(),
+  notes: z.string().nullish(),
+  requirements: z
+    .object({
+      target_job_title: z.string().optional(),
+      target_industry: z.string().optional(),
+      target_country: z.string().optional(),
+      years_of_experience: z.string().optional(),
+      education: z.string().optional(),
+      key_skills: z.string().optional(),
+      career_goals: z.string().optional(),
+      linkedin_url: z.string().optional(),
+      portfolio_url: z.string().optional(),
+      target_company: z.string().optional(),
+      job_posting_url: z.string().optional(),
+      first_cv: z.boolean().optional(),
+    })
+    .passthrough()
+    .nullish(),
   package: z
+    .object({
+      id: z.number().int().positive(),
+      name_en: z.string(),
+      name_ar: z.string().nullish(),
+    })
+    .passthrough()
+    .nullish(),
+  secondary_package: z
     .object({
       id: z.number().int().positive(),
       name_en: z.string(),
@@ -90,12 +119,17 @@ function toCustomerOrder(
     packageId: payload.package_id ?? null,
     packageName: payload.package?.name_en ?? null,
     packageNameAr: payload.package?.name_ar ?? null,
+    secondaryPackageId: payload.secondary_package_id ?? null,
+    secondaryPackageName: payload.secondary_package?.name_en ?? null,
+    secondaryPackageNameAr: payload.secondary_package?.name_ar ?? null,
     customerName: payload.customer_name,
     customerEmail: payload.customer_email,
     customerPhone: payload.customer_phone ?? '',
     status: payload.status,
     originalAmount: payload.original_amount,
     discountAmount: payload.discount_amount,
+    secondaryOriginalAmount: payload.secondary_original_amount ?? 0,
+    secondaryDiscountAmount: payload.secondary_discount_amount ?? 0,
     totalAmount: payload.total_amount,
     finalAmount: payload.final_amount,
     couponCode: payload.coupon_code ?? null,
@@ -126,6 +160,21 @@ function toCustomerOrder(
       note: history.note ?? null,
       createdAt: history.created_at ?? null,
     })),
+    requirements: {
+      targetJobTitle: payload.requirements?.target_job_title,
+      targetIndustry: payload.requirements?.target_industry,
+      targetCountry: payload.requirements?.target_country,
+      yearsOfExperience: payload.requirements?.years_of_experience,
+      education: payload.requirements?.education,
+      keySkills: payload.requirements?.key_skills,
+      careerGoals: payload.requirements?.career_goals,
+      linkedinUrl: payload.requirements?.linkedin_url,
+      portfolioUrl: payload.requirements?.portfolio_url,
+      targetCompany: payload.requirements?.target_company,
+      jobPostingUrl: payload.requirements?.job_posting_url,
+      firstCv: payload.requirements?.first_cv,
+    },
+    notes: payload.notes ?? null,
   };
 }
 
@@ -150,9 +199,36 @@ export const ordersApi = {
           ...(input.requirements.targetIndustry
             ? { target_industry: input.requirements.targetIndustry }
             : {}),
+          ...(input.requirements.targetCountry
+            ? { target_country: input.requirements.targetCountry }
+            : {}),
+          ...(input.requirements.yearsOfExperience
+            ? { years_of_experience: input.requirements.yearsOfExperience }
+            : {}),
+          ...(input.requirements.education
+            ? { education: input.requirements.education }
+            : {}),
+          ...(input.requirements.keySkills
+            ? { key_skills: input.requirements.keySkills }
+            : {}),
           ...(input.requirements.careerGoals
             ? { career_goals: input.requirements.careerGoals }
             : {}),
+          ...(input.requirements.linkedinUrl
+            ? { linkedin_url: input.requirements.linkedinUrl }
+            : {}),
+          ...(input.requirements.portfolioUrl
+            ? { portfolio_url: input.requirements.portfolioUrl }
+            : {}),
+          ...(input.requirements.targetCompany
+            ? { target_company: input.requirements.targetCompany }
+            : {}),
+          ...(input.requirements.jobPostingUrl
+            ? { job_posting_url: input.requirements.jobPostingUrl }
+            : {}),
+          ...(input.requirements.firstCv === undefined
+            ? {}
+            : { first_cv: input.requirements.firstCv }),
         }
       : undefined;
 

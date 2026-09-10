@@ -40,6 +40,7 @@ const companionOfferPayloadSchema = packageOfferPayloadSchema.extend({
       id: z.number().int().positive(),
       name_en: z.string(),
       name_ar: z.string().nullish(),
+      price: decimalSchema,
     })
     .nullish(),
 });
@@ -118,6 +119,9 @@ function toCompanionOffer(payload: CompanionOfferPayload): CompanionOffer {
     ...toPackageOffer(payload),
     type: payload.offer_type,
     packageId: payload.package?.id ?? null,
+    packageName: payload.package?.name_en ?? null,
+    packageNameAr: payload.package?.name_ar ?? null,
+    packagePrice: payload.package?.price ?? null,
   };
 }
 

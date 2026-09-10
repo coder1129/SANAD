@@ -104,6 +104,19 @@ describe('OffersService', () => {
       expect(data.end_date).toBeInstanceOf(Date);
       expect(data.is_active).toBe(true);
     });
+
+    it('rejects using the purchased service as the discounted service', async () => {
+      await expect(
+        service.create({
+          ...validOffer,
+          offer_type: 'cross_service_specific',
+          package_id: 1,
+          trigger_package_id: 1,
+        } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+
+      expect(prisma.offers.create).not.toHaveBeenCalled();
+    });
   });
 
   describe('update', () => {
@@ -148,6 +161,28 @@ describe('OffersService', () => {
 
       expect(prisma.offers.update.mock.calls[0][0].data).toEqual({
         discount_percentage: 35,
+      });
+    });
+
+    it('clears an old target when changing to an any-service offer', async () => {
+      prisma.offers.findUnique.mockResolvedValue({
+        id: 5,
+        offer_type: 'cross_service_specific',
+        package_id: 2,
+        trigger_package_id: 1,
+        start_date: new Date('2026-03-01'),
+        end_date: new Date('2026-04-01'),
+        package: { id: 2 },
+      });
+      prisma.packages.findUnique.mockResolvedValue({ id: 1 });
+      prisma.offers.update.mockResolvedValue({ id: 5 });
+
+      await service.update(5, { offer_type: 'cross_service_any' } as never);
+
+      expect(prisma.offers.update.mock.calls[0][0].data).toEqual({
+        package_id: null,
+        trigger_package_id: 1,
+        offer_type: 'cross_service_any',
       });
     });
   });

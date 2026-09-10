@@ -2,7 +2,7 @@ import { Controller, Post, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CheckoutService } from './checkout.service';
 import { CheckoutPreviewDto } from './dto';
-import { Public, CurrentUser } from '../common/decorators';
+import { Public, CurrentUser, OptionalAuth } from '../common/decorators';
 
 @ApiTags('Checkout')
 @Controller('checkout')
@@ -10,6 +10,7 @@ export class CheckoutController {
   constructor(private readonly checkoutService: CheckoutService) {}
 
   @Public()
+  @OptionalAuth()
   @Post('preview')
   @ApiOperation({
     summary:

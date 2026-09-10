@@ -11,6 +11,56 @@ import { PaginationDto, createPaginatedResponse } from '../common/utils';
 export class OffersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private normalizeConfiguration(
+    type: 'standard' | 'cross_service_any' | 'cross_service_specific',
+    packageId?: number | null,
+    triggerPackageId?: number | null,
+  ) {
+    const normalizedPackageId =
+      type === 'cross_service_any' ? null : (packageId ?? null);
+    const normalizedTriggerPackageId =
+      type === 'standard' ? null : (triggerPackageId ?? null);
+
+    if (type === 'standard' && !normalizedPackageId) {
+      throw new BadRequestException(
+        'Standard offers require a discounted package',
+      );
+    }
+    if (type !== 'standard' && !normalizedTriggerPackageId) {
+      throw new BadRequestException(
+        'Cross-service offers require a purchased package',
+      );
+    }
+    if (type === 'cross_service_specific' && !normalizedPackageId) {
+      throw new BadRequestException(
+        'Specific cross-service offers require a discounted package',
+      );
+    }
+    if (
+      normalizedPackageId &&
+      normalizedTriggerPackageId &&
+      normalizedPackageId === normalizedTriggerPackageId
+    ) {
+      throw new BadRequestException(
+        'Purchased and discounted packages must be different',
+      );
+    }
+
+    return {
+      packageId: normalizedPackageId,
+      triggerPackageId: normalizedTriggerPackageId,
+    };
+  }
+
+  private async ensurePackagesExist(ids: Array<number | null>) {
+    for (const id of new Set(
+      ids.filter((value): value is number => Boolean(value)),
+    )) {
+      const pkg = await this.prisma.packages.findUnique({ where: { id } });
+      if (!pkg) throw new NotFoundException('Package not found');
+    }
+  }
+
   async findAllPublic() {
     const now = new Date();
     return this.prisma.offers.findMany({
@@ -50,6 +100,9 @@ export class OffersService {
           package: {
             select: { id: true, name_ar: true, name_en: true, price: true },
           },
+          trigger_package: {
+            select: { id: true, name_ar: true, name_en: true, price: true },
+          },
         },
         orderBy: { created_at: 'desc' },
         skip: query.skip,
@@ -64,7 +117,7 @@ export class OffersService {
   async findOneAdmin(id: number) {
     const offer = await this.prisma.offers.findUnique({
       where: { id },
-      include: { package: true },
+      include: { package: true, trigger_package: true },
     });
     if (!offer) throw new NotFoundException('Offer not found');
     return offer;
@@ -76,24 +129,20 @@ export class OffersService {
     }
 
     const type = dto.offer_type ?? 'standard';
-    if (type === 'cross_service_any' && dto.package_id) {
-      throw new BadRequestException('Any-service cross offers cannot target one package');
-    }
-    if (type !== 'standard' && !dto.trigger_package_id) {
-      throw new BadRequestException('Cross-service offers require a purchased package');
-    }
-    if (type === 'cross_service_specific' && !dto.package_id) {
-      throw new BadRequestException('Specific cross-service offers require a discounted package');
-    }
-    for (const id of [dto.package_id, dto.trigger_package_id].filter(Boolean)) {
-      const pkg = await this.prisma.packages.findUnique({ where: { id } });
-      if (!pkg) throw new NotFoundException('Package not found');
-    }
+    const configuration = this.normalizeConfiguration(
+      type,
+      dto.package_id,
+      dto.trigger_package_id,
+    );
+    await this.ensurePackagesExist([
+      configuration.packageId,
+      configuration.triggerPackageId,
+    ]);
 
     return this.prisma.offers.create({
       data: {
-        package_id: dto.package_id,
-        trigger_package_id: dto.trigger_package_id,
+        package_id: configuration.packageId,
+        trigger_package_id: configuration.triggerPackageId,
         offer_type: type,
         name_ar: dto.name_ar,
         name_en: dto.name_en,
@@ -117,16 +166,35 @@ export class OffersService {
     if (endDate <= startDate) {
       throw new BadRequestException('End date must be after start date');
     }
-    for (const id of [dto.package_id, dto.trigger_package_id].filter(Boolean)) {
-      const pkg = await this.prisma.packages.findUnique({ where: { id } });
-      if (!pkg) throw new NotFoundException('Package not found');
+    const configurationChanged =
+      dto.offer_type !== undefined ||
+      dto.package_id !== undefined ||
+      dto.trigger_package_id !== undefined;
+    const type = (dto.offer_type ?? current.offer_type ?? 'standard') as
+      'standard' | 'cross_service_any' | 'cross_service_specific';
+    const configuration = configurationChanged
+      ? this.normalizeConfiguration(
+          type,
+          dto.package_id !== undefined ? dto.package_id : current.package_id,
+          dto.trigger_package_id !== undefined
+            ? dto.trigger_package_id
+            : current.trigger_package_id,
+        )
+      : null;
+    if (configuration) {
+      await this.ensurePackagesExist([
+        configuration.packageId,
+        configuration.triggerPackageId,
+      ]);
     }
     return this.prisma.offers.update({
       where: { id },
       data: {
-        ...(dto.package_id !== undefined && { package_id: dto.package_id }),
-        ...(dto.trigger_package_id !== undefined && { trigger_package_id: dto.trigger_package_id }),
-        ...(dto.offer_type !== undefined && { offer_type: dto.offer_type }),
+        ...(configuration && {
+          package_id: configuration.packageId,
+          trigger_package_id: configuration.triggerPackageId,
+          offer_type: type,
+        }),
         ...(dto.name_ar !== undefined && { name_ar: dto.name_ar }),
         ...(dto.name_en !== undefined && { name_en: dto.name_en }),
         ...(dto.description_ar !== undefined && {

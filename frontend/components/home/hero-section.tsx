@@ -136,7 +136,7 @@ function HeroCareerVisual({ imageAlt }: { imageAlt: string }) {
         alt={_copy(imageAlt)}
         className="object-cover object-center lg:object-contain"
         fill
-        placeholder={_copy('blur')}
+        placeholder="blur"
         preload
         sizes="(max-width: 1023px) calc(100vw - 2rem), 42vw"
         src={heroCareerProfile}

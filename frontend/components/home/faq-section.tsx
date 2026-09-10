@@ -66,7 +66,7 @@ const faqItems: readonly FaqItem[] = [
   {
     question: 'How will I receive my completed documents?',
     answer:
-      'Completed files are made available through your SANAD order. You will be notified when the final deliverables are ready to access and download.',
+      'After your order is confirmed, the SANAD team coordinates document exchange with you through the official WhatsApp number. Final files are delivered through the same agreed channel and are not currently stored in the order dashboard.',
   },
   {
     question: 'How do revisions work?',

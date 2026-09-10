@@ -8,6 +8,11 @@ import {
   IsDateString,
   IsEnum,
   IsIn,
+  IsArray,
+  IsBoolean,
+  ArrayMinSize,
+  ArrayMaxSize,
+  ArrayUnique,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -78,6 +83,23 @@ export class OrderRequirementsDto {
   @IsString()
   @MaxLength(5000)
   special_notes?: string;
+
+  @ApiPropertyOptional({ example: 'SANAD Technologies' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  target_company?: string;
+
+  @ApiPropertyOptional({ example: 'https://example.com/jobs/123' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  job_posting_url?: string;
+
+  @ApiPropertyOptional({ description: 'Whether this is the customer first CV' })
+  @IsOptional()
+  @IsBoolean()
+  first_cv?: boolean;
 }
 
 export class CreateOrderDto {
@@ -177,6 +199,21 @@ export class UpdateOrderStatusDto {
   @IsOptional()
   @IsString()
   note?: string;
+}
+
+export class BulkCompleteOrdersDto {
+  @ApiProperty({
+    description: 'Paid active orders to mark as completed in one operation',
+    type: [Number],
+    maxItems: 100,
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(100)
+  @ArrayUnique()
+  @IsInt({ each: true })
+  @Type(() => Number)
+  order_ids!: number[];
 }
 
 export class UpdateOrderAdminDto {

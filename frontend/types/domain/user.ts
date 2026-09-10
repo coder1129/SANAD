@@ -8,6 +8,18 @@ export const USER_ROLES = ['customer', 'admin', 'super_admin'] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
+export interface CareerProfile {
+  targetJobTitle: string;
+  targetIndustry: string;
+  targetCountry: string;
+  yearsOfExperience: string;
+  education: string;
+  keySkills: string;
+  careerGoals: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+}
+
 /**
  * The authenticated identity as the application consumes it.
  *
@@ -28,6 +40,7 @@ export interface User {
   firstName?: string | null;
   lastName?: string | null;
   gender?: string | null;
+  careerProfile?: CareerProfile | null;
   lastLoginAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;

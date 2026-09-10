@@ -102,5 +102,48 @@ describe('CheckoutService', () => {
       expect(pricing.subtotal_after_discounts).toBe(350);
       expect(pricing.final_amount).toBe(350);
     });
+
+    it('applies a cross-service discount only to the selected second service', async () => {
+      prisma.packages.findUnique.mockImplementation(({ where }: any) =>
+        Promise.resolve(
+          where.id === 1
+            ? {
+                id: 1,
+                name_ar: 'الخدمة الأساسية',
+                name_en: 'Primary service',
+                price: 600,
+                delivery_days: 3,
+                is_active: true,
+              }
+            : {
+                id: 2,
+                name_ar: 'الخدمة الثانية',
+                name_en: 'Second service',
+                price: 400,
+                delivery_days: 5,
+                is_active: true,
+              },
+        ),
+      );
+      prisma.offers.findFirst.mockResolvedValue({
+        id: 12,
+        discount_percentage: 20,
+      });
+      prisma.settings.findUnique.mockResolvedValue({ setting_value: 'AED' });
+
+      const pricing = await service.calculatePricing({
+        package_id: 1,
+        secondary_package_id: 2,
+      });
+
+      expect(prisma.offers.findFirst.mock.calls[0][0].where).toEqual(
+        expect.objectContaining({ trigger_package_id: 1 }),
+      );
+      expect(pricing.original_price).toBe(1000);
+      expect(pricing.secondary_original_price).toBe(400);
+      expect(pricing.secondary_discount_amount).toBe(80);
+      expect(pricing.final_amount).toBe(920);
+      expect(pricing.delivery_days).toBe(5);
+    });
   });
 });

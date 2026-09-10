@@ -1,5 +1,12 @@
 import { useCopy } from '@/lib/i18n/use-copy';
-import { ArrowRight, FileText, Clock3, RefreshCcw, Check } from 'lucide-react';
+import {
+  ArrowRight,
+  FileText,
+  Clock3,
+  RefreshCcw,
+  Check,
+  Sparkles,
+} from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -40,6 +47,9 @@ export function PackageCard({
 
   const primaryImage = getPackagePrimaryImage(packageItem);
   const shortTitle = providedShortTitle ?? getPackageShortTitle(packageItem);
+  const companionOffer = [...(packageItem.companionOffers ?? [])].sort(
+    (first, second) => second.discountPercentage - first.discountPercentage,
+  )[0];
 
   return (
     <Card className="group flex h-full flex-col overflow-hidden border-border/90 shadow-xs transition-[transform,box-shadow,border-color] duration-300 ease-[var(--ease-standard)] hover:-translate-y-1 hover:border-accent/70 hover:shadow-md focus-within:border-accent/70 focus-within:shadow-md motion-reduce:transform-none motion-reduce:transition-none">
@@ -84,7 +94,10 @@ export function PackageCard({
             {_copy(categoryLabel)}
           </Badge>
           <span className="text-xs font-semibold tracking-[0.14em] text-muted-foreground">
-            {_copy(String(index + 1).padStart(2, '0'))}
+            {_copy.number(index + 1, {
+              minimumIntegerDigits: 2,
+              useGrouping: false,
+            })}
           </span>
         </div>
 
@@ -133,6 +146,28 @@ export function PackageCard({
         <div className="mt-auto">
           <PackagePrice packageItem={packageItem} />
         </div>
+        {companionOffer ? (
+          <div className="mt-4 rounded-md border border-accent/35 bg-accent/10 p-3 text-sm">
+            <p className="flex items-center gap-2 font-semibold text-primary">
+              <Sparkles aria-hidden="true" className="size-4 text-accent" />
+              {_copy('Second-service offer', 'عرض على خدمة ثانية')}
+            </p>
+            <p className="mt-1.5 leading-6 text-foreground">
+              {_copy('Buy this service and save', 'اشترِ هذه الخدمة ووفّر')}{' '}
+              <strong>{_copy(companionOffer.discountPercentage)}%</strong>{' '}
+              {_copy('on', 'على')}{' '}
+              <strong>
+                {companionOffer.type === 'cross_service_any'
+                  ? _copy('any second service', 'أي خدمة ثانية')
+                  : _copy(
+                      companionOffer.packageName ??
+                        'the selected second service',
+                      companionOffer.packageNameAr,
+                    )}
+              </strong>
+            </p>
+          </div>
+        ) : null}
         <PackageSocialProof
           className="mt-5 border-t border-border/70 pt-4"
           packageItem={packageItem}

@@ -1,16 +1,28 @@
 'use client';
 import { useCopy } from '@/lib/i18n/use-copy';
 
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { adminApi, adminKeys } from '@/lib/api';
 import { statusIntent } from '@/lib/orders/presentation';
-import { AdminPageHeader, AdminTable, DataState, Pager } from './admin-ui';
+import {
+  AdminPageHeader,
+  AdminTable,
+  ConfirmDialog,
+  DataState,
+  Pager,
+} from './admin-ui';
 
 const statusFilters = [
   { value: '', label: 'All statuses', labelAr: 'كل الحالات' },
@@ -38,13 +50,40 @@ const statusFilters = [
     'refunded',
   ].map((value) => ({ value: `status:${value}`, status: value })),
 ];
+
+const completableStatuses = new Set([
+  'paid',
+  'awaiting_information',
+  'received',
+  'in_progress',
+  'under_review',
+  'ready',
+]);
+
+function canCompleteOrder(order: {
+  status: string;
+  payments: Array<{ status: string; amount: number | string }>;
+}) {
+  return (
+    completableStatuses.has(order.status) &&
+    order.payments.some(
+      (payment) =>
+        ['paid', 'success'].includes(payment.status) &&
+        Number(payment.amount) > 0,
+    )
+  );
+}
+
 export function OrdersView() {
   const _copy = useCopy();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [selectedOrderIds, setSelectedOrderIds] = useState<number[]>([]);
+  const [confirmingBulk, setConfirmingBulk] = useState(false);
   const queueParam = searchParams.get('queue');
   const statusParam = searchParams.get('status');
   const statusFilter = queueParam
@@ -71,6 +110,39 @@ export function OrdersView() {
     queryFn: ({ signal }) => adminApi.orders.list(params, { signal }),
     placeholderData: keepPreviousData,
   });
+  const bulkCompleteMutation = useMutation({
+    mutationFn: () => adminApi.orders.completeBulk(selectedOrderIds),
+    onSuccess: () => {
+      setConfirmingBulk(false);
+      setSelectedOrderIds([]);
+      void queryClient.invalidateQueries({
+        queryKey: ['admin', 'orders', 'list'],
+      });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
+    },
+  });
+  const completableOrders =
+    query.data?.items.filter(canCompleteOrder).map((order) => order.id) ?? [];
+  const allCompletableSelected =
+    completableOrders.length > 0 &&
+    completableOrders.every((id) => selectedOrderIds.includes(id));
+
+  const toggleOrder = (id: number) => {
+    setSelectedOrderIds((current) =>
+      current.includes(id)
+        ? current.filter((orderId) => orderId !== id)
+        : [...current, id].slice(0, 100),
+    );
+  };
+
+  const toggleAllCompletable = () => {
+    setSelectedOrderIds((current) => {
+      if (allCompletableSelected) {
+        return current.filter((id) => !completableOrders.includes(id));
+      }
+      return [...new Set([...current, ...completableOrders])].slice(0, 100);
+    });
+  };
   return (
     <>
       <AdminPageHeader
@@ -117,6 +189,45 @@ export function OrdersView() {
           </select>
         </label>
       </div>
+      {selectedOrderIds.length > 0 ? (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border border-primary/20 bg-primary/5 p-4">
+          <p className="text-sm font-semibold text-primary">
+            {_copy(
+              `${selectedOrderIds.length} orders selected`,
+              `تم تحديد ${selectedOrderIds.length} طلب`,
+            )}
+          </p>
+          <Button
+            loading={bulkCompleteMutation.isPending}
+            loadingLabel={_copy(
+              'Completing selected orders',
+              'جارٍ إكمال الطلبات المحددة',
+            )}
+            onClick={() => setConfirmingBulk(true)}
+          >
+            {_copy('Complete selected', 'إكمال المحدد')}
+          </Button>
+        </div>
+      ) : null}
+      {bulkCompleteMutation.error ? (
+        <Alert
+          className="mb-5"
+          title={_copy('Bulk completion failed', 'تعذر إكمال الطلبات')}
+          description={_copy(bulkCompleteMutation.error.userMessage)}
+          variant="error"
+        />
+      ) : null}
+      {bulkCompleteMutation.isSuccess ? (
+        <Alert
+          className="mb-5"
+          title={_copy('Orders completed', 'تم إكمال الطلبات')}
+          description={_copy(
+            `${bulkCompleteMutation.data.completed_count} orders were completed and their customers can now submit reviews.`,
+            `تم إكمال ${bulkCompleteMutation.data.completed_count} طلب، ويمكن للعملاء الآن إضافة التقييمات.`,
+          )}
+          variant="success"
+        />
+      ) : null}
       <DataState
         loading={query.isPending}
         error={_copy(query.error?.userMessage)}
@@ -126,6 +237,18 @@ export function OrdersView() {
           <table className="w-full min-w-[900px] text-start text-sm">
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
+                <th className="px-4 py-3">
+                  <input
+                    aria-label={_copy(
+                      'Select all completable orders',
+                      'تحديد كل الطلبات القابلة للإكمال',
+                    )}
+                    checked={allCompletableSelected}
+                    disabled={completableOrders.length === 0}
+                    onChange={toggleAllCompletable}
+                    type="checkbox"
+                  />
+                </th>
                 <th className="px-4 py-3">{_copy('Order')}</th>
                 <th className="px-4 py-3">{_copy('Customer')}</th>
                 <th className="px-4 py-3">{_copy('Package')}</th>
@@ -138,9 +261,30 @@ export function OrdersView() {
             </thead>
             <tbody className="divide-y divide-border">
               {query.data?.items.map((order) => {
-                const payment = order.payments[0]?.status ?? 'pending';
+                const completable = canCompleteOrder(order);
+                const collectedPayment = order.payments.find(
+                  (payment) =>
+                    ['paid', 'success'].includes(payment.status) &&
+                    Number(payment.amount) > 0,
+                );
+                const payment =
+                  collectedPayment?.status ??
+                  order.payments[0]?.status ??
+                  'pending';
                 return (
                   <tr key={order.id}>
+                    <td className="px-4 py-4">
+                      <input
+                        aria-label={_copy(
+                          `Select order ${order.order_number}`,
+                          `تحديد الطلب ${order.order_number}`,
+                        )}
+                        checked={selectedOrderIds.includes(order.id)}
+                        disabled={!completable}
+                        onChange={() => toggleOrder(order.id)}
+                        type="checkbox"
+                      />
+                    </td>
                     <td className="px-4 py-4 font-semibold text-primary">
                       {_copy('#')}
                       {_copy(order.order_number)}
@@ -152,10 +296,21 @@ export function OrdersView() {
                       </p>
                     </td>
                     <td className="px-4 py-4">
-                      {_copy(
-                        order.package?.name_en ?? '—',
-                        order.package?.name_ar,
-                      )}
+                      <span className="block">
+                        {_copy(
+                          order.package?.name_en ?? '—',
+                          order.package?.name_ar,
+                        )}
+                      </span>
+                      {order.secondary_package ? (
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {_copy('+ Second:', '+ الثانية:')}{' '}
+                          {_copy(
+                            order.secondary_package.name_en,
+                            order.secondary_package.name_ar,
+                          )}
+                        </span>
+                      ) : null}
                     </td>
                     <td className="px-4 py-4">
                       {_copy(_copy.money(order.final_amount))}
@@ -191,6 +346,18 @@ export function OrdersView() {
         page={page}
         totalPages={query.data?.meta.totalPages ?? 1}
         onPage={setPage}
+      />
+      <ConfirmDialog
+        open={confirmingBulk}
+        onOpenChange={setConfirmingBulk}
+        title={_copy('Complete selected orders?', 'إكمال الطلبات المحددة؟')}
+        description={_copy(
+          `Mark ${selectedOrderIds.length} paid orders as completed? Their customers will be able to submit reviews immediately.`,
+          `هل تريد تعيين ${selectedOrderIds.length} طلب مدفوع كمكتمل؟ سيتمكن العملاء من إضافة التقييم فورًا.`,
+        )}
+        confirmLabel={_copy('Complete selected', 'إكمال المحدد')}
+        loading={bulkCompleteMutation.isPending}
+        onConfirm={() => bulkCompleteMutation.mutate()}
       />
     </>
   );

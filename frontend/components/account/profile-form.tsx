@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { isApiError, profileApi } from '@/lib/api';
 
 const schema = z.object({
@@ -21,6 +22,15 @@ const schema = z.object({
     .max(20)
     .regex(/^[\d\s+()\-]+$/, 'Enter a valid phone number.'),
   gender: z.enum(['male', 'female'], { message: 'Select a gender.' }),
+  targetJobTitle: z.string().trim().max(255),
+  targetIndustry: z.string().trim().max(255),
+  targetCountry: z.string().trim().max(255),
+  yearsOfExperience: z.string().trim().max(100),
+  education: z.string().trim().max(500),
+  keySkills: z.string().trim().max(1000),
+  careerGoals: z.string().trim().max(2000),
+  linkedinUrl: z.string().trim().max(500),
+  portfolioUrl: z.string().trim().max(500),
 });
 type Values = z.infer<typeof schema>;
 const profileKey = ['profile'] as const;
@@ -41,7 +51,21 @@ export function ProfileForm() {
     formState: { errors },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { firstName: '', lastName: '', phone: '', gender: 'male' },
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      phone: '',
+      gender: 'male',
+      targetJobTitle: '',
+      targetIndustry: '',
+      targetCountry: '',
+      yearsOfExperience: '',
+      education: '',
+      keySkills: '',
+      careerGoals: '',
+      linkedinUrl: '',
+      portfolioUrl: '',
+    },
   });
   useEffect(() => {
     if (query.data)
@@ -51,10 +75,36 @@ export function ProfileForm() {
           query.data.lastName ?? query.data.name.split(' ').slice(1).join(' '),
         phone: query.data.phone ?? '',
         gender: query.data.gender === 'female' ? 'female' : 'male',
+        targetJobTitle: query.data.careerProfile?.targetJobTitle ?? '',
+        targetIndustry: query.data.careerProfile?.targetIndustry ?? '',
+        targetCountry: query.data.careerProfile?.targetCountry ?? '',
+        yearsOfExperience: query.data.careerProfile?.yearsOfExperience ?? '',
+        education: query.data.careerProfile?.education ?? '',
+        keySkills: query.data.careerProfile?.keySkills ?? '',
+        careerGoals: query.data.careerProfile?.careerGoals ?? '',
+        linkedinUrl: query.data.careerProfile?.linkedinUrl ?? '',
+        portfolioUrl: query.data.careerProfile?.portfolioUrl ?? '',
       });
   }, [query.data, reset]);
   const mutation = useMutation({
-    mutationFn: profileApi.update,
+    mutationFn: (values: Values) =>
+      profileApi.update({
+        firstName: values.firstName,
+        lastName: values.lastName,
+        phone: values.phone,
+        gender: values.gender,
+        careerProfile: {
+          targetJobTitle: values.targetJobTitle,
+          targetIndustry: values.targetIndustry,
+          targetCountry: values.targetCountry,
+          yearsOfExperience: values.yearsOfExperience,
+          education: values.education,
+          keySkills: values.keySkills,
+          careerGoals: values.careerGoals,
+          linkedinUrl: values.linkedinUrl,
+          portfolioUrl: values.portfolioUrl,
+        },
+      }),
     onSuccess: (profile) => {
       queryClient.setQueryData(profileKey, profile);
       setSuccess(true);
@@ -89,7 +139,10 @@ export function ProfileForm() {
         <Alert
           className="mb-6"
           title={_copy('Profile updated')}
-          description={_copy('Your contact details have been saved.')}
+          description={_copy(
+            'Your contact and career details have been saved.',
+            'تم حفظ بيانات التواصل والبيانات المهنية.',
+          )}
           variant="success"
         />
       ) : null}
@@ -130,11 +183,6 @@ export function ProfileForm() {
         <label className="grid gap-2 text-sm font-semibold">
           {_copy('Email')}
           <Input type="email" readOnly value={query.data.email} />
-          <span className="font-normal text-xs text-muted-foreground">
-            {_copy(
-              'Email is your passwordless identity and cannot be changed here.',
-            )}
-          </span>
         </label>
         <label className="grid gap-2 text-sm font-semibold">
           {_copy('Phone Number')}
@@ -165,6 +213,52 @@ export function ProfileForm() {
           ) : null}
         </label>
       </div>
+      <section className="mt-8 border-t border-border pt-7">
+        <h2 className="type-h4 text-primary">{_copy('Career profile')}</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          {_copy(
+            'These details are reused in future service orders so you do not need to enter them again.',
+          )}
+        </p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('Target job title')}
+            <Input {...register('targetJobTitle')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('Target industry')}
+            <Input {...register('targetIndustry')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('Target country')}
+            <Input {...register('targetCountry')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('Years of experience')}
+            <Input {...register('yearsOfExperience')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
+            {_copy('Education')}
+            <Textarea {...register('education')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
+            {_copy('Key skills')}
+            <Textarea {...register('keySkills')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
+            {_copy('Career goals')}
+            <Textarea {...register('careerGoals')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('LinkedIn profile URL')}
+            <Input type="url" {...register('linkedinUrl')} />
+          </label>
+          <label className="grid gap-2 text-sm font-semibold">
+            {_copy('Portfolio URL')}
+            <Input type="url" {...register('portfolioUrl')} />
+          </label>
+        </div>
+      </section>
       <div className="mt-7 border-t border-border pt-6">
         <Button
           loading={mutation.isPending}

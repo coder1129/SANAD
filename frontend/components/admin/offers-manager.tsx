@@ -55,6 +55,15 @@ const schema = z
       message: 'Select discounted package.',
     },
   )
+  .refine(
+    (data) =>
+      data.type !== 'cross_service_specific' ||
+      data.packageId !== data.triggerPackageId,
+    {
+      path: ['packageId'],
+      message: 'Purchased and discounted services must be different.',
+    },
+  )
   .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     path: ['endDate'],
     message: 'End date must be after start date.',
@@ -181,7 +190,8 @@ export function OffersManager() {
             <thead className="bg-surface-muted text-xs uppercase text-secondary">
               <tr>
                 <th className="px-4 py-3">{_copy('Offer')}</th>
-                <th className="px-4 py-3">{_copy('Package')}</th>
+                <th className="px-4 py-3">{_copy('Purchased service')}</th>
+                <th className="px-4 py-3">{_copy('Discounted service')}</th>
                 <th className="px-4 py-3">{_copy('Discount')}</th>
                 <th className="px-4 py-3">{_copy('Dates')}</th>
                 <th className="px-4 py-3">{_copy('Status')}</th>
@@ -201,7 +211,15 @@ export function OffersManager() {
                   </td>
                   <td className="px-4 py-4">
                     {_copy(
-                      offer.package?.name_en ?? '—',
+                      offer.trigger_package?.name_en ?? '—',
+                      offer.trigger_package?.name_ar,
+                    )}
+                  </td>
+                  <td className="px-4 py-4">
+                    {_copy(
+                      offer.offer_type === 'cross_service_any'
+                        ? 'Any second service'
+                        : (offer.package?.name_en ?? '—'),
                       offer.package?.name_ar,
                     )}
                   </td>
@@ -310,6 +328,7 @@ export function OffersManager() {
                 {_copy('Purchased service')}
                 <select
                   className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                  aria-invalid={errors.triggerPackageId ? true : undefined}
                   {...register('triggerPackageId')}
                 >
                   <option value="0">{_copy('Select package')}</option>
@@ -319,13 +338,21 @@ export function OffersManager() {
                     </option>
                   ))}
                 </select>
+                {errors.triggerPackageId ? (
+                  <span className="text-xs font-normal text-error">
+                    {_copy(errors.triggerPackageId.message)}
+                  </span>
+                ) : null}
               </label>
             ) : null}
             {offerType !== 'cross_service_any' ? (
               <label className="grid gap-1 text-sm font-semibold">
-                {_copy('Package')}
+                {_copy(
+                  offerType === 'standard' ? 'Service' : 'Discounted service',
+                )}
                 <select
                   className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                  aria-invalid={errors.packageId ? true : undefined}
                   {...register('packageId')}
                 >
                   <option value="0">{_copy('Select package')}</option>
@@ -335,6 +362,11 @@ export function OffersManager() {
                     </option>
                   ))}
                 </select>
+                {errors.packageId ? (
+                  <span className="text-xs font-normal text-error">
+                    {_copy(errors.packageId.message)}
+                  </span>
+                ) : null}
               </label>
             ) : null}
             <label className="grid gap-1 text-sm font-semibold">

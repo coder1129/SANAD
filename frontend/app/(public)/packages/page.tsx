@@ -115,8 +115,10 @@ export default async function PackagesPage() {
             ].map(([title, description], index) => (
               <li key={title} className="border-t-2 border-accent pt-4">
                 <span className="text-sm font-semibold text-secondary">
-                  {_copy('0')}
-                  {_copy(index + 1)}
+                  {_copy.number(index + 1, {
+                    minimumIntegerDigits: 2,
+                    useGrouping: false,
+                  })}
                 </span>
                 <h3 className="mt-2 font-semibold">{_copy(title)}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">

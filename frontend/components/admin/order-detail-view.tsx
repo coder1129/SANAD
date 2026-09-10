@@ -17,22 +17,50 @@ import { AdminPageHeader, ConfirmDialog, DataState } from './admin-ui';
 const transitions: Record<string, string[]> = {
   pending: ['pending_payment', 'cancelled'],
   pending_payment: ['cancelled'],
-  paid: ['received', 'in_progress', 'refunded'],
-  awaiting_information: ['received', 'in_progress', 'cancelled', 'refunded'],
-  received: ['awaiting_information', 'in_progress', 'cancelled', 'refunded'],
+  paid: ['received', 'in_progress', 'completed', 'refunded'],
+  awaiting_information: [
+    'received',
+    'in_progress',
+    'completed',
+    'cancelled',
+    'refunded',
+  ],
+  received: [
+    'awaiting_information',
+    'in_progress',
+    'completed',
+    'cancelled',
+    'refunded',
+  ],
   in_progress: [
     'awaiting_information',
     'under_review',
     'ready',
+    'completed',
     'cancelled',
     'refunded',
   ],
-  under_review: ['in_progress', 'ready', 'refunded'],
+  under_review: ['in_progress', 'ready', 'completed', 'refunded'],
   ready: ['in_progress', 'completed', 'refunded'],
   completed: ['refunded'],
   cancelled: [],
   refunded: [],
 };
+
+const requirementLabels = [
+  ['target_job_title', 'Target job title', 'المسمى الوظيفي المستهدف'],
+  ['target_industry', 'Target industry', 'المجال المستهدف'],
+  ['target_country', 'Target country', 'الدولة المستهدفة'],
+  ['years_of_experience', 'Years of experience', 'سنوات الخبرة'],
+  ['education', 'Education', 'التعليم والمؤهلات'],
+  ['key_skills', 'Key skills', 'المهارات الأساسية'],
+  ['career_goals', 'Career goals', 'الأهداف المهنية'],
+  ['linkedin_url', 'LinkedIn profile', 'رابط لينكدإن'],
+  ['portfolio_url', 'Portfolio', 'معرض الأعمال'],
+  ['target_company', 'Target company', 'الشركة المستهدفة'],
+  ['job_posting_url', 'Job posting', 'رابط إعلان الوظيفة'],
+  ['first_cv', 'First CV', 'أول سيرة ذاتية'],
+] as const;
 export function OrderDetailView({ id }: { id: number }) {
   const _copy = useCopy();
 
@@ -66,6 +94,11 @@ export function OrderDetailView({ id }: { id: number }) {
     },
   });
   const order = query.data;
+  const secondaryDiscountAmount = Number(order?.secondary_discount_amount ?? 0);
+  const otherDiscountAmount = Math.max(
+    0,
+    Number(order?.discount_amount ?? 0) - secondaryDiscountAmount,
+  );
   const paymentAmount =
     paymentAmountOverride ??
     (order ? Number(order.final_amount).toFixed(2) : '');
@@ -80,6 +113,25 @@ export function OrderDetailView({ id }: { id: number }) {
     order &&
     ['pending', 'pending_payment'].includes(order.status) &&
     !hasCollectedPayment,
+  );
+  const canCompleteOrder = Boolean(
+    order &&
+    hasCollectedPayment &&
+    [
+      'paid',
+      'awaiting_information',
+      'received',
+      'in_progress',
+      'under_review',
+      'ready',
+    ].includes(order.status),
+  );
+  const requirementEntries = requirementLabels.flatMap(
+    ([key, label, labelAr]) => {
+      const value = order?.requirements?.[key];
+      if (value === undefined || value === null || value === '') return [];
+      return [{ key, label, labelAr, value }];
+    },
   );
   const parsedPaymentAmount = Number(paymentAmount);
   const paymentMutation = useMutation({
@@ -148,6 +200,17 @@ export function OrderDetailView({ id }: { id: number }) {
                         order.package?.name_ar,
                       )}
                     </h2>
+                    {order.secondary_package ? (
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {_copy('Second service:', 'الخدمة الثانية:')}{' '}
+                        <strong className="text-foreground">
+                          {_copy(
+                            order.secondary_package.name_en,
+                            order.secondary_package.name_ar,
+                          )}
+                        </strong>
+                      </p>
+                    ) : null}
                   </div>
                   <StatusBadge intent={statusIntent(order.status)}>
                     {_copy(_copy.status(order.status))}
@@ -202,6 +265,43 @@ export function OrderDetailView({ id }: { id: number }) {
                   </Button>
                 ) : null}
               </section>
+              {requirementEntries.length > 0 || order.notes ? (
+                <section className="border border-border bg-surface p-6">
+                  <h2 className="type-h4 text-primary">
+                    {_copy('Customer requirements', 'متطلبات العميل')}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {_copy(
+                      'Information supplied with this service order.',
+                      'البيانات التي أرسلها العميل مع طلب الخدمة.',
+                    )}
+                  </p>
+                  <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+                    {requirementEntries.map((item) => (
+                      <div key={item.key}>
+                        <dt className="text-xs uppercase text-muted-foreground">
+                          {_copy(item.label, item.labelAr)}
+                        </dt>
+                        <dd className="mt-1 whitespace-pre-wrap break-words font-medium">
+                          {typeof item.value === 'boolean'
+                            ? _copy(item.value ? 'Yes' : 'No')
+                            : String(item.value)}
+                        </dd>
+                      </div>
+                    ))}
+                    {order.notes ? (
+                      <div className="sm:col-span-2">
+                        <dt className="text-xs uppercase text-muted-foreground">
+                          {_copy('Additional notes')}
+                        </dt>
+                        <dd className="mt-1 whitespace-pre-wrap break-words font-medium">
+                          {order.notes}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                </section>
+              ) : null}
               <section className="border border-border bg-surface p-6">
                 <h2 className="type-h4 text-primary">
                   {_copy('Payment Information')}
@@ -209,15 +309,54 @@ export function OrderDetailView({ id }: { id: number }) {
                 <dl className="mt-5 grid gap-3 text-sm">
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">
-                      {_copy('Original price')}
+                      {_copy(
+                        order.secondary_package
+                          ? 'Primary service price'
+                          : 'Original price',
+                        order.secondary_package
+                          ? 'سعر الخدمة الأساسية'
+                          : 'السعر الأصلي',
+                      )}
                     </dt>
-                    <dd>{_copy(_copy.money(order.original_amount))}</dd>
+                    <dd>
+                      {_copy(
+                        _copy.money(
+                          Number(order.original_amount) -
+                            Number(order.secondary_original_amount ?? 0),
+                        ),
+                      )}
+                    </dd>
                   </div>
+                  {order.secondary_package ? (
+                    <div className="flex justify-between">
+                      <dt className="text-muted-foreground">
+                        {_copy('Second service price', 'سعر الخدمة الثانية')}
+                      </dt>
+                      <dd>
+                        {_copy(
+                          _copy.money(
+                            Number(order.secondary_original_amount ?? 0),
+                          ),
+                        )}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {secondaryDiscountAmount > 0 ? (
+                    <div className="flex justify-between text-success">
+                      <dt>
+                        {_copy('Second service saving', 'خصم الخدمة الثانية')}
+                      </dt>
+                      <dd>
+                        {_copy('-')}
+                        {_copy(_copy.money(secondaryDiscountAmount))}
+                      </dd>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between">
                     <dt className="text-muted-foreground">
                       {_copy('Discount')}
                     </dt>
-                    <dd>{_copy(_copy.money(order.discount_amount ?? 0))}</dd>
+                    <dd>{_copy(_copy.money(otherDiscountAmount))}</dd>
                   </div>
                   <div className="flex justify-between border-t border-border pt-3 font-semibold">
                     <dt>{_copy('Final amount')}</dt>
@@ -393,6 +532,28 @@ export function OrderDetailView({ id }: { id: number }) {
               ) : null}
             </div>
             <aside className="h-fit border border-border bg-surface p-6">
+              {canCompleteOrder ? (
+                <div className="mb-6 border-b border-border pb-6">
+                  <h2 className="type-h4 text-primary">
+                    {_copy('Complete and deliver order', 'إتمام وتسليم الطلب')}
+                  </h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {_copy(
+                      'Mark the paid order completed and enable the customer review immediately.',
+                      'اعتمد الطلب المدفوع كمكتمل وافتح التقييم للعميل فورًا.',
+                    )}
+                  </p>
+                  <Button
+                    className="mt-4 w-full"
+                    onClick={() => {
+                      setNextStatus('completed');
+                      setConfirming(true);
+                    }}
+                  >
+                    {_copy('Complete and deliver', 'إتمام وتسليم')}
+                  </Button>
+                </div>
+              ) : null}
               <h2 className="type-h4 text-primary">{_copy('Update Status')}</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 {_copy('Only valid next states are available.')}

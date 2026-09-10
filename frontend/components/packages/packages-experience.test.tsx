@@ -128,6 +128,35 @@ describe('Package selection experience', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('advertises an available second-service offer in the catalog', () => {
+    render(
+      <ServicesCatalog
+        packages={[
+          {
+            ...packages[0],
+            companionOffers: [
+              {
+                id: 9,
+                name: 'LinkedIn companion offer',
+                description: null,
+                discountPercentage: 20,
+                type: 'cross_service_specific',
+                packageId: 5,
+                packageName: 'LinkedIn Profile Optimization',
+                packagePrice: 149,
+              },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    const offer = screen.getByText('Second-service offer').parentElement;
+    expect(offer).toBeVisible();
+    expect(offer).toHaveTextContent('20%');
+    expect(offer).toHaveTextContent('LinkedIn Profile Optimization');
+  });
+
   it('opens a service illustration and restores keyboard focus after Escape', async () => {
     const user = userEvent.setup();
     render(

@@ -75,7 +75,18 @@ export function OrdersList() {
                   {_copy(order.orderNumber)}
                 </td>
                 <td className="px-5 py-4">
-                  {_copy(order.packageName ?? 'Service', order.packageNameAr)}
+                  <span className="block">
+                    {_copy(order.packageName ?? 'Service', order.packageNameAr)}
+                  </span>
+                  {order.secondaryPackageName ? (
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {_copy('+ Second service:', '+ الخدمة الثانية:')}{' '}
+                      {_copy(
+                        order.secondaryPackageName,
+                        order.secondaryPackageNameAr,
+                      )}
+                    </span>
+                  ) : null}
                 </td>
                 <td className="px-5 py-4">
                   {_copy(_copy.money(order.finalAmount, order.currency))}
@@ -96,7 +107,16 @@ export function OrdersList() {
                 <td className="px-5 py-4">
                   <Button asChild size="sm" variant="outline">
                     <Link href={`/my-orders/${order.id}`}>
-                      {_copy('View Order')}
+                      {_copy(
+                        order.status === 'completed' &&
+                          order.paymentStatus === 'paid'
+                          ? 'Rate Service'
+                          : 'View Order',
+                        order.status === 'completed' &&
+                          order.paymentStatus === 'paid'
+                          ? 'قيّم الخدمة'
+                          : 'عرض الطلب',
+                      )}
                     </Link>
                   </Button>
                 </td>
@@ -128,6 +148,15 @@ export function OrdersList() {
             <p className="mt-5 font-semibold">
               {_copy(order.packageName ?? 'SANAD service', order.packageNameAr)}
             </p>
+            {order.secondaryPackageName ? (
+              <p className="mt-1 text-sm text-muted-foreground">
+                {_copy('+ Second service:', '+ الخدمة الثانية:')}{' '}
+                {_copy(
+                  order.secondaryPackageName,
+                  order.secondaryPackageNameAr,
+                )}
+              </p>
+            ) : null}
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-muted-foreground">{_copy('Amount')}</dt>
@@ -147,7 +176,16 @@ export function OrdersList() {
               </div>
             </dl>
             <Button asChild className="mt-5 w-full" variant="outline">
-              <Link href={`/my-orders/${order.id}`}>{_copy('View Order')}</Link>
+              <Link href={`/my-orders/${order.id}`}>
+                {_copy(
+                  order.status === 'completed' && order.paymentStatus === 'paid'
+                    ? 'Rate Service'
+                    : 'View Order',
+                  order.status === 'completed' && order.paymentStatus === 'paid'
+                    ? 'قيّم الخدمة'
+                    : 'عرض الطلب',
+                )}
+              </Link>
             </Button>
           </article>
         ))}

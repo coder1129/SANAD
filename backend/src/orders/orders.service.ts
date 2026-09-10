@@ -32,17 +32,20 @@ const ALLOWED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.PAID]: [
     OrderStatus.RECEIVED,
     OrderStatus.IN_PROGRESS,
+    OrderStatus.COMPLETED,
     OrderStatus.REFUNDED,
   ],
   [OrderStatus.AWAITING_INFORMATION]: [
     OrderStatus.RECEIVED,
     OrderStatus.IN_PROGRESS,
+    OrderStatus.COMPLETED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED,
   ],
   [OrderStatus.RECEIVED]: [
     OrderStatus.AWAITING_INFORMATION,
     OrderStatus.IN_PROGRESS,
+    OrderStatus.COMPLETED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED,
   ],
@@ -50,12 +53,14 @@ const ALLOWED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     OrderStatus.AWAITING_INFORMATION,
     OrderStatus.UNDER_REVIEW,
     OrderStatus.READY,
+    OrderStatus.COMPLETED,
     OrderStatus.CANCELLED,
     OrderStatus.REFUNDED,
   ],
   [OrderStatus.UNDER_REVIEW]: [
     OrderStatus.IN_PROGRESS,
     OrderStatus.READY,
+    OrderStatus.COMPLETED,
     OrderStatus.REFUNDED,
   ],
   [OrderStatus.READY]: [
@@ -67,6 +72,27 @@ const ALLOWED_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   [OrderStatus.CANCELLED]: [],
   [OrderStatus.REFUNDED]: [],
 };
+
+const COMPLETABLE_ORDER_STATUSES: OrderStatus[] = [
+  OrderStatus.PAID,
+  OrderStatus.AWAITING_INFORMATION,
+  OrderStatus.RECEIVED,
+  OrderStatus.IN_PROGRESS,
+  OrderStatus.UNDER_REVIEW,
+  OrderStatus.READY,
+];
+
+const REUSABLE_CAREER_PROFILE_FIELDS = [
+  'target_job_title',
+  'target_industry',
+  'years_of_experience',
+  'education',
+  'key_skills',
+  'linkedin_url',
+  'portfolio_url',
+  'target_country',
+  'career_goals',
+] as const;
 
 @Injectable()
 export class OrdersService {
@@ -161,6 +187,34 @@ export class OrdersService {
             requirements: dto.requirements ? { ...dto.requirements } : {},
           },
         });
+
+        if (dto.requirements) {
+          const existingCareerProfile =
+            user.career_profile &&
+            typeof user.career_profile === 'object' &&
+            !Array.isArray(user.career_profile)
+              ? user.career_profile
+              : {};
+          const reusableCareerProfile = Object.fromEntries(
+            REUSABLE_CAREER_PROFILE_FIELDS.flatMap((field) => {
+              const value = dto.requirements?.[field];
+              return typeof value === 'string' && value.trim()
+                ? [[field, value.trim()]]
+                : [];
+            }),
+          );
+          if (Object.keys(reusableCareerProfile).length > 0) {
+            await tx.users.update({
+              where: { id: user.id },
+              data: {
+                career_profile: {
+                  ...existingCareerProfile,
+                  ...reusableCareerProfile,
+                },
+              },
+            });
+          }
+        }
 
         if (pricing.coupon_code && pricing.coupon_discount_amount > 0) {
           const coupon = await tx.coupons.findUnique({
@@ -272,6 +326,15 @@ export class OrdersService {
               package_images: { where: { is_primary: true }, take: 1 },
             },
           },
+          secondary_package: {
+            select: {
+              id: true,
+              name_ar: true,
+              name_en: true,
+              delivery_days: true,
+              package_images: { where: { is_primary: true }, take: 1 },
+            },
+          },
           offers: {
             select: {
               id: true,
@@ -307,6 +370,11 @@ export class OrdersService {
       where: { id },
       include: {
         package: {
+          include: {
+            package_images: true,
+          },
+        },
+        secondary_package: {
           include: {
             package_images: true,
           },
@@ -361,6 +429,7 @@ export class OrdersService {
       where: { order_number: normalized },
       include: {
         package: { include: { package_images: true } },
+        secondary_package: { include: { package_images: true } },
         offers: true,
         payments: {
           orderBy: { created_at: 'desc' },
@@ -505,6 +574,9 @@ export class OrdersService {
           package: {
             select: { id: true, name_ar: true, name_en: true, price: true },
           },
+          secondary_package: {
+            select: { id: true, name_ar: true, name_en: true, price: true },
+          },
           offers: {
             select: {
               id: true,
@@ -546,6 +618,11 @@ export class OrdersService {
           },
         },
         package: {
+          include: {
+            package_images: true,
+          },
+        },
+        secondary_package: {
           include: {
             package_images: true,
           },
@@ -692,6 +769,119 @@ export class OrdersService {
     });
 
     return this.findOneAdmin(id);
+  }
+
+  async completeBulkAdmin(orderIds: number[], adminId: number) {
+    const uniqueOrderIds = [...new Set(orderIds)];
+
+    return this.prisma.$transaction(
+      async (tx) => {
+        const orders = await tx.orders.findMany({
+          where: { id: { in: uniqueOrderIds } },
+          select: {
+            id: true,
+            order_number: true,
+            user_id: true,
+            status: true,
+            payments: { select: { status: true, amount: true } },
+          },
+        });
+
+        if (orders.length !== uniqueOrderIds.length) {
+          throw new NotFoundException({
+            message: 'One or more selected orders were not found',
+            code: 'ORDERS_NOT_FOUND',
+          });
+        }
+
+        const invalidStatus = orders.find(
+          (order) =>
+            !COMPLETABLE_ORDER_STATUSES.includes(order.status as OrderStatus),
+        );
+        if (invalidStatus) {
+          throw new BadRequestException({
+            message: `Order #${invalidStatus.order_number} cannot be completed from status: ${invalidStatus.status}`,
+            code: 'ORDER_NOT_COMPLETABLE',
+          });
+        }
+
+        const unpaidOrder = orders.find(
+          (order) =>
+            !order.payments.some(
+              (payment) =>
+                ['paid', 'success'].includes(payment.status) &&
+                Number(payment.amount) > 0,
+            ),
+        );
+        if (unpaidOrder) {
+          throw new BadRequestException({
+            message: `A collected payment is required before completing order #${unpaidOrder.order_number}`,
+            code: 'COLLECTED_PAYMENT_REQUIRED',
+          });
+        }
+
+        const updated = await tx.orders.updateMany({
+          where: {
+            OR: orders.map((order) => ({
+              id: order.id,
+              status: order.status,
+            })),
+          },
+          data: { status: OrderStatus.COMPLETED },
+        });
+        if (updated.count !== orders.length) {
+          throw new BadRequestException({
+            message: 'One or more order statuses changed; reload and retry',
+            code: 'ORDER_STATUS_CONFLICT',
+          });
+        }
+
+        const completedAt = new Date();
+        await tx.order_status_history.createMany({
+          data: orders.map((order) => ({
+            order_id: order.id,
+            from_status: order.status,
+            to_status: OrderStatus.COMPLETED,
+            changed_by: adminId,
+            note: 'Order completed using the bulk completion action',
+            created_at: completedAt,
+          })),
+        });
+        await tx.admin_activity_log.createMany({
+          data: orders.map((order) => ({
+            admin_id: adminId,
+            action: 'complete_order',
+            table_name: 'orders',
+            record_id: order.id,
+            description: `Order #${order.order_number} marked completed`,
+            changes: { from: order.status, to: OrderStatus.COMPLETED },
+            created_at: completedAt,
+          })),
+        });
+
+        const customerOrders = orders.filter((order) => order.user_id);
+        if (customerOrders.length > 0) {
+          await tx.notifications.createMany({
+            data: customerOrders.map((order) => ({
+              user_id: order.user_id,
+              order_id: order.id,
+              title_ar: 'اكتمل طلبك بنجاح',
+              title_en: 'Order Status Update: completed',
+              message_ar: `اكتمل طلبك رقم ${order.order_number} بنجاح. يمكنك الآن تقييم الخدمة من حسابك.`,
+              message_en: `Your order #${order.order_number} is complete. You can now review the service from your account.`,
+              notification_type: 'order_completed',
+              created_at: completedAt,
+            })),
+          });
+        }
+
+        return {
+          completed_count: orders.length,
+          order_ids: orders.map((order) => order.id),
+        };
+      },
+      { isolationLevel: 'Serializable', maxWait: 5_000, timeout: 15_000 },
+    );
   }
 
   // Admin updates order notes / delivery date

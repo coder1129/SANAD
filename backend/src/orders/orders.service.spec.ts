@@ -60,7 +60,7 @@ describe('OrdersService', () => {
         update: vi.fn(),
         updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
-      users: { findUnique: vi.fn() },
+      users: { findUnique: vi.fn(), update: vi.fn() },
       coupons: {
         findUnique: vi.fn(),
         update: vi.fn(),
@@ -71,10 +71,10 @@ describe('OrdersService', () => {
         findMany: vi.fn().mockResolvedValue([]),
         deleteMany: vi.fn(),
       },
-      order_status_history: { create: vi.fn() },
-      notifications: { create: vi.fn() },
+      order_status_history: { create: vi.fn(), createMany: vi.fn() },
+      notifications: { create: vi.fn(), createMany: vi.fn() },
       payments: { create: vi.fn(), count: vi.fn().mockResolvedValue(1) },
-      admin_activity_log: { create: vi.fn() },
+      admin_activity_log: { create: vi.fn(), createMany: vi.fn() },
       $transaction: vi.fn(async (input: any, options?: unknown) => {
         prisma.__transactionOptions = options;
         return typeof input === 'function' ? input(prisma) : Promise.all(input);
@@ -281,6 +281,33 @@ describe('OrdersService', () => {
       expect(prisma.orders.create.mock.calls[0][0].data.requirements).toEqual(
         {},
       );
+    });
+
+    it('stores reusable order requirements in the customer career profile', async () => {
+      activeCustomer({
+        career_profile: { target_country: 'UAE', key_skills: 'React' },
+      });
+
+      await service.create(1, {
+        package_id: 1,
+        requirements: {
+          target_job_title: ' Product Manager ',
+          target_industry: 'FinTech',
+          target_company: 'Company specific value',
+        },
+      });
+
+      expect(prisma.users.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: {
+          career_profile: {
+            target_country: 'UAE',
+            key_skills: 'React',
+            target_job_title: 'Product Manager',
+            target_industry: 'FinTech',
+          },
+        },
+      });
     });
 
     it('records the opening status history entry', async () => {
@@ -492,6 +519,18 @@ describe('OrdersService', () => {
       } as never);
 
       expect(result.data.meta.total).toBe(1);
+    });
+
+    it('includes the second service in the customer order list', async () => {
+      await service.findAllCustomer(7, {
+        page: 1,
+        limit: 20,
+        skip: 0,
+      } as never);
+
+      expect(prisma.orders.findMany.mock.calls[0][0].include).toHaveProperty(
+        'secondary_package',
+      );
     });
   });
 
@@ -788,6 +827,9 @@ describe('OrdersService', () => {
       expect(prisma.orders.findUnique.mock.calls[0][0].include).toHaveProperty(
         'order_status_history',
       );
+      expect(prisma.orders.findUnique.mock.calls[0][0].include).toHaveProperty(
+        'secondary_package',
+      );
     });
   });
 
@@ -802,9 +844,12 @@ describe('OrdersService', () => {
     it.each([
       [OrderStatus.PENDING, OrderStatus.CANCELLED],
       [OrderStatus.PAID, OrderStatus.IN_PROGRESS],
+      [OrderStatus.PAID, OrderStatus.COMPLETED],
       [OrderStatus.PAID, OrderStatus.REFUNDED],
       [OrderStatus.RECEIVED, OrderStatus.AWAITING_INFORMATION],
+      [OrderStatus.RECEIVED, OrderStatus.COMPLETED],
       [OrderStatus.IN_PROGRESS, OrderStatus.UNDER_REVIEW],
+      [OrderStatus.IN_PROGRESS, OrderStatus.COMPLETED],
       [OrderStatus.UNDER_REVIEW, OrderStatus.READY],
       [OrderStatus.READY, OrderStatus.COMPLETED],
       [OrderStatus.COMPLETED, OrderStatus.REFUNDED],
@@ -1032,6 +1077,68 @@ describe('OrdersService', () => {
           } as never),
         ),
       ).toBe('ORDER_STATUS_CONFLICT');
+    });
+  });
+
+  describe('completeBulkAdmin', () => {
+    const paidOrder = (id: number, status: OrderStatus) => ({
+      id,
+      order_number: `SANAD-${id}`,
+      user_id: id,
+      status,
+      payments: [{ status: 'paid', amount: 125 }],
+    });
+
+    it('completes selected paid active orders and records every side effect', async () => {
+      prisma.orders.findMany.mockResolvedValue([
+        paidOrder(10, OrderStatus.RECEIVED),
+        paidOrder(11, OrderStatus.IN_PROGRESS),
+      ]);
+      prisma.orders.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.completeBulkAdmin([10, 11], 42);
+
+      expect(result).toEqual({ completed_count: 2, order_ids: [10, 11] });
+      expect(prisma.orders.updateMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            { id: 10, status: OrderStatus.RECEIVED },
+            { id: 11, status: OrderStatus.IN_PROGRESS },
+          ],
+        },
+        data: { status: OrderStatus.COMPLETED },
+      });
+      expect(
+        prisma.order_status_history.createMany.mock.calls[0][0].data,
+      ).toHaveLength(2);
+      expect(prisma.admin_activity_log.createMany).toHaveBeenCalled();
+      expect(prisma.notifications.createMany).toHaveBeenCalled();
+    });
+
+    it('rejects the entire selection when one order has no collected payment', async () => {
+      prisma.orders.findMany.mockResolvedValue([
+        paidOrder(10, OrderStatus.RECEIVED),
+        {
+          ...paidOrder(11, OrderStatus.READY),
+          payments: [{ status: 'paid', amount: 0 }],
+        },
+      ]);
+
+      expect(await errorCode(service.completeBulkAdmin([10, 11], 42))).toBe(
+        'COLLECTED_PAYMENT_REQUIRED',
+      );
+      expect(prisma.orders.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('rejects terminal or unpaid-workflow statuses', async () => {
+      prisma.orders.findMany.mockResolvedValue([
+        paidOrder(10, OrderStatus.CANCELLED),
+      ]);
+
+      expect(await errorCode(service.completeBulkAdmin([10], 42))).toBe(
+        'ORDER_NOT_COMPLETABLE',
+      );
+      expect(prisma.orders.updateMany).not.toHaveBeenCalled();
     });
   });
 

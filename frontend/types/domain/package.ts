@@ -18,6 +18,9 @@ export interface PackageOffer {
 export interface CompanionOffer extends PackageOffer {
   type: 'cross_service_any' | 'cross_service_specific';
   packageId?: number | null;
+  packageName?: string | null;
+  packageNameAr?: string | null;
+  packagePrice?: number | null;
 }
 
 export interface CareerPackage {

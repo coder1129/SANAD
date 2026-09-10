@@ -326,7 +326,7 @@ export default async function PackageDetailPage({
 
           <div className="grid items-start gap-8 lg:grid-cols-12 lg:gap-8 xl:gap-12">
             {/* Column 1: Service Image Gallery Showcase */}
-            <div className="sanad-detail-enter sanad-detail-enter-delay-1 lg:col-span-6 lg:mt-1 lg:translate-x-6 xl:translate-x-10">
+            <div className="sanad-detail-enter sanad-detail-enter-delay-1 lg:col-span-6 lg:mt-1">
               <div className="relative rounded-2xl border border-primary-foreground/10 bg-primary-foreground/[0.035] p-2 shadow-[0_24px_56px_rgb(0_0_0_/_0.24)] sm:p-3">
                 <div
                   aria-hidden="true"
@@ -347,7 +347,7 @@ export default async function PackageDetailPage({
             </div>
 
             {/* Column 2: Service Title, Description, Key Stats, Pricing & Action Buttons */}
-            <div className="sanad-detail-enter sanad-detail-enter-delay-2 lg:col-span-6 lg:-translate-x-6 xl:-translate-x-8">
+            <div className="sanad-detail-enter sanad-detail-enter-delay-2 lg:col-span-6">
               <div className="max-w-xl lg:pt-4 xl:pt-6">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge className="border-primary-foreground/20 bg-primary-foreground/10 text-primary-foreground">
@@ -798,7 +798,10 @@ export default async function PackageDetailPage({
                       key={step.title}
                     >
                       <span className="font-display text-3xl text-accent/80">
-                        {_copy(String(index + 1).padStart(2, '0'))}
+                        {_copy.number(index + 1, {
+                          minimumIntegerDigits: 2,
+                          useGrouping: false,
+                        })}
                       </span>
                       <h3 className="mt-5 font-semibold text-primary">
                         {_copy(step.title)}

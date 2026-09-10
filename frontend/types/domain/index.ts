@@ -17,7 +17,7 @@ export type {
   GoogleAuthResult,
 } from './auth';
 export { USER_ROLES } from './user';
-export type { User, UserRole } from './user';
+export type { CareerProfile, User, UserRole } from './user';
 export type {
   CareerPackage,
   CompanionOffer,
@@ -25,7 +25,11 @@ export type {
   PackageOffer,
 } from './package';
 export type { CheckoutPreviewInput, CheckoutPricing } from './checkout';
-export type { CreateOrderInput, CustomerOrder } from './order';
+export type {
+  CreateOrderInput,
+  CustomerOrder,
+  OrderRequirements,
+} from './order';
 export type { OrderPayment, OrderStatusHistory } from './order';
 export type {
   CheckoutPaymentMethod,

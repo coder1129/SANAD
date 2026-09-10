@@ -1,9 +1,20 @@
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
+import { cpSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const root = process.cwd();
+const standaloneRoot = resolve(root, '.next/standalone');
+
+// Match the production Docker image layout so E2E exercises the standalone
+// server and its static assets, not Next's incompatible `next start` command.
+cpSync(resolve(root, 'public'), resolve(standaloneRoot, 'public'), {
+  recursive: true,
+});
+cpSync(resolve(root, '.next/static'), resolve(standaloneRoot, '.next/static'), {
+  recursive: true,
+});
 
 try {
   const existing = await fetch('http://127.0.0.1:3100/robots.txt');
@@ -18,16 +29,13 @@ try {
   }
 }
 
-const server = spawn(
-  process.execPath,
-  [resolve(root, 'node_modules/next/dist/bin/next'), 'start', '--port', '3100'],
-  {
-    cwd: root,
-    detached: process.platform !== 'win32',
-    stdio: ['ignore', 'pipe', 'pipe'],
-    windowsHide: true,
-  },
-);
+const server = spawn(process.execPath, [resolve(standaloneRoot, 'server.js')], {
+  cwd: standaloneRoot,
+  detached: process.platform !== 'win32',
+  env: { ...process.env, HOSTNAME: '127.0.0.1', PORT: '3100' },
+  stdio: ['ignore', 'pipe', 'pipe'],
+  windowsHide: true,
+});
 
 server.stdout.pipe(process.stdout);
 server.stderr.pipe(process.stderr);

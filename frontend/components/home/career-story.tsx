@@ -35,7 +35,7 @@ export async function CareerStory() {
               alt={_copy(t('imageAlt'))}
               className="scale-[1.06] object-cover"
               fill
-              placeholder={_copy('blur')}
+              placeholder="blur"
               sizes="(max-width: 1023px) calc(100vw - 2rem), 50vw"
               src={careerStoryImage}
             />

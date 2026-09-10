@@ -1,9 +1,9 @@
 'use client';
 
-import { useTransition } from 'react';
 import { useLocale } from 'next-intl';
 import { Globe } from 'lucide-react';
 
+import { useLocaleSwitcher } from '@/components/providers/locale-provider';
 import { cn } from '@/lib/utils/cn';
 
 interface LanguageSwitcherProps {
@@ -11,82 +11,37 @@ interface LanguageSwitcherProps {
   variant?: 'icon' | 'text' | 'full';
 }
 
-/**
- * Switches between Arabic and English by setting the SANAD_LOCALE cookie
- * and reloading the page. This preserves all existing URL structure
- * (no /ar/ or /en/ prefix needed).
- */
+/** Switches locale in React state without navigating away from the current page. */
 export function LanguageSwitcher({
   className,
   variant = 'full',
 }: LanguageSwitcherProps) {
   const locale = useLocale();
-  const [isPending, startTransition] = useTransition();
-
+  const { setLocale } = useLocaleSwitcher();
   const isArabic = locale === 'ar';
   const nextLocale = isArabic ? 'en' : 'ar';
-  const label = isArabic ? 'English' : 'عربي';
-  const ariaLabel = isArabic ? 'Switch to English' : 'التبديل إلى العربية';
+  const label = isArabic ? 'English' : '\u0627\u0644\u0639\u0631\u0628\u064a\u0629';
+  const ariaLabel = isArabic
+    ? 'Switch to English'
+    : '\u0627\u0644\u062a\u0628\u062f\u064a\u0644 \u0625\u0644\u0649 \u0627\u0644\u0639\u0631\u0628\u064a\u0629';
 
-  function handleSwitch() {
-    startTransition(() => {
-      // Set the locale cookie (1 year expiry)
-      const expires = new Date();
-      expires.setFullYear(expires.getFullYear() + 1);
-      document.cookie = `SANAD_LOCALE=${nextLocale}; path=/; expires=${expires.toUTCString()}; SameSite=Lax`;
-      // Reload to apply the new locale from the server
-      window.location.reload();
-    });
-  }
-
-  if (variant === 'icon') {
-    return (
-      <button
-        aria-label={ariaLabel}
-        className={cn(
-          'inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-surface-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-55',
-          className,
-        )}
-        disabled={isPending}
-        onClick={handleSwitch}
-        type="button"
-      >
-        <Globe aria-hidden="true" className="size-4" />
-      </button>
-    );
-  }
-
-  if (variant === 'text') {
-    return (
-      <button
-        aria-label={ariaLabel}
-        className={cn(
-          'inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-surface-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-55',
-          className,
-        )}
-        disabled={isPending}
-        onClick={handleSwitch}
-        type="button"
-      >
-        {label}
-      </button>
-    );
-  }
-
-  // variant === 'full'
   return (
     <button
       aria-label={ariaLabel}
       className={cn(
-        'inline-flex min-h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-surface-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-55',
+        variant === 'icon'
+          ? 'inline-flex min-h-9 min-w-9 items-center justify-center rounded-md px-2'
+          : variant === 'text'
+            ? 'inline-flex min-h-9 items-center gap-1.5 rounded-md px-2'
+            : 'inline-flex min-h-9 items-center gap-1.5 rounded-md px-2.5',
+        'text-sm font-semibold text-foreground transition-colors duration-200 hover:bg-surface-muted hover:text-primary',
         className,
       )}
-      disabled={isPending}
-      onClick={handleSwitch}
+      onClick={() => setLocale(nextLocale)}
       type="button"
     >
-      <Globe aria-hidden="true" className="size-4 shrink-0" />
-      <span>{label}</span>
+      {variant !== 'text' && <Globe aria-hidden="true" className="size-4 shrink-0" />}
+      {variant !== 'icon' && <span>{label}</span>}
     </button>
   );
 }

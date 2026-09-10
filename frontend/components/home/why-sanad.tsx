@@ -61,7 +61,10 @@ export async function WhySanad() {
                   aria-hidden="true"
                   className="font-display text-2xl leading-none text-accent sm:pt-0.5 sm:text-3xl"
                 >
-                  {_copy(String(index + 1).padStart(2, '0'))}
+                  {_copy.number(index + 1, {
+                    minimumIntegerDigits: 2,
+                    useGrouping: false,
+                  })}
                 </span>
                 <div>
                   <h3 className="type-h4 text-primary">{_copy(title)}</h3>

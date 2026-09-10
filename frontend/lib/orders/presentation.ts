@@ -11,7 +11,7 @@ const statusTranslations: Record<string, string> = {
   pending_payment: 'في انتظار الدفع',
   paid: 'مدفوع',
   awaiting_information: 'بانتظار البيانات',
-  received: 'تم الاستلام',
+  received: 'تم استلام بيانات الطلب',
   in_progress: 'قيد التنفيذ',
   under_review: 'قيد المراجعة',
   ready: 'جاهز للتسليم',
@@ -40,6 +40,19 @@ export function formatMoney(
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   }).format(Number(value));
+}
+
+/** Formats a UI number using the numeral system appropriate for the locale. */
+export function formatNumber(
+  value: number,
+  locale?: string,
+  options?: Intl.NumberFormatOptions,
+): string {
+  const isAr = isArabicLocale(locale);
+  return new Intl.NumberFormat(
+    isAr ? 'ar-AE-u-nu-arab' : 'en-AE',
+    options,
+  ).format(value);
 }
 
 export function formatDate(

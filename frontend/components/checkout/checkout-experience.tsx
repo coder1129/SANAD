@@ -29,6 +29,7 @@ import {
 } from '@/lib/api';
 import type {
   CareerPackage,
+  CompanionOffer,
   CheckoutPaymentMethod,
   CheckoutPricing,
   PaymentResult,
@@ -44,7 +45,16 @@ interface CheckoutFormState {
   phone: string | null;
   targetJobTitle: string;
   targetIndustry: string;
+  targetCountry: string;
+  yearsOfExperience: string;
+  education: string;
+  keySkills: string;
   careerGoals: string;
+  linkedinUrl: string;
+  portfolioUrl: string;
+  targetCompany: string;
+  jobPostingUrl: string;
+  firstCv: boolean;
   notes: string;
   paymentMethod: CheckoutPaymentMethod;
   couponCode: string;
@@ -56,6 +66,59 @@ interface FieldErrors {
   targetIndustry?: string;
   careerGoals?: string;
   notes?: string;
+}
+
+interface CouponMessage {
+  en: string;
+  ar: string;
+}
+
+const COUPON_MESSAGES: Record<string, CouponMessage> = {
+  COUPON_NOT_FOUND: {
+    en: 'This coupon code is not valid.',
+    ar: 'كود الخصم غير صحيح.',
+  },
+  COUPON_INACTIVE: {
+    en: 'This coupon is no longer active.',
+    ar: 'كود الخصم غير نشط.',
+  },
+  COUPON_NOT_STARTED: {
+    en: 'This coupon is not active yet.',
+    ar: 'لم يبدأ تفعيل كود الخصم بعد.',
+  },
+  COUPON_EXPIRED: {
+    en: 'This coupon has expired.',
+    ar: 'انتهت صلاحية كود الخصم.',
+  },
+  COUPON_LIMIT_REACHED: {
+    en: 'This coupon has reached its usage limit.',
+    ar: 'تم استهلاك الحد المتاح لكود الخصم.',
+  },
+  COUPON_ALREADY_USED: {
+    en: 'You have already used this coupon.',
+    ar: 'استخدمت كود الخصم هذا من قبل.',
+  },
+  COUPON_MIN_AMOUNT: {
+    en: 'Your order does not meet this coupon’s minimum amount.',
+    ar: 'الطلب لا يحقق الحد الأدنى لاستخدام كود الخصم.',
+  },
+  COUPON_VALUE_INVALID: {
+    en: 'This coupon is not configured correctly. Please contact support.',
+    ar: 'إعدادات كود الخصم غير صحيحة. يرجى التواصل مع الدعم.',
+  },
+};
+
+const DEFAULT_COUPON_ERROR: CouponMessage = {
+  en: 'We could not apply this coupon. Please try again.',
+  ar: 'تعذر تطبيق كود الخصم. يرجى المحاولة مرة أخرى.',
+};
+
+function getCouponError(error: unknown): CouponMessage {
+  if (isApiError(error) && error.code) {
+    return COUPON_MESSAGES[error.code] ?? DEFAULT_COUPON_ERROR;
+  }
+
+  return DEFAULT_COUPON_ERROR;
 }
 
 const PAYMENT_METHODS: Array<{
@@ -78,31 +141,6 @@ const PAYMENT_METHODS: Array<{
   },
 ];
 
-function validateForm(form: CheckoutFormState): FieldErrors {
-  const errors: FieldErrors = {};
-  const phone = (form.phone ?? '').trim();
-
-  if (!phone)
-    errors.phone = 'Please add a phone number for WhatsApp follow-up.';
-  else if (!/^[\d\s+()\-]{5,20}$/.test(phone)) {
-    errors.phone = 'Enter a valid phone number.';
-  }
-  if (form.targetJobTitle.length > 255) {
-    errors.targetJobTitle = 'Keep this under 255 characters.';
-  }
-  if (form.targetIndustry.length > 255) {
-    errors.targetIndustry = 'Keep this under 255 characters.';
-  }
-  if (form.careerGoals.length > 2000) {
-    errors.careerGoals = 'Keep this under 2,000 characters.';
-  }
-  if (form.notes.length > 5000) {
-    errors.notes = 'Keep this under 5,000 characters.';
-  }
-
-  return errors;
-}
-
 function isPaymentComplete(payment: PaymentResult): boolean {
   return (
     payment.bypassed ||
@@ -110,6 +148,76 @@ function isPaymentComplete(payment: PaymentResult): boolean {
     ['paid', 'completed', 'success'].includes(payment.status.toLowerCase())
   );
 }
+
+function discountedPrice(price: number, discountPercentage: number): number {
+  return Math.max(
+    0,
+    Math.round(price * (1 - discountPercentage / 100) * 100) / 100,
+  );
+}
+
+function getBestOfferForPackage(
+  offers: CompanionOffer[],
+  packageId: number,
+): CompanionOffer | undefined {
+  return offers
+    .filter(
+      (offer) =>
+        offer.type === 'cross_service_any' || offer.packageId === packageId,
+    )
+    .sort(
+      (first, second) => second.discountPercentage - first.discountPercentage,
+    )[0];
+}
+
+type ServiceKind = 'cv' | 'cover_letter' | 'linkedin' | 'general';
+
+function getServiceKind(packageItem: CareerPackage): ServiceKind {
+  const name = `${packageItem.name} ${packageItem.nameAr ?? ''}`.toLowerCase();
+  if (name.includes('linkedin') || name.includes('لينكد')) return 'linkedin';
+  if (name.includes('cover') || name.includes('خطاب')) return 'cover_letter';
+  if (name.includes('cv') || name.includes('resume') || name.includes('سيرة'))
+    return 'cv';
+  return 'general';
+}
+
+const SERVICE_GUIDANCE: Record<
+  ServiceKind,
+  { title: string; titleAr: string; description: string; descriptionAr: string }
+> = {
+  cv: {
+    title: 'Preparing your CV request',
+    titleAr: 'تجهيز طلب السيرة الذاتية',
+    description:
+      'If this is your first CV, that is completely fine. Add your education, experience and skills below, then send any certificates or existing documents on WhatsApp.',
+    descriptionAr:
+      'إذا كانت هذه أول سيرة ذاتية لك فلا مشكلة. أضف تعليمك وخبراتك ومهاراتك أدناه، ثم أرسل الشهادات أو المستندات المتاحة عبر واتساب.',
+  },
+  cover_letter: {
+    title: 'Preparing your cover letter request',
+    titleAr: 'تجهيز طلب خطاب التقديم',
+    description:
+      'Add the target company and job posting when available. Your saved career profile will provide the shared background information.',
+    descriptionAr:
+      'أضف الشركة المستهدفة ورابط إعلان الوظيفة إن توفر. سنستخدم بيانات ملفك المهني للمعلومات المشتركة.',
+  },
+  linkedin: {
+    title: 'Preparing your LinkedIn request',
+    titleAr: 'تجهيز طلب لينكدإن',
+    description:
+      'Add your LinkedIn profile link and the role or market you want to target. You will not need to repeat saved career information.',
+    descriptionAr:
+      'أضف رابط حسابك على لينكدإن والوظيفة أو السوق الذي تستهدفه. لن تحتاج إلى تكرار بياناتك المهنية المحفوظة.',
+  },
+  general: {
+    title: 'Information for your service',
+    titleAr: 'معلومات الخدمة',
+    description:
+      'Add the context that will help the SANAD team understand your goal. Saved career details are reused automatically.',
+    descriptionAr:
+      'أضف المعلومات التي تساعد فريق سند على فهم هدفك. نعيد استخدام بياناتك المهنية المحفوظة تلقائيًا.',
+  },
+};
 
 export function CheckoutExperience({
   checkoutMode,
@@ -126,7 +234,16 @@ export function CheckoutExperience({
     phone: user?.phone ?? null,
     targetJobTitle: '',
     targetIndustry: '',
+    targetCountry: '',
+    yearsOfExperience: '',
+    education: '',
+    keySkills: '',
     careerGoals: '',
+    linkedinUrl: '',
+    portfolioUrl: '',
+    targetCompany: '',
+    jobPostingUrl: '',
+    firstCv: false,
     notes: '',
     paymentMethod: 'card',
     couponCode: '',
@@ -137,35 +254,58 @@ export function CheckoutExperience({
     null,
   );
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState<CouponMessage | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingPayment, setPendingPayment] = useState<PaymentResult | null>(
     null,
   );
-
+  const serviceKind = getServiceKind(packageItem);
   function updateField<K extends keyof CheckoutFormState>(
     field: K,
     value: CheckoutFormState[K],
   ) {
     setForm((current) => ({ ...current, [field]: value }));
     setFieldErrors((current) => ({ ...current, [field]: undefined }));
+    if (field === 'couponCode') setCouponError(null);
     setError(null);
   }
 
-  const companionOffer = packageItem.companionOffers?.[0];
+  const companionOffers = packageItem.companionOffers ?? [];
+  const bestAnyServiceOffer = companionOffers
+    .filter((offer) => offer.type === 'cross_service_any')
+    .sort(
+      (first, second) => second.discountPercentage - first.discountPercentage,
+    )[0];
+  const specificOffers = Array.from(
+    companionOffers
+      .filter(
+        (offer) => offer.type === 'cross_service_specific' && offer.packageId,
+      )
+      .reduce((offersByPackage, offer) => {
+        const current = offersByPackage.get(offer.packageId!);
+        if (!current || offer.discountPercentage > current.discountPercentage) {
+          offersByPackage.set(offer.packageId!, offer);
+        }
+        return offersByPackage;
+      }, new Map<number, CompanionOffer>())
+      .values(),
+  ).sort(
+    (first, second) => second.discountPercentage - first.discountPercentage,
+  );
+  const selectedCompanionOffer = secondaryPackageId
+    ? getBestOfferForPackage(companionOffers, secondaryPackageId)
+    : undefined;
+
   useEffect(() => {
-    if (!companionOffer) return;
-    if (companionOffer.type === 'cross_service_any') {
-      void packagesApi
-        .list()
-        .then((result) =>
-          setPackages(
-            result.items.filter((item) => item.id !== packageItem.id),
-          ),
-        );
-    }
-  }, [companionOffer, packageItem.id]);
+    if (!bestAnyServiceOffer) return;
+    void packagesApi
+      .list()
+      .then((result) =>
+        setPackages(result.items.filter((item) => item.id !== packageItem.id)),
+      );
+  }, [bestAnyServiceOffer, packageItem.id]);
 
   async function refreshPricing(
     nextSecondaryPackageId = secondaryPackageId,
@@ -198,19 +338,35 @@ export function CheckoutExperience({
     }
   }
 
+  async function clearSecondaryPackage() {
+    setError(null);
+    setSecondaryPackageId(null);
+    try {
+      await refreshPricing(null);
+    } catch {
+      setDisplayPricing(pricing);
+    }
+  }
+
   async function applyCoupon() {
     const couponCode = form.couponCode.trim();
     setError(null);
+    if (!couponCode) {
+      setCouponError({
+        en: 'Enter a coupon code before applying it.',
+        ar: 'أدخل كود الخصم قبل تطبيقه.',
+      });
+      return;
+    }
+
+    setCouponError(null);
     setIsApplyingCoupon(true);
     try {
       await refreshPricing(secondaryPackageId, couponCode);
     } catch (requestError) {
-      setDisplayPricing(pricing);
-      setError(
-        isApiError(requestError)
-          ? requestError.userMessage
-          : 'We could not apply this coupon. Please try again.',
-      );
+      // Preserve the currently displayed pricing (including a selected second
+      // service) and show the validation feedback beside the coupon input.
+      setCouponError(getCouponError(requestError));
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -218,16 +374,6 @@ export function CheckoutExperience({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const submittedForm = {
-      ...form,
-      phone: form.phone ?? user?.phone ?? '',
-    };
-    const errors = validateForm(submittedForm);
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return;
-    }
-
     setError(null);
     setPendingPayment(null);
     setIsSubmitting(true);
@@ -238,13 +384,7 @@ export function CheckoutExperience({
         offerId: displayPricing.offerId ?? undefined,
         couponCode: displayPricing.couponCode ?? undefined,
         secondaryPackageId: displayPricing.secondaryPackageId ?? undefined,
-        customerPhone: submittedForm.phone.trim(),
-        notes: form.notes.trim() || undefined,
-        requirements: {
-          targetJobTitle: form.targetJobTitle.trim() || undefined,
-          targetIndustry: form.targetIndustry.trim() || undefined,
-          careerGoals: form.careerGoals.trim() || undefined,
-        },
+        customerPhone: user?.phone?.trim() ?? '',
       });
       if (checkoutMode === 'manual') {
         router.replace(
@@ -355,14 +495,14 @@ export function CheckoutExperience({
         <div className="flex items-start justify-between gap-4 border-b border-border pb-6">
           <div>
             <p className="text-xs font-semibold tracking-[0.16em] text-secondary uppercase">
-              {_copy('Your details')}
+              {_copy('Complete your order')}
             </p>
             <h2 className="type-h3 mt-2 text-primary">
-              {_copy('Help us prepare your order')}
+              {_copy('Review and submit your request')}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
               {_copy(
-                'A few details help the service owner start with the right context.',
+                'After submitting, you will receive clear instructions for sending your information directly on WhatsApp.',
               )}
             </p>
           </div>
@@ -381,7 +521,7 @@ export function CheckoutExperience({
           />
         ) : null}
 
-        <div className="mt-7 grid gap-5 sm:grid-cols-2">
+        <div aria-hidden="true" hidden>
           <div className="sm:col-span-2">
             <label
               className="type-label text-foreground"
@@ -400,6 +540,176 @@ export function CheckoutExperience({
               {user.name}
             </p>
           </div>
+          <div>
+            <label
+              className="type-label text-foreground"
+              htmlFor="checkout-country"
+            >
+              {_copy('Target country')}
+            </label>
+            <Input
+              className="mt-2"
+              id="checkout-country"
+              onChange={(event) =>
+                updateField('targetCountry', event.target.value)
+              }
+              placeholder={_copy('e.g. UAE or Saudi Arabia')}
+              value={form.targetCountry}
+            />
+          </div>
+          {serviceKind === 'cv' ? (
+            <>
+              <div>
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-experience"
+                >
+                  {_copy('Years of experience')}
+                </label>
+                <Input
+                  className="mt-2"
+                  id="checkout-experience"
+                  onChange={(event) =>
+                    updateField('yearsOfExperience', event.target.value)
+                  }
+                  placeholder={_copy('e.g. 5 years')}
+                  value={form.yearsOfExperience}
+                />
+              </div>
+              <label className="flex items-start gap-3 border border-border bg-surface-muted p-4 sm:col-span-2">
+                <input
+                  checked={form.firstCv}
+                  className="mt-1"
+                  onChange={(event) =>
+                    updateField('firstCv', event.target.checked)
+                  }
+                  type="checkbox"
+                />
+                <span>
+                  <span className="block text-sm font-semibold">
+                    {_copy('This is my first CV')}
+                  </span>
+                  <span className="mt-1 block text-xs leading-5 text-muted-foreground">
+                    {_copy(
+                      'You can continue without an existing CV. Add what you know and send supporting documents on WhatsApp.',
+                    )}
+                  </span>
+                </span>
+              </label>
+              <div className="sm:col-span-2">
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-education"
+                >
+                  {_copy('Education')}
+                </label>
+                <Textarea
+                  className="mt-2"
+                  id="checkout-education"
+                  onChange={(event) =>
+                    updateField('education', event.target.value)
+                  }
+                  placeholder={_copy('Degree, major, institution and year')}
+                  value={form.education}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-skills"
+                >
+                  {_copy('Key skills')}
+                </label>
+                <Textarea
+                  className="mt-2"
+                  id="checkout-skills"
+                  onChange={(event) =>
+                    updateField('keySkills', event.target.value)
+                  }
+                  placeholder={_copy(
+                    'Your strongest technical and soft skills',
+                  )}
+                  value={form.keySkills}
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-portfolio"
+                >
+                  {_copy('Portfolio URL')}
+                </label>
+                <Input
+                  className="mt-2"
+                  id="checkout-portfolio"
+                  onChange={(event) =>
+                    updateField('portfolioUrl', event.target.value)
+                  }
+                  placeholder="https://"
+                  type="url"
+                  value={form.portfolioUrl}
+                />
+              </div>
+            </>
+          ) : null}
+          {serviceKind === 'linkedin' ? (
+            <div className="sm:col-span-2">
+              <label
+                className="type-label text-foreground"
+                htmlFor="checkout-linkedin"
+              >
+                {_copy('LinkedIn profile URL')}
+              </label>
+              <Input
+                className="mt-2"
+                id="checkout-linkedin"
+                onChange={(event) =>
+                  updateField('linkedinUrl', event.target.value)
+                }
+                placeholder="https://www.linkedin.com/in/..."
+                type="url"
+                value={form.linkedinUrl}
+              />
+            </div>
+          ) : null}
+          {serviceKind === 'cover_letter' ? (
+            <>
+              <div>
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-company"
+                >
+                  {_copy('Target company')}
+                </label>
+                <Input
+                  className="mt-2"
+                  id="checkout-company"
+                  onChange={(event) =>
+                    updateField('targetCompany', event.target.value)
+                  }
+                  value={form.targetCompany}
+                />
+              </div>
+              <div>
+                <label
+                  className="type-label text-foreground"
+                  htmlFor="checkout-job-posting"
+                >
+                  {_copy('Job posting URL')}
+                </label>
+                <Input
+                  className="mt-2"
+                  id="checkout-job-posting"
+                  onChange={(event) =>
+                    updateField('jobPostingUrl', event.target.value)
+                  }
+                  placeholder="https://"
+                  type="url"
+                  value={form.jobPostingUrl}
+                />
+              </div>
+            </>
+          ) : null}
           <div className="sm:col-span-2">
             <label
               className="type-label text-foreground"
@@ -522,6 +832,12 @@ export function CheckoutExperience({
               </p>
             ) : null}
           </div>
+          <p className="text-xs leading-5 text-muted-foreground sm:col-span-2">
+            {_copy(
+              'Your text details are saved with the order and added to the prepared WhatsApp message. You can review the message before sending it; supporting files are attached separately in WhatsApp.',
+              'تُحفظ البيانات النصية مع الطلب وتُضاف إلى رسالة واتساب المجهزة. يمكنك مراجعة الرسالة قبل إرسالها، وتُرفق الملفات المساندة بشكل منفصل في واتساب.',
+            )}
+          </p>
         </div>
       </section>
 
@@ -542,20 +858,60 @@ export function CheckoutExperience({
           <dl className="grid gap-3 text-sm">
             <div className="flex items-center justify-between gap-4">
               <dt className="text-muted-foreground">
-                {_copy('Service price')}
+                {_copy(
+                  displayPricing.secondaryPackageId
+                    ? 'Primary service'
+                    : 'Service price',
+                  displayPricing.secondaryPackageId
+                    ? 'الخدمة الأساسية'
+                    : 'سعر الخدمة',
+                )}
               </dt>
               <dd className="font-semibold text-foreground">
                 {_copy(
                   _copy.money(
-                    displayPricing.originalPrice,
+                    displayPricing.originalPrice -
+                      displayPricing.secondaryOriginalPrice,
                     displayPricing.currency,
                   ),
                 )}
               </dd>
             </div>
+            {displayPricing.secondaryPackageId ? (
+              <div className="flex items-start justify-between gap-4">
+                <dt className="text-muted-foreground">
+                  <span className="block">
+                    {_copy('Second service', 'الخدمة الثانية')}
+                  </span>
+                  <span className="block text-xs">
+                    {_copy(
+                      displayPricing.secondaryPackageName ?? 'Selected service',
+                      displayPricing.secondaryPackageNameAr,
+                    )}
+                  </span>
+                </dt>
+                <dd className="font-semibold text-foreground">
+                  {_copy(
+                    _copy.money(
+                      displayPricing.secondaryOriginalPrice,
+                      displayPricing.currency,
+                    ),
+                  )}
+                </dd>
+              </div>
+            ) : null}
             {displayPricing.offerDiscountAmount > 0 ? (
               <div className="flex items-center justify-between gap-4 text-success">
-                <dt>{_copy('Offer saving')}</dt>
+                <dt>
+                  {_copy(
+                    displayPricing.secondaryPackageId
+                      ? `Second service offer (${displayPricing.offerDiscountPercentage}%)`
+                      : 'Offer saving',
+                    displayPricing.secondaryPackageId
+                      ? `خصم الخدمة الثانية (${displayPricing.offerDiscountPercentage}%)`
+                      : 'قيمة الخصم',
+                  )}
+                </dt>
                 <dd className="font-semibold">
                   {_copy('-')}
                   {_copy(
@@ -603,6 +959,10 @@ export function CheckoutExperience({
             </label>
             <div className="mt-2 flex gap-2">
               <Input
+                aria-describedby={
+                  couponError ? 'checkout-coupon-error' : undefined
+                }
+                aria-invalid={couponError ? true : undefined}
                 id="checkout-coupon"
                 onChange={(event) =>
                   updateField('couponCode', event.target.value)
@@ -619,6 +979,15 @@ export function CheckoutExperience({
                 {_copy('Apply')}
               </Button>
             </div>
+            {couponError ? (
+              <p
+                className="mt-2 text-xs text-error"
+                id="checkout-coupon-error"
+                role="alert"
+              >
+                {_copy(couponError.en, couponError.ar)}
+              </p>
+            ) : null}
             {displayPricing.couponCode ? (
               <p className="mt-2 text-xs text-success">
                 {_copy('Coupon applied')}: {_copy(displayPricing.couponCode)}
@@ -626,70 +995,164 @@ export function CheckoutExperience({
             ) : null}
           </div>
 
-          {companionOffer ? (
+          {companionOffers.length > 0 ? (
             <div className="mt-6 border-t border-border pt-5">
               <p className="type-label text-foreground">
-                {_copy('Second service offer')}
+                {_copy('Second service offers', 'عروض الخدمة الثانية')}
               </p>
-              {companionOffer.type === 'cross_service_specific' &&
-              companionOffer.packageId ? (
-                <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm">
-                  <input
-                    checked={secondaryPackageId === companionOffer.packageId}
-                    className="mt-1 size-4 accent-primary"
-                    onChange={(event) => {
-                      if (event.target.checked)
-                        void selectSecondaryPackage(companionOffer.packageId!);
-                      else {
-                        setSecondaryPackageId(null);
-                        void refreshPricing(null).catch(() =>
-                          setDisplayPricing(pricing),
-                        );
-                      }
-                    }}
-                    type="checkbox"
-                  />
-                  <span>
-                    <span className="block font-semibold text-foreground">
-                      {_copy('Add the discounted second service')}
-                    </span>
-                    <span className="mt-1 block text-muted-foreground">
-                      {_copy(
-                        'You can continue with this service only if you prefer.',
-                      )}
-                    </span>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {_copy(
+                  'Add one optional service to this order. The discount applies to the second service only.',
+                  'أضف خدمة اختيارية واحدة إلى الطلب، ويُطبّق الخصم على الخدمة الثانية فقط.',
+                )}
+              </p>
+
+              {specificOffers.length > 0 ? (
+                <div className="mt-3 grid gap-2">
+                  {specificOffers.map((offer) => {
+                    const checked = secondaryPackageId === offer.packageId;
+                    const originalPrice = offer.packagePrice ?? 0;
+                    return (
+                      <label
+                        className={`flex cursor-pointer items-start gap-3 rounded-md border p-3 text-sm transition-colors ${checked ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                        key={offer.id}
+                      >
+                        <input
+                          checked={checked}
+                          className="mt-1 size-4 accent-primary"
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              void selectSecondaryPackage(offer.packageId!);
+                            } else {
+                              void clearSecondaryPackage();
+                            }
+                          }}
+                          type="checkbox"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-semibold text-foreground">
+                            {_copy(offer.name, offer.nameAr)}
+                          </span>
+                          <span className="mt-1 block text-muted-foreground">
+                            {_copy(
+                              offer.packageName ?? 'Selected second service',
+                              offer.packageNameAr,
+                            )}{' '}
+                            {_copy('·')} {_copy(offer.discountPercentage)}%
+                            {_copy(' off', ' خصم')}
+                          </span>
+                          {originalPrice > 0 ? (
+                            <span className="mt-1 block text-xs text-muted-foreground">
+                              <span className="line-through">
+                                {_copy(
+                                  _copy.money(
+                                    originalPrice,
+                                    displayPricing.currency,
+                                  ),
+                                )}
+                              </span>{' '}
+                              <strong className="text-success no-underline">
+                                {_copy(
+                                  _copy.money(
+                                    discountedPrice(
+                                      originalPrice,
+                                      offer.discountPercentage,
+                                    ),
+                                    displayPricing.currency,
+                                  ),
+                                )}
+                              </strong>
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {bestAnyServiceOffer ? (
+                <label className="mt-3 grid gap-2 rounded-md border border-border p-3 text-sm">
+                  <span className="font-semibold text-foreground">
+                    {_copy(
+                      bestAnyServiceOffer.name,
+                      bestAnyServiceOffer.nameAr,
+                    )}
                   </span>
-                </label>
-              ) : (
-                <label className="mt-2 grid gap-1 text-sm text-muted-foreground">
-                  {_copy('Choose your discounted second service')}
+                  <span className="text-muted-foreground">
+                    {_copy(
+                      'Choose any second service and save',
+                      'اختر أي خدمة ثانية ووفّر',
+                    )}{' '}
+                    <strong>
+                      {_copy(bestAnyServiceOffer.discountPercentage)}%
+                    </strong>
+                  </span>
                   <select
                     className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3 text-foreground"
                     onChange={(event) => {
                       const id = Number(event.target.value);
                       if (id) void selectSecondaryPackage(id);
+                      else void clearSecondaryPackage();
                     }}
                     value={secondaryPackageId ?? 0}
                   >
                     <option value="0">{_copy('Select package')}</option>
-                    {packages.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {_copy(item.name, item.nameAr)}
-                      </option>
-                    ))}
+                    {packages.map((item) => {
+                      const applicableOffer = getBestOfferForPackage(
+                        companionOffers,
+                        item.id,
+                      );
+                      const finalPrice = discountedPrice(
+                        item.price,
+                        applicableOffer?.discountPercentage ??
+                          bestAnyServiceOffer.discountPercentage,
+                      );
+                      return (
+                        <option key={item.id} value={item.id}>
+                          {_copy(item.name, item.nameAr)} —{' '}
+                          {_copy(
+                            _copy.money(finalPrice, displayPricing.currency),
+                          )}
+                        </option>
+                      );
+                    })}
                   </select>
                 </label>
-              )}
+              ) : null}
+
               {displayPricing.secondaryPackageId ? (
-                <p className="mt-2 text-xs text-success">
-                  {_copy('Second service saving')}: {_copy('-')}
-                  {_copy(
-                    _copy.money(
-                      displayPricing.secondaryDiscountAmount,
-                      displayPricing.currency,
-                    ),
-                  )}
-                </p>
+                <div className="mt-3 rounded-md bg-success/10 p-3 text-sm text-success">
+                  <p className="font-semibold">
+                    {_copy(
+                      displayPricing.secondaryPackageName ??
+                        'Second service added',
+                      displayPricing.secondaryPackageNameAr,
+                    )}
+                  </p>
+                  <p className="mt-1 text-xs">
+                    {_copy('Saving', 'التوفير')}: {_copy('-')}
+                    {_copy(
+                      _copy.money(
+                        displayPricing.secondaryDiscountAmount,
+                        displayPricing.currency,
+                      ),
+                    )}
+                    {selectedCompanionOffer ? (
+                      <>
+                        {' '}
+                        ({_copy(selectedCompanionOffer.discountPercentage)}%)
+                      </>
+                    ) : null}
+                  </p>
+                  <button
+                    className="mt-2 text-xs font-semibold underline underline-offset-2"
+                    onClick={() => void clearSecondaryPackage()}
+                    type="button"
+                  >
+                    {_copy('Remove second service', 'إزالة الخدمة الثانية')}
+                  </button>
+                </div>
               ) : null}
             </div>
           ) : null}

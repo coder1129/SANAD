@@ -28,6 +28,7 @@ export class UsersService {
         first_name: true,
         last_name: true,
         gender: true,
+        career_profile: true,
         role: true,
         email_verified: true,
         last_login: true,
@@ -57,6 +58,20 @@ export class UsersService {
       effectiveFirstName || effectiveLastName
         ? [effectiveFirstName, effectiveLastName].filter(Boolean).join(' ')
         : dto.name;
+    const currentCareerProfile =
+      user.career_profile &&
+      typeof user.career_profile === 'object' &&
+      !Array.isArray(user.career_profile)
+        ? user.career_profile
+        : {};
+    const careerProfile = dto.career_profile
+      ? Object.fromEntries(
+          Object.entries(dto.career_profile).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? value.trim() : value,
+          ]),
+        )
+      : undefined;
 
     return this.prisma.users.update({
       where: { id: userId },
@@ -66,6 +81,9 @@ export class UsersService {
         ...(lastName !== undefined && { last_name: lastName }),
         ...(dto.phone !== undefined && { phone: dto.phone }),
         ...(dto.gender !== undefined && { gender: dto.gender }),
+        ...(careerProfile !== undefined && {
+          career_profile: { ...currentCareerProfile, ...careerProfile },
+        }),
       },
       select: {
         id: true,
@@ -75,6 +93,7 @@ export class UsersService {
         first_name: true,
         last_name: true,
         gender: true,
+        career_profile: true,
         role: true,
         email_verified: true,
         last_login: true,

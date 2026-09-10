@@ -52,7 +52,7 @@ const sections = [
     title: 'Information We Collect',
     content: [
       'When you place an order or create an account, we collect your name, email address, phone number, and LinkedIn profile URL. During the service fulfilment process, you provide your existing CV, employment history, target roles, and related career context.',
-      'Payment transactions are processed through PCI-DSS compliant gateways. SANAD does not store raw credit card numbers on its servers.',
+      'Payment arrangements are handled directly through SANAD’s official communication channels. We record only the transaction details needed to confirm and reconcile your order.',
     ],
   },
   {
@@ -75,21 +75,21 @@ const sections = [
     id: 'data-security',
     title: 'Data Security',
     content: [
-      'Data in transit is protected by TLS 1.3. Access to client files is restricted to the writer and quality reviewer assigned to your specific order. We conduct regular security reviews and maintain access logs for accountability.',
+      'We use encrypted HTTPS connections for the platform. Access to customer information is limited to authorised SANAD team members who need it to fulfil or support the order.',
     ],
   },
   {
     id: 'third-party-sharing',
     title: 'Third-Party Sharing',
     content: [
-      'We do not sell, rent, or trade your personal information. Data is shared only with infrastructure providers (hosting, payment processing) that are contractually bound to equivalent privacy standards.',
+      'We do not sell, rent, or trade your personal information. Data is shared only with service providers needed for hosting, email delivery, storage, and customer communication, subject to their applicable privacy obligations.',
     ],
   },
   {
     id: 'retention-and-deletion',
     title: 'Retention & Deletion',
     content: [
-      'Completed documents remain accessible in your order dashboard for your convenience. You may request permanent deletion of your account and all associated files at any time by contacting our support team.',
+      'Documents exchanged for the service are currently sent through the agreed WhatsApp channel and are not stored in the order dashboard. We retain order and contact records only as needed to provide the service and meet legal obligations. You may contact support to request deletion of eligible personal data.',
     ],
   },
   {
@@ -103,7 +103,7 @@ const sections = [
     id: 'contact',
     title: 'Contact',
     content: [
-      'For privacy-related questions or data requests, email privacy@sanad.sa.',
+      'For privacy-related questions or data requests, contact SANAD through the support email or official WhatsApp number published on the website.',
     ],
   },
 ] as const;
@@ -163,7 +163,7 @@ export default async function PrivacyPolicyPage() {
               {sections.map(({ content, id, title }, index) => (
                 <section id={id} key={id}>
                   <h2 className="type-h4 text-primary">
-                    {_copy(index + 1)}
+                    {_copy.number(index + 1, { useGrouping: false })}
                     {_copy('.')}
                     {_copy(title)}
                   </h2>
