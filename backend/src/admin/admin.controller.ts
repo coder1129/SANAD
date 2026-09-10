@@ -13,6 +13,7 @@ import {
   CustomerFilterDto,
   UpdateCustomerStatusDto,
   ActivityLogFilterDto,
+  DashboardFilterDto,
 } from './dto';
 import { Roles, CurrentUser } from '../common/decorators';
 import { UserRole } from '../common/enums';
@@ -26,8 +27,8 @@ export class AdminController {
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Get Admin Dashboard KPIs and real-time analytics' })
-  async getDashboard() {
-    return this.adminService.getDashboardStats();
+  async getDashboard(@Query() query: DashboardFilterDto) {
+    return this.adminService.getDashboardStats(query);
   }
 
   @Get('customers')

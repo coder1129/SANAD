@@ -5,8 +5,8 @@ import { getCopy } from '@/lib/i18n/server-copy';
 
 export async function generateMetadata(): Promise<Metadata> {
   const _copy = await getCopy();
-  return await getLocalizedMetadata({
-    title: _copy('Order Confirmed | SANAD', 'تم تأكيد الطلب | سند'),
+  return getLocalizedMetadata({
+    title: _copy('Order Received | SANAD', 'تم استلام الطلب | سند'),
   });
 }
 

@@ -49,6 +49,14 @@ test('metadata routes are served', async ({ request }) => {
   }
 });
 
+test('manual checkout keeps the hosted payment route out of the public flow', async ({
+  request,
+}) => {
+  const response = await request.get('/checkout/pay');
+
+  expect(response.status()).toBe(404);
+});
+
 test('security headers are applied to frontend responses', async ({
   request,
 }) => {

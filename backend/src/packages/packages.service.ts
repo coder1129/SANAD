@@ -3,17 +3,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePackageDto, UpdatePackageDto } from './dto';
 import { PaginationDto, createPaginatedResponse } from '../common/utils';
 import { StorageService } from '../files/storage.service';
-import { OrderStatus } from '../common/enums';
-
-const PURCHASED_ORDER_STATUSES = [
-  OrderStatus.PAID,
-  OrderStatus.AWAITING_INFORMATION,
-  OrderStatus.RECEIVED,
-  OrderStatus.IN_PROGRESS,
-  OrderStatus.UNDER_REVIEW,
-  OrderStatus.READY,
-  OrderStatus.COMPLETED,
-];
 
 @Injectable()
 export class PackagesService {
@@ -98,8 +87,19 @@ export class PackagesService {
             },
           },
           triggered_offers: {
-            where: { is_active: true, start_date: { lte: new Date() }, end_date: { gte: new Date() }, offer_type: { in: ['cross_service_any', 'cross_service_specific'] } },
-            include: { package: { select: { id: true, name_en: true, name_ar: true, price: true } } },
+            where: {
+              is_active: true,
+              start_date: { lte: new Date() },
+              end_date: { gte: new Date() },
+              offer_type: {
+                in: ['cross_service_any', 'cross_service_specific'],
+              },
+            },
+            include: {
+              package: {
+                select: { id: true, name_en: true, name_ar: true, price: true },
+              },
+            },
           },
           package_reviews: {
             where: { status: 'published' },
@@ -108,7 +108,11 @@ export class PackagesService {
           _count: {
             select: {
               orders: {
-                where: { status: { in: PURCHASED_ORDER_STATUSES } },
+                where: {
+                  payments: {
+                    some: { status: 'paid', amount: { gt: 0 } },
+                  },
+                },
               },
             },
           },
@@ -140,8 +144,17 @@ export class PackagesService {
           },
         },
         triggered_offers: {
-          where: { is_active: true, start_date: { lte: new Date() }, end_date: { gte: new Date() }, offer_type: { in: ['cross_service_any', 'cross_service_specific'] } },
-          include: { package: { select: { id: true, name_en: true, name_ar: true, price: true } } },
+          where: {
+            is_active: true,
+            start_date: { lte: new Date() },
+            end_date: { gte: new Date() },
+            offer_type: { in: ['cross_service_any', 'cross_service_specific'] },
+          },
+          include: {
+            package: {
+              select: { id: true, name_en: true, name_ar: true, price: true },
+            },
+          },
         },
         package_reviews: {
           where: { status: 'published' },
@@ -150,7 +163,11 @@ export class PackagesService {
         _count: {
           select: {
             orders: {
-              where: { status: { in: PURCHASED_ORDER_STATUSES } },
+              where: {
+                payments: {
+                  some: { status: 'paid', amount: { gt: 0 } },
+                },
+              },
             },
           },
         },

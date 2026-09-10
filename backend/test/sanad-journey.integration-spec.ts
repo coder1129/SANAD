@@ -23,7 +23,7 @@ describe('SANAD real customer-to-public journey', () => {
   const password = 'Journey1!Test';
 
   beforeAll(async () => {
-    process.env.PAYMENT_PROVIDER = 'bypass';
+    process.env.PAYMENT_PROVIDER = 'manual';
     const { AppModule } = await import('../src/app.module');
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -147,17 +147,47 @@ describe('SANAD real customer-to-public journey', () => {
       .expect(201);
     orderId = created.body.data.id;
     const orderNumber = created.body.data.order_number as string;
-    expect(created.body.data.status).toBe('paid');
+    const finalAmount = Number(created.body.data.final_amount);
+    expect(created.body.data.status).toBe('pending_payment');
+    expect(created.body.data.payments).toHaveLength(0);
 
-    const payment = await request(app.getHttpServer())
+    const disabledOnlinePayment = await request(app.getHttpServer())
       .post('/api/v1/payments/create')
       .set('Authorization', `Bearer ${customerToken}`)
       .send({ order_id: orderId, payment_method: 'card' })
+      .expect(400);
+    expect(disabledOnlinePayment.body.code).toBe('MANUAL_PAYMENT_ONLY');
+
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/orders/${orderId}/status`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: 'paid' })
+      .expect(400);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/payments/manual')
+      .set('Authorization', `Bearer ${customerToken}`)
+      .send({
+        order_id: orderId,
+        amount: finalAmount,
+        payment_method: 'payment_link',
+      })
+      .expect(403);
+
+    const payment = await request(app.getHttpServer())
+      .post('/api/v1/admin/payments/manual')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        order_id: orderId,
+        amount: finalAmount,
+        payment_method: 'payment_link',
+        transaction_reference: `JOURNEY-${runId}`,
+      })
       .expect(201);
     expect(payment.body.data).toMatchObject({
       status: 'paid',
-      bypassed: true,
-      requires_payment: false,
+      amount: String(finalAmount),
+      payment_method: 'payment_link',
     });
 
     await request(app.getHttpServer())
@@ -248,6 +278,7 @@ describe('SANAD real customer-to-public journey', () => {
       .get(`/api/v1/packages/${packageRecord!.id}`)
       .expect(200);
     expect(packageResponse.body.data.rating_count).toBeGreaterThanOrEqual(1);
+    expect(packageResponse.body.data.buyer_count).toBeGreaterThanOrEqual(1);
 
     const adminReadRoutes = [
       '/api/v1/admin/dashboard',

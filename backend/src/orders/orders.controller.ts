@@ -42,7 +42,7 @@ export class OrdersController {
 
   @Get('number/:orderNumber')
   @ApiOperation({
-    summary: 'Get a paid customer order by its public order number',
+    summary: 'Get a customer order by its public order number',
   })
   async findByNumberCustomer(
     @Param('orderNumber') orderNumber: string,

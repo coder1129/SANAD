@@ -89,9 +89,9 @@ describe('environment validation', () => {
         NODE_ENV: 'production',
         TRUST_PROXY: 'false',
         ...productionServices,
-        PAYMENT_PROVIDER: 'bypass',
+        PAYMENT_PROVIDER: 'manual',
       }),
-    ).toMatchObject({ NODE_ENV: 'production' });
+    ).toMatchObject({ NODE_ENV: 'production', PAYMENT_PROVIDER: 'manual' });
   });
 
   it('rejects the mock payment gateway in production', () => {
@@ -143,7 +143,7 @@ describe('environment validation', () => {
     ).toThrow(/SWAGGER_ENABLED=false/);
   });
 
-  it('allows Railway local storage but rejects incomplete R2/S3 configuration', () => {
+  it('allows volume-backed local storage but rejects incomplete R2/S3 configuration', () => {
     expect(
       validate({
         ...valid,

@@ -7,6 +7,7 @@ import { validatePublicEnvironment } from './lib/env/public-env-schema';
 const publicEnvironment = validatePublicEnvironment(
   {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_CHECKOUT_MODE: process.env.NEXT_PUBLIC_CHECKOUT_MODE,
     NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
     NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
@@ -99,6 +100,7 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   poweredByHeader: false,
   images: { remotePatterns },
   async headers() {

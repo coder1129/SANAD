@@ -94,12 +94,12 @@ function Navigation({
               onClick={onNavigate}
             >
               <Icon className="size-4" aria-hidden="true" />
-            <span
-              className={cn(
-                'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
-                compact ? 'max-w-0 opacity-0' : 'max-w-40 opacity-100',
-              )}
-            >
+              <span
+                className={cn(
+                  'overflow-hidden whitespace-nowrap transition-[max-width,opacity] duration-200 ease-out',
+                  compact ? 'max-w-0 opacity-0' : 'max-w-40 opacity-100',
+                )}
+              >
                 {_copy(label)}
               </span>
             </Link>

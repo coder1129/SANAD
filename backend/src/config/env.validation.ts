@@ -184,7 +184,7 @@ class EnvironmentVariables {
   GOOGLE_CLIENT_ID?: string;
 
   @IsString()
-  @IsIn(['mock', 'bypass'])
+  @IsIn(['mock', 'manual', 'bypass'])
   PAYMENT_PROVIDER: string = 'mock';
 
   @IsString()
@@ -324,7 +324,7 @@ export function validate(config: Record<string, unknown>) {
       Boolean(value?.trim()),
     );
 
-    // Railway can persist the built-in local storage by mounting `/app/uploads`.
+    // A persistent volume can preserve the built-in `/app/uploads` storage.
     // R2/S3 remains optional, but when it is configured every field must be
     // present so a half-configured client can never start accepting uploads.
     if (
@@ -336,7 +336,7 @@ export function validate(config: Record<string, unknown>) {
         !validatedConfig.R2_PUBLIC_URL)
     ) {
       throw new Error(
-        'R2/S3 configuration is incomplete: provide account ID or endpoint, access key, secret, bucket, and public URL; or remove all R2_* variables to use Railway local storage.',
+        'R2/S3 configuration is incomplete: provide account ID or endpoint, access key, secret, bucket, and public URL; or remove all R2_* variables to use local storage backed by a persistent volume.',
       );
     }
     if (hasStorageConfiguration) {
@@ -363,7 +363,7 @@ export function validate(config: Record<string, unknown>) {
     }
     if (validatedConfig.PAYMENT_PROVIDER === 'mock') {
       throw new Error(
-        'Production cannot use PAYMENT_PROVIDER=mock. Use bypass only for a deliberate no-charge launch, or configure a real payment provider before accepting payments.',
+        'Production cannot use PAYMENT_PROVIDER=mock. Use manual for admin-confirmed external payments, or configure a real payment provider.',
       );
     }
   }

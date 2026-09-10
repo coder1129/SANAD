@@ -61,7 +61,11 @@ export function AdministratorsManager() {
           ),
       );
       if (variables.input.name !== undefined) {
-        setNames(({ [variables.id]: _savedName, ...current }) => current);
+        setNames((current) => {
+          const next = { ...current };
+          delete next[variables.id];
+          return next;
+        });
         setSavedNameId(variables.id);
       }
       void refresh();

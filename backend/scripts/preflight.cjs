@@ -63,6 +63,11 @@ try {
       'WARNING: PAYMENT_PROVIDER=bypass - orders are accepted without charging customers. Disable this before enabling paid checkout.',
     );
   }
+  if (config.PAYMENT_PROVIDER === 'manual') {
+    notes.push(
+      'PAYMENT_PROVIDER=manual - customer checkout is disabled; admins must reconcile and confirm external payments.',
+    );
+  }
   for (const note of notes) {
     process.stdout.write(`  note: ${note}\n`);
   }

@@ -6,6 +6,7 @@ import {
   CreditCard,
   ExternalLink,
   LockKeyhole,
+  MessageCircle,
   Phone,
   ShieldCheck,
   Smartphone,
@@ -19,7 +20,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
-import { checkoutApi, isApiError, ordersApi, packagesApi, paymentsApi } from '@/lib/api';
+import {
+  checkoutApi,
+  isApiError,
+  ordersApi,
+  packagesApi,
+  paymentsApi,
+} from '@/lib/api';
 import type {
   CareerPackage,
   CheckoutPaymentMethod,
@@ -28,6 +35,7 @@ import type {
 } from '@/types/domain';
 
 interface CheckoutExperienceProps {
+  checkoutMode: 'manual' | 'gateway';
   packageItem: CareerPackage;
   pricing: CheckoutPricing;
 }
@@ -104,6 +112,7 @@ function isPaymentComplete(payment: PaymentResult): boolean {
 }
 
 export function CheckoutExperience({
+  checkoutMode,
   packageItem,
   pricing,
 }: CheckoutExperienceProps) {
@@ -124,7 +133,9 @@ export function CheckoutExperience({
   });
   const [displayPricing, setDisplayPricing] = useState(pricing);
   const [packages, setPackages] = useState<CareerPackage[]>([]);
-  const [secondaryPackageId, setSecondaryPackageId] = useState<number | null>(null);
+  const [secondaryPackageId, setSecondaryPackageId] = useState<number | null>(
+    null,
+  );
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState<string | null>(null);
@@ -146,15 +157,26 @@ export function CheckoutExperience({
   useEffect(() => {
     if (!companionOffer) return;
     if (companionOffer.type === 'cross_service_any') {
-      void packagesApi.list().then((result) => setPackages(result.items.filter((item) => item.id !== packageItem.id)));
+      void packagesApi
+        .list()
+        .then((result) =>
+          setPackages(
+            result.items.filter((item) => item.id !== packageItem.id),
+          ),
+        );
     }
   }, [companionOffer, packageItem.id]);
 
-  async function refreshPricing(nextSecondaryPackageId = secondaryPackageId, couponCode = form.couponCode.trim()) {
+  async function refreshPricing(
+    nextSecondaryPackageId = secondaryPackageId,
+    couponCode = form.couponCode.trim(),
+  ) {
     const nextPricing = await checkoutApi.preview({
       packageId: packageItem.id,
       offerId: pricing.offerId ?? undefined,
-      ...(nextSecondaryPackageId ? { secondaryPackageId: nextSecondaryPackageId } : {}),
+      ...(nextSecondaryPackageId
+        ? { secondaryPackageId: nextSecondaryPackageId }
+        : {}),
       ...(couponCode ? { couponCode } : {}),
     });
     setDisplayPricing(nextPricing);
@@ -163,10 +185,16 @@ export function CheckoutExperience({
   async function selectSecondaryPackage(id: number) {
     setError(null);
     setSecondaryPackageId(id);
-    try { await refreshPricing(id); } catch (requestError) {
+    try {
+      await refreshPricing(id);
+    } catch (requestError) {
       setSecondaryPackageId(null);
       setDisplayPricing(pricing);
-      setError(isApiError(requestError) ? requestError.userMessage : 'We could not apply this service offer.');
+      setError(
+        isApiError(requestError)
+          ? requestError.userMessage
+          : 'We could not apply this service offer.',
+      );
     }
   }
 
@@ -218,6 +246,13 @@ export function CheckoutExperience({
           careerGoals: form.careerGoals.trim() || undefined,
         },
       });
+      if (checkoutMode === 'manual') {
+        router.replace(
+          `/order-success/${encodeURIComponent(order.orderNumber)}`,
+        );
+        return;
+      }
+
       const payment = await paymentsApi.create({
         orderId: order.id,
         paymentMethod: form.paymentMethod,
@@ -268,7 +303,9 @@ export function CheckoutExperience({
         </h2>
         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
           {_copy(
-            'Your account keeps the order, payment, and WhatsApp handoff connected in one place.',
+            checkoutMode === 'manual'
+              ? 'Your account keeps the order and WhatsApp handoff connected in one place.'
+              : 'Your account keeps the order, payment, and WhatsApp handoff connected in one place.',
           )}
         </p>
         <Button
@@ -508,7 +545,12 @@ export function CheckoutExperience({
                 {_copy('Service price')}
               </dt>
               <dd className="font-semibold text-foreground">
-                {_copy(_copy.money(displayPricing.originalPrice, displayPricing.currency))}
+                {_copy(
+                  _copy.money(
+                    displayPricing.originalPrice,
+                    displayPricing.currency,
+                  ),
+                )}
               </dd>
             </div>
             {displayPricing.offerDiscountAmount > 0 ? (
@@ -517,7 +559,10 @@ export function CheckoutExperience({
                 <dd className="font-semibold">
                   {_copy('-')}
                   {_copy(
-                    _copy.money(displayPricing.offerDiscountAmount, displayPricing.currency),
+                    _copy.money(
+                      displayPricing.offerDiscountAmount,
+                      displayPricing.currency,
+                    ),
                   )}
                 </dd>
               </div>
@@ -539,19 +584,29 @@ export function CheckoutExperience({
             <div className="mt-2 flex items-end justify-between gap-4 border-t border-border pt-4">
               <dt className="font-semibold text-primary">{_copy('Total')}</dt>
               <dd className="font-display text-3xl leading-none text-primary">
-                {_copy(_copy.money(displayPricing.finalAmount, displayPricing.currency))}
+                {_copy(
+                  _copy.money(
+                    displayPricing.finalAmount,
+                    displayPricing.currency,
+                  ),
+                )}
               </dd>
             </div>
           </dl>
 
           <div className="mt-6 border-t border-border pt-5">
-            <label className="type-label text-foreground" htmlFor="checkout-coupon">
+            <label
+              className="type-label text-foreground"
+              htmlFor="checkout-coupon"
+            >
               {_copy('Coupon Code')}
             </label>
             <div className="mt-2 flex gap-2">
               <Input
                 id="checkout-coupon"
-                onChange={(event) => updateField('couponCode', event.target.value)}
+                onChange={(event) =>
+                  updateField('couponCode', event.target.value)
+                }
                 placeholder={_copy('Enter coupon code')}
                 value={form.couponCode}
               />
@@ -573,17 +628,23 @@ export function CheckoutExperience({
 
           {companionOffer ? (
             <div className="mt-6 border-t border-border pt-5">
-              <p className="type-label text-foreground">{_copy('Second service offer')}</p>
-              {companionOffer.type === 'cross_service_specific' && companionOffer.packageId ? (
+              <p className="type-label text-foreground">
+                {_copy('Second service offer')}
+              </p>
+              {companionOffer.type === 'cross_service_specific' &&
+              companionOffer.packageId ? (
                 <label className="mt-2 flex cursor-pointer items-start gap-3 rounded-md border border-border p-3 text-sm">
                   <input
                     checked={secondaryPackageId === companionOffer.packageId}
                     className="mt-1 size-4 accent-primary"
                     onChange={(event) => {
-                      if (event.target.checked) void selectSecondaryPackage(companionOffer.packageId!);
+                      if (event.target.checked)
+                        void selectSecondaryPackage(companionOffer.packageId!);
                       else {
                         setSecondaryPackageId(null);
-                        void refreshPricing(null).catch(() => setDisplayPricing(pricing));
+                        void refreshPricing(null).catch(() =>
+                          setDisplayPricing(pricing),
+                        );
                       }
                     }}
                     type="checkbox"
@@ -593,7 +654,9 @@ export function CheckoutExperience({
                       {_copy('Add the discounted second service')}
                     </span>
                     <span className="mt-1 block text-muted-foreground">
-                      {_copy('You can continue with this service only if you prefer.')}
+                      {_copy(
+                        'You can continue with this service only if you prefer.',
+                      )}
                     </span>
                   </span>
                 </label>
@@ -602,72 +665,107 @@ export function CheckoutExperience({
                   {_copy('Choose your discounted second service')}
                   <select
                     className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3 text-foreground"
-                    onChange={(event) => { const id = Number(event.target.value); if (id) void selectSecondaryPackage(id); }}
+                    onChange={(event) => {
+                      const id = Number(event.target.value);
+                      if (id) void selectSecondaryPackage(id);
+                    }}
                     value={secondaryPackageId ?? 0}
                   >
                     <option value="0">{_copy('Select package')}</option>
-                    {packages.map((item) => <option key={item.id} value={item.id}>{_copy(item.name, item.nameAr)}</option>)}
+                    {packages.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {_copy(item.name, item.nameAr)}
+                      </option>
+                    ))}
                   </select>
                 </label>
               )}
               {displayPricing.secondaryPackageId ? (
                 <p className="mt-2 text-xs text-success">
-                  {_copy('Second service saving')}: {_copy('-')}{_copy(_copy.money(displayPricing.secondaryDiscountAmount, displayPricing.currency))}
+                  {_copy('Second service saving')}: {_copy('-')}
+                  {_copy(
+                    _copy.money(
+                      displayPricing.secondaryDiscountAmount,
+                      displayPricing.currency,
+                    ),
+                  )}
                 </p>
               ) : null}
             </div>
           ) : null}
 
-          <fieldset className="mt-7">
-            <legend className="type-label text-foreground">
-              {_copy('Payment method')}
-            </legend>
-            <div className="mt-3 grid gap-2">
-              {PAYMENT_METHODS.map(({ value, label, detail, icon: Icon }) => (
-                <label
-                  className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors ${form.paymentMethod === value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
-                  key={value}
-                >
-                  <input
-                    checked={form.paymentMethod === value}
-                    className="sr-only"
-                    name="payment-method"
-                    onChange={() => updateField('paymentMethod', value)}
-                    type="radio"
-                    value={value}
-                  />
-                  <span className="grid size-9 place-items-center rounded-md bg-surface-muted text-secondary">
-                    <Icon aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold text-primary">
-                      {_copy(label)}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">
-                      {_copy(detail)}
-                    </span>
-                  </span>
-                  <span
-                    className={`ms-auto grid size-5 place-items-center rounded-full border ${form.paymentMethod === value ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}
+          {checkoutMode === 'gateway' ? (
+            <fieldset className="mt-7">
+              <legend className="type-label text-foreground">
+                {_copy('Payment method')}
+              </legend>
+              <div className="mt-3 grid gap-2">
+                {PAYMENT_METHODS.map(({ value, label, detail, icon: Icon }) => (
+                  <label
+                    className={`flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors ${form.paymentMethod === value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'}`}
+                    key={value}
                   >
-                    {form.paymentMethod === value ? (
-                      <CheckCircle2 aria-hidden="true" className="size-3.5" />
-                    ) : null}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
+                    <input
+                      checked={form.paymentMethod === value}
+                      className="sr-only"
+                      name="payment-method"
+                      onChange={() => updateField('paymentMethod', value)}
+                      type="radio"
+                      value={value}
+                    />
+                    <span className="grid size-9 place-items-center rounded-md bg-surface-muted text-secondary">
+                      <Icon aria-hidden="true" className="size-4" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold text-primary">
+                        {_copy(label)}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">
+                        {_copy(detail)}
+                      </span>
+                    </span>
+                    <span
+                      className={`ms-auto grid size-5 place-items-center rounded-full border ${form.paymentMethod === value ? 'border-primary bg-primary text-primary-foreground' : 'border-border'}`}
+                    >
+                      {form.paymentMethod === value ? (
+                        <CheckCircle2 aria-hidden="true" className="size-3.5" />
+                      ) : null}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : (
+            <Alert
+              className="mt-7"
+              title={_copy('Payment arranged on WhatsApp')}
+              description={_copy(
+                'Submit your request first. The SANAD team will send you the appropriate payment link or QR code on WhatsApp.',
+              )}
+            />
+          )}
 
           <Button
             className="mt-7 w-full"
             loading={isSubmitting}
-            loadingLabel={_copy('Starting secure checkout')}
+            loadingLabel={_copy(
+              checkoutMode === 'manual'
+                ? 'Submitting request'
+                : 'Starting secure checkout',
+            )}
             size="lg"
             type="submit"
           >
-            {_copy('Continue to payment')}
-            <CreditCard aria-hidden="true" className="size-4" />
+            {_copy(
+              checkoutMode === 'manual'
+                ? 'Submit request'
+                : 'Continue to payment',
+            )}
+            {checkoutMode === 'manual' ? (
+              <MessageCircle aria-hidden="true" className="size-4" />
+            ) : (
+              <CreditCard aria-hidden="true" className="size-4" />
+            )}
           </Button>
           <p className="mt-4 flex items-start gap-2 text-xs leading-5 text-muted-foreground">
             <LockKeyhole
@@ -675,7 +773,9 @@ export function CheckoutExperience({
               className="mt-0.5 size-4 shrink-0 text-success"
             />
             {_copy(
-              'Payment is processed securely. WhatsApp appears only after payment confirmation.',
+              checkoutMode === 'manual'
+                ? 'No payment is taken on this page. Your request stays awaiting payment until an administrator confirms the amount received.'
+                : 'Payment is processed securely. WhatsApp appears only after payment confirmation.',
             )}
           </p>
         </div>

@@ -90,15 +90,9 @@ describe('PackagesService', () => {
       const result = await service.findAllPublic(query());
       const include = prisma.packages.findMany.mock.calls[0][0].include;
 
-      expect(include._count.select.orders.where.status.in).toEqual([
-        'paid',
-        'awaiting_information',
-        'received',
-        'in_progress',
-        'under_review',
-        'ready',
-        'completed',
-      ]);
+      expect(include._count.select.orders.where.payments).toEqual({
+        some: { status: 'paid', amount: { gt: 0 } },
+      });
       expect(include.package_reviews).toEqual({
         where: { status: 'published' },
         select: { rating: true },

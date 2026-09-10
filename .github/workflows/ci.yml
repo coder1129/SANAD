@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, develop]
 
+permissions:
+  contents: read
+
 jobs:
   frontend-test:
     name: Frontend Tests & Security
@@ -15,6 +18,7 @@ jobs:
       NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:3999/api/v1
       NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3100
       NEXT_PUBLIC_MEDIA_BASE_URL: http://127.0.0.1:3999/media
+      NEXT_PUBLIC_CHECKOUT_MODE: manual
 
     steps:
       - name: Checkout code
@@ -43,9 +47,13 @@ jobs:
         working-directory: frontend
         run: npm run test:coverage
 
-      - name: Build
+      - name: Build standalone production server
         working-directory: frontend
         run: npm run build
+
+      - name: Verify standalone output
+        working-directory: frontend
+        run: test -f .next/standalone/server.js
 
       - name: Install Playwright browser
         working-directory: frontend
@@ -86,10 +94,12 @@ jobs:
           --health-retries 5
 
     env:
+      NODE_ENV: test
       DATABASE_URL: postgresql://postgres:test_password_12345@localhost:5432/sanad_test_db
       JWT_ACCESS_SECRET: test-access-secret-that-is-at-least-32-chars-long
       JWT_REFRESH_SECRET: test-refresh-secret-that-is-at-least-32-chars-different
       PAYMENT_WEBHOOK_SECRET: test-webhook-secret-at-least-32-characters-long-unique
+      PAYMENT_PROVIDER: bypass
       FRONTEND_URL: http://localhost:3001
 
     steps:
@@ -99,8 +109,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
@@ -141,18 +151,24 @@ jobs:
         working-directory: backend
         run: npm run build
 
-      # Blocking on purpose: a high or critical advisory in a dependency of a
-      # service that handles credentials and payments is a release blocker, not
-      # a note to read later.
       - name: Security audit
         working-directory: backend
         run: npm audit --audit-level=high
 
-      # Runs the application's own env validation against the built output, so a
-      # broken configuration contract fails here rather than at container start.
-      - name: Preflight environment validation
+      # Runs the application's environment contract against production rules,
+      # so a broken deployment fails in CI before the container starts.
+      - name: Preflight production environment validation
         working-directory: backend
-        run: npm run preflight
+        env:
+          NODE_ENV: production
+          FRONTEND_URL: https://example.test
+          CORS_ORIGINS: https://example.test
+          TRUST_PROXY: "1"
+          SWAGGER_ENABLED: "false"
+          SMTP_HOST: smtp.example.test
+          REQUIRE_EMAIL_VERIFICATION: "true"
+          PAYMENT_PROVIDER: manual
+        run: npm run preflight:production
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

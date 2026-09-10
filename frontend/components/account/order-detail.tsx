@@ -59,8 +59,12 @@ export function OrderDetail(props: Props) {
     );
   const order = orderQuery.data;
   if (!order) return null;
+  const hasCollectedPayment = order.payments.some(
+    (payment) =>
+      ['paid', 'success'].includes(payment.status) && payment.amount > 0,
+  );
   const message = props.success
-    ? `Hello SANAD,\n\nI'm contacting you regarding my order.\n\nOrder: #${order.orderNumber}\nService: ${order.packageName ?? 'SANAD career service'}\n\nI would like to send my documents and requirements.`
+    ? `Hello SANAD,\n\nI'm contacting you regarding my order.\n\nOrder: #${order.orderNumber}\nService: ${order.packageName ?? 'SANAD career service'}\n\nI would like to arrange payment and send my documents and requirements.`
     : `Hello SANAD,\n\nI'm contacting you regarding:\n\nOrder: #${order.orderNumber}\nService: ${order.packageName ?? 'SANAD career service'}`;
   const localizedMessage =
     _copy.locale === 'ar'
@@ -81,14 +85,20 @@ export function OrderDetail(props: Props) {
           />
           <div>
             <p className="text-xs font-semibold tracking-[0.16em] text-success uppercase">
-              {_copy('Payment confirmed')}
+              {_copy(
+                hasCollectedPayment ? 'Payment confirmed' : 'Request received',
+              )}
             </p>
             <h1 className="type-h1 mt-2 text-primary">
-              {_copy('Order Confirmed')}
+              {_copy(
+                hasCollectedPayment ? 'Order Confirmed' : 'Order Received',
+              )}
             </h1>
             <p className="mt-3 max-w-2xl text-muted-foreground">
               {_copy(
-                'Your order is safely recorded. Continue with the SANAD team on WhatsApp to send your documents, requirements, and career information.',
+                hasCollectedPayment
+                  ? 'Your payment and order are confirmed. Continue with the SANAD team on WhatsApp to send your documents and requirements.'
+                  : 'Your request is safely recorded and no payment has been confirmed yet. Continue on WhatsApp to arrange payment and send your requirements.',
               )}
             </p>
           </div>
@@ -202,7 +212,9 @@ export function OrderDetail(props: Props) {
           <h2 className="type-h4 text-primary">{_copy('What&apos;s Next?')}</h2>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
             {_copy(
-              'Continue with the SANAD team on WhatsApp to send your documents, requirements, and career information.',
+              hasCollectedPayment
+                ? 'Continue with the SANAD team on WhatsApp to send your documents, requirements, and career information.'
+                : 'Continue with the SANAD team on WhatsApp to receive your payment link or QR code, then send your documents and requirements.',
             )}
           </p>
           {whatsapp ? (
@@ -232,7 +244,7 @@ export function OrderDetail(props: Props) {
           ) : null}
         </aside>
       </div>
-      {!props.success && order.status === 'completed' ? (
+      {!props.success && order.status === 'completed' && hasCollectedPayment ? (
         <div className="mt-8 border border-border bg-surface p-6 sm:p-8">
           <ReviewForm orderId={order.id} />
         </div>

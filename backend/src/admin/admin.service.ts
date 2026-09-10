@@ -1,18 +1,60 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CustomerFilterDto,
   UpdateCustomerStatusDto,
   ActivityLogFilterDto,
+  DashboardFilterDto,
 } from './dto';
 import { createPaginatedResponse } from '../common/utils';
 
+interface DashboardDateWindow {
+  start: Date | null;
+  end: Date | null;
+}
+
+interface DashboardPerformanceMetrics {
+  orders_created: number;
+  paid_orders: number;
+  successful_payments: number;
+  gross_sales: number;
+  collected_revenue: number;
+  discounts: number;
+  average_order_value: number;
+  new_customers: number;
+  purchasing_customers: number;
+}
+
+function money(value: unknown): number {
+  return Math.round(Number(value || 0) * 100) / 100;
+}
+
+function comparison(current: number, previous: number | null) {
+  return {
+    previous,
+    change_percentage:
+      previous && previous !== 0
+        ? Math.round(((current - previous) / previous) * 1000) / 10
+        : null,
+  };
+}
+
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // 1. Dashboard KPIs
-  async getDashboardStats() {
+  async getDashboardStats(query: DashboardFilterDto = {}) {
+    const selectedWindow = this.dashboardWindow(query);
+    const previousWindow = this.previousDashboardWindow(selectedWindow);
     const now = new Date();
     const startOfToday = new Date(
       now.getFullYear(),
@@ -119,6 +161,27 @@ export class AdminService {
       }),
     ]);
 
+    const [orderStatusAgg, performance, previousPerformance] =
+      await Promise.all([
+        this.prisma.orders.groupBy({
+          by: ['status'],
+          _count: { id: true },
+        }),
+        this.getPerformanceMetrics(selectedWindow),
+        previousWindow
+          ? this.getPerformanceMetrics(previousWindow)
+          : Promise.resolve(null),
+      ]);
+
+    const statusCounts = new Map<string, number>(
+      orderStatusAgg.map((item) => [item.status, item._count.id]),
+    );
+    const countStatuses = (...statuses: string[]) =>
+      statuses.reduce(
+        (sum, status) => sum + (statusCounts.get(status) || 0),
+        0,
+      );
+
     // Enhance top packages with names
     const packageIds = topPackagesAgg
       .map((p) => p.package_id)
@@ -141,6 +204,65 @@ export class AdminService {
     });
 
     return {
+      payment_mode:
+        this.configService.get<string>('PAYMENT_PROVIDER') || 'mock',
+      period: {
+        start: selectedWindow.start?.toISOString() ?? null,
+        end: selectedWindow.end?.toISOString() ?? null,
+      },
+      operational: {
+        total: totalOrders,
+        awaiting_payment: countStatuses('pending', 'pending_payment'),
+        paid_awaiting_start: countStatuses('paid'),
+        awaiting_information: countStatuses('awaiting_information'),
+        in_progress: countStatuses('received', 'in_progress', 'under_review'),
+        ready: countStatuses('ready'),
+        completed: countStatuses('completed'),
+        cancelled: countStatuses('cancelled'),
+        refunded: countStatuses('refunded'),
+      },
+      performance: {
+        ...performance,
+        currency: 'AED',
+      },
+      comparison: {
+        orders_created: comparison(
+          performance.orders_created,
+          previousPerformance?.orders_created ?? null,
+        ),
+        paid_orders: comparison(
+          performance.paid_orders,
+          previousPerformance?.paid_orders ?? null,
+        ),
+        successful_payments: comparison(
+          performance.successful_payments,
+          previousPerformance?.successful_payments ?? null,
+        ),
+        gross_sales: comparison(
+          performance.gross_sales,
+          previousPerformance?.gross_sales ?? null,
+        ),
+        collected_revenue: comparison(
+          performance.collected_revenue,
+          previousPerformance?.collected_revenue ?? null,
+        ),
+        discounts: comparison(
+          performance.discounts,
+          previousPerformance?.discounts ?? null,
+        ),
+        average_order_value: comparison(
+          performance.average_order_value,
+          previousPerformance?.average_order_value ?? null,
+        ),
+        new_customers: comparison(
+          performance.new_customers,
+          previousPerformance?.new_customers ?? null,
+        ),
+        purchasing_customers: comparison(
+          performance.purchasing_customers,
+          previousPerformance?.purchasing_customers ?? null,
+        ),
+      },
       overview: {
         customers: {
           total: totalCustomers,
@@ -168,6 +290,110 @@ export class AdminService {
         count: p._count.id,
         total_amount: Number(p._sum.amount || 0),
       })),
+    };
+  }
+
+  private dashboardWindow(query: DashboardFilterDto): DashboardDateWindow {
+    const start = query.start_date ? new Date(query.start_date) : null;
+    const end = query.end_date ? new Date(query.end_date) : null;
+
+    if (start && end && start > end) {
+      throw new BadRequestException({
+        message: 'Dashboard start date must not be after the end date',
+        code: 'INVALID_DASHBOARD_DATE_RANGE',
+      });
+    }
+
+    return { start, end };
+  }
+
+  private previousDashboardWindow(
+    window: DashboardDateWindow,
+  ): DashboardDateWindow | null {
+    if (!window.start || !window.end) return null;
+
+    const duration = window.end.getTime() - window.start.getTime();
+    const previousEnd = new Date(window.start.getTime() - 1);
+    return {
+      start: new Date(previousEnd.getTime() - duration),
+      end: previousEnd,
+    };
+  }
+
+  private async getPerformanceMetrics(
+    window: DashboardDateWindow,
+  ): Promise<DashboardPerformanceMetrics> {
+    const createdAt = this.dateConstraint(window);
+    const paymentDate = this.dateConstraint(window);
+    const paidPaymentWhere = {
+      status: 'paid',
+      amount: { gt: 0 },
+      ...(paymentDate ? { payment_date: paymentDate } : {}),
+    };
+    const paidOrderWhere = {
+      payments: { some: paidPaymentWhere },
+    };
+
+    const [
+      ordersCreated,
+      paidOrders,
+      paidOrderAmounts,
+      paidPayments,
+      newCustomers,
+      purchasingCustomers,
+    ] = await Promise.all([
+      this.prisma.orders.count(
+        createdAt ? { where: { created_at: createdAt } } : { where: {} },
+      ),
+      this.prisma.orders.count({ where: paidOrderWhere }),
+      this.prisma.orders.aggregate({
+        _sum: { final_amount: true, discount_amount: true },
+        where: paidOrderWhere,
+      }),
+      this.prisma.payments.aggregate({
+        _count: { id: true },
+        _sum: { amount: true },
+        where: paidPaymentWhere,
+      }),
+      this.prisma.users.count({
+        where: {
+          role: 'customer',
+          ...(createdAt ? { created_at: createdAt } : {}),
+        },
+      }),
+      this.prisma.orders.findMany({
+        where: {
+          user_id: { not: null },
+          ...paidOrderWhere,
+        },
+        select: { user_id: true },
+        distinct: ['user_id'],
+      }),
+    ]);
+
+    const collectedRevenue = money(paidPayments._sum.amount);
+    const paidOrderCount = Number(paidOrders || 0);
+
+    return {
+      orders_created: Number(ordersCreated || 0),
+      paid_orders: paidOrderCount,
+      successful_payments: Number(paidPayments._count?.id || 0),
+      gross_sales: money(paidOrderAmounts._sum.final_amount),
+      collected_revenue: collectedRevenue,
+      discounts: money(paidOrderAmounts._sum.discount_amount),
+      average_order_value: paidOrderCount
+        ? money(money(paidOrderAmounts._sum.final_amount) / paidOrderCount)
+        : 0,
+      new_customers: Number(newCustomers || 0),
+      purchasing_customers: purchasingCustomers.length,
+    };
+  }
+
+  private dateConstraint(window: DashboardDateWindow) {
+    if (!window.start && !window.end) return null;
+    return {
+      ...(window.start ? { gte: window.start } : {}),
+      ...(window.end ? { lte: window.end } : {}),
     };
   }
 

@@ -104,6 +104,12 @@ export interface AdminOrder {
     payment_method: string;
     transaction_id?: string;
     currency?: string;
+    payment_date?: string | null;
+    payment_response?: {
+      source?: string;
+      external_reference?: string;
+      note?: string;
+    } | null;
   }>;
   order_status_history?: Array<{
     id: number;
@@ -194,6 +200,46 @@ export interface ActivityLog {
 }
 
 export interface DashboardData {
+  payment_mode: string;
+  period: {
+    start: string | null;
+    end: string | null;
+  };
+  operational: {
+    total: number;
+    awaiting_payment: number;
+    paid_awaiting_start: number;
+    awaiting_information: number;
+    in_progress: number;
+    ready: number;
+    completed: number;
+    cancelled: number;
+    refunded: number;
+  };
+  performance: {
+    orders_created: number;
+    paid_orders: number;
+    successful_payments: number;
+    gross_sales: number;
+    collected_revenue: number;
+    discounts: number;
+    average_order_value: number;
+    new_customers: number;
+    purchasing_customers: number;
+    currency: string;
+  };
+  comparison: Record<
+    | 'orders_created'
+    | 'paid_orders'
+    | 'successful_payments'
+    | 'gross_sales'
+    | 'collected_revenue'
+    | 'discounts'
+    | 'average_order_value'
+    | 'new_customers'
+    | 'purchasing_customers',
+    { previous: number | null; change_percentage: number | null }
+  >;
   overview: {
     customers: { total: number; new_today: number; new_this_month: number };
     orders: {
@@ -262,6 +308,10 @@ function paginated<T>(payload: unknown, endpoint: string): PaginatedData<T> {
 
 type Options = Pick<ApiRequestOptions, 'signal'>;
 type Query = ApiQueryParams;
+export type DashboardQuery = {
+  start_date?: string;
+  end_date?: string;
+};
 
 export const adminKeys = {
   dashboard: ['admin', 'dashboard'] as const,
@@ -308,9 +358,12 @@ export const adminApi = {
         password,
       }),
   },
-  dashboard: async (options: Options = {}) =>
+  dashboard: async (params: DashboardQuery = {}, options: Options = {}) =>
     object<DashboardData>(
-      await api.get<unknown>('/admin/dashboard', options),
+      await api.get<unknown>('/admin/dashboard', {
+        params,
+        signal: options.signal,
+      }),
       'GET /admin/dashboard',
     ),
   orders: {
@@ -334,6 +387,30 @@ export const adminApi = {
           note,
         }),
         'PATCH /admin/orders/:id/status',
+      ),
+    confirmManualPayment: async (
+      id: number,
+      input: {
+        amount: number;
+        paymentMethod:
+          'payment_link' | 'qr_code' | 'bank_transfer' | 'cash' | 'other';
+        transactionReference?: string;
+        paymentDate?: string;
+        note?: string;
+      },
+    ) =>
+      object<AdminPayment>(
+        await api.post<unknown>('/admin/payments/manual', {
+          order_id: id,
+          amount: input.amount,
+          payment_method: input.paymentMethod,
+          ...(input.transactionReference
+            ? { transaction_reference: input.transactionReference }
+            : {}),
+          ...(input.paymentDate ? { payment_date: input.paymentDate } : {}),
+          ...(input.note ? { note: input.note } : {}),
+        }),
+        'POST /admin/payments/manual',
       ),
     update: async (
       id: number,

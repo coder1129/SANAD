@@ -1,7 +1,12 @@
 import { z } from 'zod';
 
 import type { PaginatedData, PaginationParams } from '@/types/api';
-import type { CareerPackage, CompanionOffer, PackageImage, PackageOffer } from '@/types/domain';
+import type {
+  CareerPackage,
+  CompanionOffer,
+  PackageImage,
+  PackageOffer,
+} from '@/types/domain';
 import { getApiBaseUrl } from '@/lib/env/public-env';
 
 import { ApiError } from '../errors';
@@ -30,7 +35,13 @@ const packageOfferPayloadSchema = z.object({
 });
 const companionOfferPayloadSchema = packageOfferPayloadSchema.extend({
   offer_type: z.enum(['cross_service_any', 'cross_service_specific']),
-  package: z.object({ id: z.number().int().positive(), name_en: z.string(), name_ar: z.string().nullish() }).nullish(),
+  package: z
+    .object({
+      id: z.number().int().positive(),
+      name_en: z.string(),
+      name_ar: z.string().nullish(),
+    })
+    .nullish(),
 });
 
 const packagePayloadSchema = z.object({
@@ -103,7 +114,11 @@ function toPackageOffer(payload: PackageOfferPayload): PackageOffer {
   };
 }
 function toCompanionOffer(payload: CompanionOfferPayload): CompanionOffer {
-  return { ...toPackageOffer(payload), type: payload.offer_type, packageId: payload.package?.id ?? null };
+  return {
+    ...toPackageOffer(payload),
+    type: payload.offer_type,
+    packageId: payload.package?.id ?? null,
+  };
 }
 
 function toCareerPackage(payload: PackagePayload): CareerPackage {

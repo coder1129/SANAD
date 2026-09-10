@@ -70,7 +70,9 @@ export const checkoutApi = {
         ...(input.couponCode === undefined
           ? {}
           : { coupon_code: input.couponCode }),
-        ...(input.secondaryPackageId === undefined ? {} : { secondary_package_id: input.secondaryPackageId }),
+        ...(input.secondaryPackageId === undefined
+          ? {}
+          : { secondary_package_id: input.secondaryPackageId }),
       },
       { authMode: 'none', signal: options.signal },
     );

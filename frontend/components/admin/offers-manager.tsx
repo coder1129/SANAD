@@ -41,14 +41,20 @@ const schema = z
     active: z.boolean(),
   })
   .refine((data) => data.type !== 'standard' || data.packageId > 0, {
-    path: ['packageId'], message: 'Select package.',
+    path: ['packageId'],
+    message: 'Select package.',
   })
   .refine((data) => data.type === 'standard' || data.triggerPackageId > 0, {
-    path: ['triggerPackageId'], message: 'Select purchased package.',
+    path: ['triggerPackageId'],
+    message: 'Select purchased package.',
   })
-  .refine((data) => data.type !== 'cross_service_specific' || data.packageId > 0, {
-    path: ['packageId'], message: 'Select discounted package.',
-  })
+  .refine(
+    (data) => data.type !== 'cross_service_specific' || data.packageId > 0,
+    {
+      path: ['packageId'],
+      message: 'Select discounted package.',
+    },
+  )
   .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     path: ['endDate'],
     message: 'End date must be after start date.',
@@ -122,9 +128,13 @@ export function OffersManager() {
   const save = useMutation({
     mutationFn: (values: Values) => {
       const input = {
-        ...(values.type === 'cross_service_any' ? {} : { package_id: values.packageId }),
+        ...(values.type === 'cross_service_any'
+          ? {}
+          : { package_id: values.packageId }),
         offer_type: values.type,
-        ...(values.type !== 'standard' ? { trigger_package_id: values.triggerPackageId } : {}),
+        ...(values.type !== 'standard'
+          ? { trigger_package_id: values.triggerPackageId }
+          : {}),
         name_en: values.name_en,
         name_ar: values.name_ar,
         description_en: '',
@@ -280,36 +290,52 @@ export function OffersManager() {
             </div>
             <label className="grid gap-1 text-sm font-semibold">
               {_copy('Offer type')}
-              <select className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3" {...register('type')}>
-                <option value="standard">{_copy('Discount on one service')}</option>
-                <option value="cross_service_any">{_copy('Buy a service, discount any second service')}</option>
-                <option value="cross_service_specific">{_copy('Buy a service, discount a selected second service')}</option>
+              <select
+                className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                {...register('type')}
+              >
+                <option value="standard">
+                  {_copy('Discount on one service')}
+                </option>
+                <option value="cross_service_any">
+                  {_copy('Buy a service, discount any second service')}
+                </option>
+                <option value="cross_service_specific">
+                  {_copy('Buy a service, discount a selected second service')}
+                </option>
               </select>
             </label>
             {offerType !== 'standard' ? (
               <label className="grid gap-1 text-sm font-semibold">
                 {_copy('Purchased service')}
-                <select className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3" {...register('triggerPackageId')}>
+                <select
+                  className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                  {...register('triggerPackageId')}
+                >
                   <option value="0">{_copy('Select package')}</option>
-                  {packages.data?.items.map((pkg) => <option key={pkg.id} value={pkg.id}>{_copy(pkg.name_en, pkg.name_ar)}</option>)}
+                  {packages.data?.items.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {_copy(pkg.name_en, pkg.name_ar)}
+                    </option>
+                  ))}
                 </select>
               </label>
             ) : null}
             {offerType !== 'cross_service_any' ? (
-            <label className="grid gap-1 text-sm font-semibold">
-              {_copy('Package')}
-              <select
-                className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
-                {...register('packageId')}
-              >
-                <option value="0">{_copy('Select package')}</option>
-                {packages.data?.items.map((pkg) => (
-                  <option key={pkg.id} value={pkg.id}>
-                    {_copy(pkg.name_en, pkg.name_ar)}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label className="grid gap-1 text-sm font-semibold">
+                {_copy('Package')}
+                <select
+                  className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                  {...register('packageId')}
+                >
+                  <option value="0">{_copy('Select package')}</option>
+                  {packages.data?.items.map((pkg) => (
+                    <option key={pkg.id} value={pkg.id}>
+                      {_copy(pkg.name_en, pkg.name_ar)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             ) : null}
             <label className="grid gap-1 text-sm font-semibold">
               {_copy('Discount %')}

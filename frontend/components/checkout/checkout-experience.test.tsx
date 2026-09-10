@@ -1,6 +1,6 @@
-import { render, screen } from '@/test/render';
+import { cleanup, render, screen, waitFor } from '@/test/render';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { UseAuthResult } from '@/hooks/use-auth';
 import type { CareerPackage, CheckoutPricing, User } from '@/types/domain';
@@ -9,11 +9,14 @@ import { CheckoutExperience } from './checkout-experience';
 
 const mocks = vi.hoisted(() => ({
   auth: null as UseAuthResult | null,
+  orderCreate: vi.fn(),
+  paymentCreate: vi.fn(),
+  routerReplace: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
   usePathname: () => '/checkout/professional-cv',
-  useRouter: () => ({ replace: vi.fn() }),
+  useRouter: () => ({ replace: mocks.routerReplace }),
 }));
 
 vi.mock('@/components/auth/auth-modal', () => ({
@@ -27,9 +30,9 @@ vi.mock('@/hooks/use-auth', () => ({
 vi.mock('@/lib/api', () => ({
   checkoutApi: { preview: vi.fn() },
   isApiError: () => false,
-  ordersApi: { create: vi.fn() },
+  ordersApi: { create: mocks.orderCreate },
   packagesApi: { list: vi.fn() },
-  paymentsApi: { create: vi.fn() },
+  paymentsApi: { create: mocks.paymentCreate },
 }));
 
 const packageItem: CareerPackage = {
@@ -99,12 +102,19 @@ function authState(overrides: Partial<UseAuthResult> = {}): UseAuthResult {
 
 describe('CheckoutExperience', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     mocks.auth = authState();
   });
 
+  afterEach(() => cleanup());
+
   it('copies the restored account phone into the WhatsApp field', async () => {
     const view = render(
-      <CheckoutExperience packageItem={packageItem} pricing={pricing} />,
+      <CheckoutExperience
+        checkoutMode="manual"
+        packageItem={packageItem}
+        pricing={pricing}
+      />,
     );
 
     expect(screen.getByRole('status')).toHaveTextContent(
@@ -118,7 +128,11 @@ describe('CheckoutExperience', () => {
       isInitializing: false,
     });
     view.rerender(
-      <CheckoutExperience packageItem={packageItem} pricing={pricing} />,
+      <CheckoutExperience
+        checkoutMode="manual"
+        packageItem={packageItem}
+        pricing={pricing}
+      />,
     );
 
     const phone = await screen.findByLabelText(/WhatsApp phone/);
@@ -126,5 +140,92 @@ describe('CheckoutExperience', () => {
 
     await userEvent.clear(phone);
     expect(phone).toHaveValue('');
+  });
+
+  it('hides online payment methods in manual checkout mode', () => {
+    mocks.auth = authState({
+      user,
+      status: 'authenticated',
+      isAuthenticated: true,
+      isInitializing: false,
+    });
+
+    render(
+      <CheckoutExperience
+        checkoutMode="manual"
+        packageItem={packageItem}
+        pricing={pricing}
+      />,
+    );
+
+    expect(
+      screen.getAllByText('Payment arranged on WhatsApp').length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole('button', { name: /Submit request/ }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText('Visa or Mastercard')).not.toBeInTheDocument();
+    expect(screen.queryByText('Apple Pay')).not.toBeInTheDocument();
+  });
+
+  it('keeps the preserved card and Apple Pay controls in gateway mode', () => {
+    mocks.auth = authState({
+      user,
+      status: 'authenticated',
+      isAuthenticated: true,
+      isInitializing: false,
+    });
+
+    render(
+      <CheckoutExperience
+        checkoutMode="gateway"
+        packageItem={packageItem}
+        pricing={pricing}
+      />,
+    );
+
+    expect(screen.getByText('Visa or Mastercard')).toBeVisible();
+    expect(screen.getByText('Apple Pay')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: /Continue to payment/ }),
+    ).toBeVisible();
+  });
+
+  it('submits a manual request without creating an online payment session', async () => {
+    mocks.auth = authState({
+      user,
+      status: 'authenticated',
+      isAuthenticated: true,
+      isInitializing: false,
+    });
+    mocks.orderCreate.mockResolvedValue({
+      id: 19,
+      orderNumber: 'SANAD-2026-MANUAL',
+    });
+    const interaction = userEvent.setup();
+
+    render(
+      <CheckoutExperience
+        checkoutMode="manual"
+        packageItem={packageItem}
+        pricing={pricing}
+      />,
+    );
+    await interaction.click(
+      screen.getByRole('button', { name: /Submit request/ }),
+    );
+
+    await waitFor(() => {
+      expect(mocks.orderCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          packageId: 1,
+          customerPhone: '+971 50 123 4567',
+        }),
+      );
+      expect(mocks.routerReplace).toHaveBeenCalledWith(
+        '/order-success/SANAD-2026-MANUAL',
+      );
+    });
+    expect(mocks.paymentCreate).not.toHaveBeenCalled();
   });
 });

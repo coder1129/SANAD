@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
 
 const aggregate = (amount: number | null) => ({ _sum: { amount } });
 
@@ -9,6 +10,7 @@ describe('AdminService', () => {
   let service: AdminService;
   let prisma: any;
   let tx: any;
+  let configService: any;
 
   beforeEach(() => {
     tx = {
@@ -24,6 +26,9 @@ describe('AdminService', () => {
       },
       orders: {
         count: vi.fn().mockResolvedValue(0),
+        aggregate: vi.fn().mockResolvedValue({
+          _sum: { final_amount: 0, discount_amount: 0 },
+        }),
         findMany: vi.fn().mockResolvedValue([]),
         groupBy: vi.fn().mockResolvedValue([]),
       },
@@ -40,7 +45,13 @@ describe('AdminService', () => {
         typeof input === 'function' ? input(tx) : Promise.all(input),
       ),
     };
-    service = new AdminService(prisma as PrismaService);
+    configService = {
+      get: vi.fn().mockReturnValue('bypass'),
+    };
+    service = new AdminService(
+      prisma as PrismaService,
+      configService as ConfigService,
+    );
   });
 
   describe('getDashboardStats', () => {
@@ -133,6 +144,87 @@ describe('AdminService', () => {
       const result = await service.getDashboardStats();
 
       expect(result.top_packages[0].name_en).toBe('Unknown');
+    });
+
+    it('reports every operational queue without hiding paid or ready orders', async () => {
+      prisma.orders.groupBy.mockResolvedValueOnce([]).mockResolvedValueOnce([
+        { status: 'pending', _count: { id: 2 } },
+        { status: 'pending_payment', _count: { id: 3 } },
+        { status: 'paid', _count: { id: 4 } },
+        { status: 'awaiting_information', _count: { id: 1 } },
+        { status: 'received', _count: { id: 2 } },
+        { status: 'in_progress', _count: { id: 5 } },
+        { status: 'under_review', _count: { id: 3 } },
+        { status: 'ready', _count: { id: 2 } },
+        { status: 'completed', _count: { id: 8 } },
+        { status: 'cancelled', _count: { id: 1 } },
+        { status: 'refunded', _count: { id: 1 } },
+      ]);
+      prisma.orders.count.mockResolvedValueOnce(32);
+
+      const result = await service.getDashboardStats();
+
+      expect(result.operational).toEqual({
+        total: 32,
+        awaiting_payment: 5,
+        paid_awaiting_start: 4,
+        awaiting_information: 1,
+        in_progress: 10,
+        ready: 2,
+        completed: 8,
+        cancelled: 1,
+        refunded: 1,
+      });
+      expect(result.payment_mode).toBe('bypass');
+    });
+
+    it('applies the selected period to performance metrics and compares the previous period', async () => {
+      prisma.orders.count
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(12)
+        .mockResolvedValueOnce(7)
+        .mockResolvedValueOnce(8)
+        .mockResolvedValueOnce(4);
+      prisma.orders.aggregate
+        .mockResolvedValueOnce({
+          _sum: { final_amount: 2800, discount_amount: 350 },
+        })
+        .mockResolvedValueOnce({
+          _sum: { final_amount: 1600, discount_amount: 100 },
+        });
+      prisma.payments.aggregate
+        .mockResolvedValueOnce(aggregate(0))
+        .mockResolvedValueOnce(aggregate(0))
+        .mockResolvedValueOnce(aggregate(0))
+        .mockResolvedValueOnce({ _sum: { amount: 2800 }, _count: { id: 7 } })
+        .mockResolvedValueOnce({ _sum: { amount: 1600 }, _count: { id: 4 } });
+
+      const result = await service.getDashboardStats({
+        start_date: '2026-09-01T00:00:00.000Z',
+        end_date: '2026-09-07T23:59:59.999Z',
+      });
+
+      expect(result.performance).toMatchObject({
+        orders_created: 12,
+        paid_orders: 7,
+        successful_payments: 7,
+        gross_sales: 2800,
+        collected_revenue: 2800,
+        discounts: 350,
+        average_order_value: 400,
+      });
+      expect(result.comparison.orders_created).toEqual({
+        previous: 8,
+        change_percentage: 50,
+      });
+      expect(prisma.orders.count.mock.calls[5][0].where.created_at).toEqual({
+        gte: new Date('2026-09-01T00:00:00.000Z'),
+        lte: new Date('2026-09-07T23:59:59.999Z'),
+      });
     });
   });
 

@@ -7,8 +7,8 @@
   privilege escalation, rotates Docker logs, and has liveness/readiness probes.
 - Production validation rejects insecure secrets, HTTP frontend/CORS origins,
   enabled Swagger, incomplete R2 storage, missing email delivery, and the mock
-  payment provider. `PAYMENT_PROVIDER=bypass` remains an explicit temporary
-  no-charge mode.
+  payment provider. `PAYMENT_PROVIDER=manual` enables reconciled external
+  payments without exposing card or Apple Pay checkout to customers.
 
 ## Before every deployment
 
@@ -97,5 +97,8 @@ is not proven until this command completes successfully.
 
 - Add real R2, email, Sentry, domain/TLS, and hosting secrets.
 - Enable email verification after existing users are backfilled.
-- Replace payment bypass with the contracted gateway before charging customers.
+- For manual payments, train administrators to confirm an order only after the
+  funds appear in the provider or bank account. If on-site checkout is enabled
+  later, connect the contracted gateway and switch both backend and frontend
+  checkout modes together.
 - Configure scheduled encrypted backups and alerting in the hosting platform.

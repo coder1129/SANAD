@@ -8,13 +8,15 @@ import { useState } from 'react';
 import { Alert } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/status-badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { adminApi, adminKeys } from '@/lib/api';
 import { statusIntent, whatsappHref } from '@/lib/orders/presentation';
 import { AdminPageHeader, ConfirmDialog, DataState } from './admin-ui';
 
 const transitions: Record<string, string[]> = {
-  pending: ['pending_payment', 'paid', 'cancelled'],
-  pending_payment: ['paid', 'cancelled'],
+  pending: ['pending_payment', 'cancelled'],
+  pending_payment: ['cancelled'],
   paid: ['received', 'in_progress', 'refunded'],
   awaiting_information: ['received', 'in_progress', 'cancelled', 'refunded'],
   received: ['awaiting_information', 'in_progress', 'cancelled', 'refunded'],
@@ -37,6 +39,16 @@ export function OrderDetailView({ id }: { id: number }) {
   const queryClient = useQueryClient();
   const [nextStatus, setNextStatus] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [confirmingPayment, setConfirmingPayment] = useState(false);
+  const [paymentAmountOverride, setPaymentAmount] = useState<string | null>(
+    null,
+  );
+  const [paymentMethod, setPaymentMethod] = useState<
+    'payment_link' | 'qr_code' | 'bank_transfer' | 'cash' | 'other'
+  >('payment_link');
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentDate, setPaymentDate] = useState('');
+  const [paymentNote, setPaymentNote] = useState('');
   const query = useQuery({
     queryKey: adminKeys.detail('orders', id),
     queryFn: ({ signal }) => adminApi.orders.get(id, { signal }),
@@ -54,6 +66,49 @@ export function OrderDetailView({ id }: { id: number }) {
     },
   });
   const order = query.data;
+  const paymentAmount =
+    paymentAmountOverride ??
+    (order ? Number(order.final_amount).toFixed(2) : '');
+  const hasCollectedPayment = Boolean(
+    order?.payments.some(
+      (payment) =>
+        ['paid', 'success'].includes(payment.status) &&
+        Number(payment.amount) > 0,
+    ),
+  );
+  const canConfirmPayment = Boolean(
+    order &&
+    ['pending', 'pending_payment'].includes(order.status) &&
+    !hasCollectedPayment,
+  );
+  const parsedPaymentAmount = Number(paymentAmount);
+  const paymentMutation = useMutation({
+    mutationFn: () =>
+      adminApi.orders.confirmManualPayment(id, {
+        amount: parsedPaymentAmount,
+        paymentMethod,
+        transactionReference: paymentReference.trim() || undefined,
+        paymentDate: paymentDate
+          ? new Date(paymentDate).toISOString()
+          : undefined,
+        note: paymentNote.trim() || undefined,
+      }),
+    onSuccess: () => {
+      setConfirmingPayment(false);
+      setPaymentReference('');
+      setPaymentNote('');
+      void queryClient.invalidateQueries({
+        queryKey: adminKeys.detail('orders', id),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ['admin', 'orders', 'list'],
+      });
+      void queryClient.invalidateQueries({ queryKey: adminKeys.dashboard });
+      void queryClient.invalidateQueries({
+        queryKey: ['admin', 'payments', 'list'],
+      });
+    },
+  });
   const customerPhone = order?.user?.phone ?? order?.customer_phone;
   const wa = order
     ? whatsappHref(
@@ -183,7 +238,15 @@ export function OrderDetailView({ id }: { id: number }) {
                         </p>
                         <p className="text-muted-foreground">
                           {_copy(_copy.status(payment.payment_method))}
+                          {_copy(
+                            ` · ${_copy.money(Number(payment.amount), payment.currency ?? 'AED')}`,
+                          )}
                         </p>
+                        {payment.payment_date ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {_copy(_copy.date(payment.payment_date))}
+                          </p>
+                        ) : null}
                       </div>
                       <StatusBadge intent={statusIntent(payment.status)}>
                         {_copy(_copy.status(payment.status))}
@@ -191,6 +254,119 @@ export function OrderDetailView({ id }: { id: number }) {
                     </div>
                   ))}
                 </div>
+                {canConfirmPayment ? (
+                  <div className="mt-7 border-t border-border pt-6">
+                    <h3 className="font-semibold text-primary">
+                      {_copy('Confirm payment received')}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {_copy(
+                        'Use this only after the external payment appears in your payment account or bank statement. The amount must match the order total.',
+                      )}
+                    </p>
+                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                      <label className="grid gap-2 text-sm font-semibold">
+                        {_copy('Amount received')}
+                        <Input
+                          inputMode="decimal"
+                          max="9999999.99"
+                          min="0.01"
+                          onChange={(event) =>
+                            setPaymentAmount(event.target.value)
+                          }
+                          required
+                          step="0.01"
+                          type="number"
+                          value={paymentAmount}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-semibold">
+                        {_copy('Payment method')}
+                        <select
+                          className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3"
+                          onChange={(event) =>
+                            setPaymentMethod(
+                              event.target.value as typeof paymentMethod,
+                            )
+                          }
+                          value={paymentMethod}
+                        >
+                          <option value="payment_link">
+                            {_copy('Payment link')}
+                          </option>
+                          <option value="qr_code">{_copy('QR code')}</option>
+                          <option value="bank_transfer">
+                            {_copy('Bank transfer')}
+                          </option>
+                          <option value="cash">{_copy('Cash')}</option>
+                          <option value="other">{_copy('Other')}</option>
+                        </select>
+                      </label>
+                      <label className="grid gap-2 text-sm font-semibold">
+                        {_copy('Transaction reference')}
+                        <Input
+                          maxLength={255}
+                          onChange={(event) =>
+                            setPaymentReference(event.target.value)
+                          }
+                          placeholder={_copy('Optional external reference')}
+                          value={paymentReference}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-semibold">
+                        {_copy('Payment date')}
+                        <Input
+                          max={new Date().toISOString().slice(0, 16)}
+                          onChange={(event) =>
+                            setPaymentDate(event.target.value)
+                          }
+                          type="datetime-local"
+                          value={paymentDate}
+                        />
+                      </label>
+                      <label className="grid gap-2 text-sm font-semibold sm:col-span-2">
+                        {_copy('Reconciliation note')}
+                        <Textarea
+                          maxLength={2000}
+                          onChange={(event) =>
+                            setPaymentNote(event.target.value)
+                          }
+                          placeholder={_copy('Optional private note')}
+                          value={paymentNote}
+                        />
+                      </label>
+                    </div>
+                    {paymentMutation.error ? (
+                      <Alert
+                        className="mt-4"
+                        title={_copy('Payment confirmation failed')}
+                        description={_copy(paymentMutation.error.userMessage)}
+                        variant="error"
+                      />
+                    ) : null}
+                    {paymentMutation.isSuccess ? (
+                      <Alert
+                        className="mt-4"
+                        title={_copy('Payment confirmed')}
+                        description={_copy(
+                          'The payment, order status, dashboard revenue, and customer purchase record were updated.',
+                        )}
+                        variant="success"
+                      />
+                    ) : null}
+                    <Button
+                      className="mt-5"
+                      disabled={
+                        !Number.isFinite(parsedPaymentAmount) ||
+                        parsedPaymentAmount <= 0
+                      }
+                      onClick={() => setConfirmingPayment(true)}
+                      type="button"
+                    >
+                      {_copy('Confirm payment received')}
+                    </Button>
+                  </div>
+                ) : null}
               </section>
               {order.order_status_history?.length ? (
                 <section className="border border-border bg-surface p-6">
@@ -266,6 +442,17 @@ export function OrderDetailView({ id }: { id: number }) {
         loading={mutation.isPending}
         onConfirm={() => mutation.mutate(nextStatus)}
         destructive={['cancelled', 'refunded'].includes(nextStatus)}
+      />
+      <ConfirmDialog
+        open={confirmingPayment}
+        onOpenChange={setConfirmingPayment}
+        title={_copy('Confirm collected payment?')}
+        description={_copy(
+          `Confirm that ${Number.isFinite(parsedPaymentAmount) ? _copy.money(parsedPaymentAmount) : paymentAmount} was actually received for this order. This creates a permanent payment and audit record.`,
+        )}
+        confirmLabel="Confirm payment"
+        loading={paymentMutation.isPending}
+        onConfirm={() => paymentMutation.mutate()}
       />
     </>
   );

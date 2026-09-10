@@ -8,6 +8,7 @@ import { cache } from 'react';
 
 import { CheckoutExperience } from '@/components/checkout/checkout-experience';
 import { checkoutApi, isApiError, packagesApi } from '@/lib/api';
+import { getCheckoutMode } from '@/lib/env/public-env';
 import {
   getBestPackageOffer,
   getPackageHref,
@@ -57,6 +58,7 @@ export async function generateMetadata({
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
   const _copy = await getCopy();
+  const checkoutMode = getCheckoutMode();
 
   const { slug } = await params;
   const packageItem = await resolvePackage(slug);
@@ -115,13 +117,19 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
             {_copy(
-              'Add the context we need, review the final total, and continue to secure payment.',
+              checkoutMode === 'manual'
+                ? 'Add the context we need, review the final total, then continue with the SANAD team on WhatsApp.'
+                : 'Add the context we need, review the final total, and continue to secure payment.',
             )}
           </p>
         </div>
       </section>
       <section className="layout-container py-10 sm:py-14 lg:py-18">
-        <CheckoutExperience packageItem={packageItem} pricing={pricing} />
+        <CheckoutExperience
+          checkoutMode={checkoutMode}
+          packageItem={packageItem}
+          pricing={pricing}
+        />
       </section>
     </div>
   );

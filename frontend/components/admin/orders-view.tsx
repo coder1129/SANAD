@@ -3,6 +3,7 @@ import { useCopy } from '@/lib/i18n/use-copy';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,31 +12,59 @@ import { adminApi, adminKeys } from '@/lib/api';
 import { statusIntent } from '@/lib/orders/presentation';
 import { AdminPageHeader, AdminTable, DataState, Pager } from './admin-ui';
 
-const statuses = [
-  '',
-  'pending',
-  'pending_payment',
-  'paid',
-  'awaiting_information',
-  'received',
-  'in_progress',
-  'under_review',
-  'ready',
-  'completed',
-  'cancelled',
-  'refunded',
+const statusFilters = [
+  { value: '', label: 'All statuses', labelAr: 'كل الحالات' },
+  {
+    value: 'queue:awaiting_payment',
+    label: 'Awaiting payment (all)',
+    labelAr: 'بانتظار الدفع (الكل)',
+  },
+  {
+    value: 'queue:in_progress',
+    label: 'In production (all)',
+    labelAr: 'قيد التنفيذ (الكل)',
+  },
+  ...[
+    'pending',
+    'pending_payment',
+    'paid',
+    'awaiting_information',
+    'received',
+    'in_progress',
+    'under_review',
+    'ready',
+    'completed',
+    'cancelled',
+    'refunded',
+  ].map((value) => ({ value: `status:${value}`, status: value })),
 ];
 export function OrdersView() {
   const _copy = useCopy();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const queueParam = searchParams.get('queue');
+  const statusParam = searchParams.get('status');
+  const statusFilter = queueParam
+    ? `queue:${queueParam}`
+    : statusParam
+      ? `status:${statusParam}`
+      : '';
+
+  const queue = statusFilter.startsWith('queue:')
+    ? statusFilter.slice('queue:'.length)
+    : undefined;
+  const status = statusFilter.startsWith('status:')
+    ? statusFilter.slice('status:'.length)
+    : undefined;
   const params = {
     page,
     limit: 20,
     search: search || undefined,
-    status: status || undefined,
+    status,
+    queue,
   };
   const query = useQuery({
     queryKey: adminKeys.list('orders', params),
@@ -67,14 +96,22 @@ export function OrdersView() {
           <select
             className="min-h-11 rounded-md border border-[var(--control-border)] bg-surface px-3 text-sm"
             onChange={(event) => {
-              setStatus(event.target.value);
+              const nextParams = new URLSearchParams(searchParams.toString());
+              nextParams.delete('queue');
+              nextParams.delete('status');
+              const [kind, value] = event.target.value.split(':');
+              if (kind && value) nextParams.set(kind, value);
+              const nextQuery = nextParams.toString();
+              router.replace(nextQuery ? `?${nextQuery}` : '/admin/orders');
               setPage(1);
             }}
-            value={status}
+            value={statusFilter}
           >
-            {statuses.map((value) => (
-              <option key={value} value={value}>
-                {_copy(value ? _copy.status(value) : 'All statuses')}
+            {statusFilters.map((filter) => (
+              <option key={filter.value} value={filter.value}>
+                {'status' in filter
+                  ? _copy.status(filter.status)
+                  : _copy(filter.label, filter.labelAr)}
               </option>
             ))}
           </select>

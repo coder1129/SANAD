@@ -109,7 +109,7 @@ export class ReviewsService {
   async create(userId: number, dto: CreateReviewDto) {
     const order = await this.prisma.orders.findUnique({
       where: { id: dto.order_id },
-      include: { payments: { select: { status: true } } },
+      include: { payments: { select: { status: true, amount: true } } },
     });
     if (!order) throw new NotFoundException('Order not found');
     if (order.user_id !== userId) {
@@ -131,8 +131,10 @@ export class ReviewsService {
       });
     }
     if (
-      !order.payments.some((payment) =>
-        PAID_PAYMENT_STATUSES.includes(payment.status),
+      !order.payments.some(
+        (payment) =>
+          PAID_PAYMENT_STATUSES.includes(payment.status) &&
+          Number(payment.amount) > 0,
       )
     ) {
       throw new BadRequestException({

@@ -1,6 +1,22 @@
-import { IsOptional, IsBoolean, IsString } from 'class-validator';
+import { IsOptional, IsBoolean, IsString, IsDateString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto, ToBoolean } from '../../common/utils';
+
+export class DashboardFilterDto {
+  @ApiPropertyOptional({
+    description: 'Inclusive analytics range start as an ISO-8601 timestamp',
+  })
+  @IsOptional()
+  @IsDateString()
+  start_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Inclusive analytics range end as an ISO-8601 timestamp',
+  })
+  @IsOptional()
+  @IsDateString()
+  end_date?: string;
+}
 
 export class CustomerFilterDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filter by account lock status' })

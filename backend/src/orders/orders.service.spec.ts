@@ -73,7 +73,7 @@ describe('OrdersService', () => {
       },
       order_status_history: { create: vi.fn() },
       notifications: { create: vi.fn() },
-      payments: { create: vi.fn() },
+      payments: { create: vi.fn(), count: vi.fn().mockResolvedValue(1) },
       admin_activity_log: { create: vi.fn() },
       $transaction: vi.fn(async (input: any, options?: unknown) => {
         prisma.__transactionOptions = options;
@@ -430,6 +430,30 @@ describe('OrdersService', () => {
     });
   });
 
+  describe('create — manual payment mode', () => {
+    it('creates an awaiting-payment order without a fake payment record', async () => {
+      configService.get.mockReturnValue('manual');
+      activeCustomer();
+      prisma.orders.create.mockResolvedValue(
+        storedOrder({ status: OrderStatus.PENDING_PAYMENT }),
+      );
+      prisma.orders.findUnique.mockResolvedValue(
+        storedOrder({ status: OrderStatus.PENDING_PAYMENT }),
+      );
+
+      const order = await service.create(1, { package_id: 1 });
+
+      expect(order.status).toBe(OrderStatus.PENDING_PAYMENT);
+      expect(prisma.orders.create.mock.calls[0][0].data.status).toBe(
+        OrderStatus.PENDING_PAYMENT,
+      );
+      expect(prisma.payments.create).not.toHaveBeenCalled();
+      expect(
+        prisma.order_status_history.create.mock.calls[0][0].data.note,
+      ).toContain('external payment');
+    });
+  });
+
   describe('findAllCustomer', () => {
     it('scopes the list to the requesting customer', async () => {
       await service.findAllCustomer(7, {
@@ -529,7 +553,7 @@ describe('OrdersService', () => {
       ).toBe('ORDER_FORBIDDEN');
     });
 
-    it('does not expose a success page for an unpaid order', async () => {
+    it('returns an unpaid order to its owner for the request-received page', async () => {
       prisma.orders.findUnique.mockResolvedValue(
         storedOrder({
           status: OrderStatus.PENDING_PAYMENT,
@@ -537,9 +561,11 @@ describe('OrdersService', () => {
         }),
       );
 
-      expect(
-        await errorCode(service.findByNumberCustomer('SANAD-2026-ABC-DEF', 1)),
-      ).toBe('ORDER_NOT_CONFIRMED');
+      await expect(
+        service.findByNumberCustomer('SANAD-2026-ABC-DEF', 1),
+      ).resolves.toEqual(
+        expect.objectContaining({ status: OrderStatus.PENDING_PAYMENT }),
+      );
     });
 
     it('returns a confirmed paid order to its owner', async () => {
@@ -673,6 +699,32 @@ describe('OrdersService', () => {
   });
 
   describe('findAllAdmin', () => {
+    it('expands the awaiting-payment dashboard queue into its statuses', async () => {
+      await service.findAllAdmin({
+        page: 1,
+        limit: 20,
+        skip: 0,
+        queue: 'awaiting_payment',
+      } as never);
+
+      expect(prisma.orders.findMany.mock.calls[0][0].where.status).toEqual({
+        in: ['pending', 'pending_payment'],
+      });
+    });
+
+    it('expands the in-progress dashboard queue into its statuses', async () => {
+      await service.findAllAdmin({
+        page: 1,
+        limit: 20,
+        skip: 0,
+        queue: 'in_progress',
+      } as never);
+
+      expect(prisma.orders.findMany.mock.calls[0][0].where.status).toEqual({
+        in: ['received', 'in_progress', 'under_review'],
+      });
+    });
+
     it('searches order number, name, email, and phone', async () => {
       await service.findAllAdmin({
         page: 1,
@@ -748,9 +800,7 @@ describe('OrdersService', () => {
     });
 
     it.each([
-      [OrderStatus.PENDING, OrderStatus.PAID],
       [OrderStatus.PENDING, OrderStatus.CANCELLED],
-      [OrderStatus.PENDING_PAYMENT, OrderStatus.PAID],
       [OrderStatus.PAID, OrderStatus.IN_PROGRESS],
       [OrderStatus.PAID, OrderStatus.REFUNDED],
       [OrderStatus.RECEIVED, OrderStatus.AWAITING_INFORMATION],
@@ -769,6 +819,52 @@ describe('OrdersService', () => {
         where: { id: 300, status: from },
         data: { status: to },
       });
+    });
+
+    it.each([OrderStatus.PENDING, OrderStatus.PENDING_PAYMENT])(
+      'requires a payment record instead of allowing a direct %s to paid change',
+      async (from) => {
+        prisma.orders.findUnique.mockResolvedValue(stored(from));
+
+        expect(
+          await errorCode(
+            service.updateStatusAdmin(300, 42, {
+              status: OrderStatus.PAID,
+            } as never),
+          ),
+        ).toBe('PAYMENT_CONFIRMATION_REQUIRED');
+        expect(prisma.orders.updateMany).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([OrderStatus.PENDING, OrderStatus.PENDING_PAYMENT])(
+      'requires a payment record instead of directly moving %s to paid',
+      async (from) => {
+        prisma.orders.findUnique.mockResolvedValue(stored(from));
+
+        expect(
+          await errorCode(
+            service.updateStatusAdmin(300, 42, {
+              status: OrderStatus.PAID,
+            } as never),
+          ),
+        ).toBe('PAYMENT_CONFIRMATION_REQUIRED');
+        expect(prisma.orders.updateMany).not.toHaveBeenCalled();
+      },
+    );
+
+    it('requires a positive collected payment before completion', async () => {
+      prisma.orders.findUnique.mockResolvedValue(stored(OrderStatus.READY));
+      prisma.payments.count.mockResolvedValue(0);
+
+      expect(
+        await errorCode(
+          service.updateStatusAdmin(300, 42, {
+            status: OrderStatus.COMPLETED,
+          } as never),
+        ),
+      ).toBe('COLLECTED_PAYMENT_REQUIRED');
+      expect(prisma.orders.updateMany).not.toHaveBeenCalled();
     });
 
     it.each([

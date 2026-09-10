@@ -5,9 +5,9 @@ FROM node:22-alpine AS deps
 
 WORKDIR /app
 
-# Prisma needs a syntactically valid DATABASE_URL at generate time. Railway
-# may not expose runtime secrets to the image build, so provide a harmless
-# placeholder here; the real value is injected at runtime.
+# Prisma needs a syntactically valid DATABASE_URL at image-build time. Runtime
+# secrets should not be exposed to the build, so use a harmless placeholder;
+# the real value is injected when the container starts.
 ENV DATABASE_URL=postgresql://localhost:5432/sanad_db?schema=public
 
 # openssl is required by Prisma's query engine; the toolchain builds argon2.
@@ -57,7 +57,7 @@ RUN npm ci --omit=dev && \
 # =====================================================
 FROM node:22-alpine AS runner
 
-RUN apk add --no-cache openssl && \
+RUN apk add --no-cache openssl postgresql-client && \
     addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
@@ -67,14 +67,13 @@ COPY --from=prod-deps --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
 COPY --chown=nestjs:nodejs prisma ./prisma
 COPY --chown=nestjs:nodejs package.json ./
-COPY --chown=nestjs:nodejs scripts/docker-entrypoint.sh ./scripts/docker-entrypoint.sh
-COPY --chown=nestjs:nodejs scripts/preflight.cjs ./scripts/preflight.cjs
+COPY --chown=nestjs:nodejs scripts ./scripts
 
-# Local-disk fallback for uploads. Production validation requires R2/S3
-# credentials, so this stays empty there; mount a volume if you opt out.
-RUN mkdir -p /app/uploads && \
+# Named volumes make uploads and database backups durable when object storage
+# or a managed backup service are not configured.
+RUN mkdir -p /app/uploads /app/backups && \
     chmod 0555 /app/scripts/docker-entrypoint.sh && \
-    chown -R nestjs:nodejs /app/uploads
+    chown -R nestjs:nodejs /app/uploads /app/backups
 
 USER nestjs
 

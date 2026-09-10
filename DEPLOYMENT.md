@@ -1,176 +1,163 @@
-# دليل النشر
+# دليل نشر SANAD على استضافة عامة
 
-هذا المشروع ينقسم إلى خدمتين:
+هذا الدليل غير مرتبط بـ Vercel أو Railway. الطريقة الموصى بها هي تشغيل المشروع على خادم Linux أو أي مزوّد يدعم Docker Compose.
 
-- `backend/` على Railway
-- `frontend/` على Vercel
+## البنية
 
-## 1) نشر الباك إند على Railway
+- `web`: واجهة Next.js تعمل كخادم Node.js كامل، وليست Static Export.
+- `api`: واجهة NestJS الخلفية.
+- `postgres`: قاعدة PostgreSQL مع Volume دائم.
+- `uploads`: تخزين دائم للملفات عند عدم استخدام R2/S3.
+- `database_backups`: Volume لنسخ قاعدة البيانات.
+- Nginx أو Reverse Proxy مشابه: إنهاء HTTPS وتوجيه الدومينات إلى الحاويات المحلية.
 
-### الإعداد الموصى به
+الخدمات ترتبط بالمضيف على `127.0.0.1` فقط؛ لا يتم كشف Node.js أو PostgreSQL مباشرة للإنترنت.
 
-- أنشئ خدمة PostgreSQL على Railway.
-- أنشئ خدمة Web للباك إند من مجلد `backend`.
-- استخدم `backend/Dockerfile` إن أمكن، لأنه يشغّل migrations تلقائيًا قبل الإقلاع.
+## متطلبات الخادم
 
-مهم: اربط `DATABASE_URL` بمتغير `DATABASE_URL` الخاص بخدمة PostgreSQL في
-Railway. لا تستخدم `localhost` أو `127.0.0.1`؛ داخل حاوية الباك إند يشيران إلى
-الحاوية نفسها وليس إلى قاعدة البيانات.
+- Linux حديث بذاكرة 2 GB على الأقل، ويفضل 4 GB للبناء على نفس الخادم.
+- Docker Engine وDocker Compose v2.
+- دومين يشير إلى الخادم.
+- Nginx ووسيلة إصدار شهادة TLS مثل Certbot، أو Reverse Proxy مُدار.
+- مساحة خارج الخادم لنسخ احتياطية دورية.
 
-### متغيرات البيئة
+## 1. إعداد متغيرات الإنتاج
 
-اضبط القيم التالية في Railway:
-
-```bash
-NODE_ENV=production
-DATABASE_URL=postgresql://...
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=30d
-FRONTEND_URL=https://your-vercel-domain.vercel.app
-CORS_ORIGINS=https://your-vercel-domain.vercel.app
-TRUST_PROXY=1
-SWAGGER_ENABLED=false
-R2_ACCOUNT_ID=...
-R2_ACCESS_KEY_ID=...
-R2_SECRET_ACCESS_KEY=...
-R2_BUCKET=...
-R2_PUBLIC_URL=https://media.your-domain.com
-RESEND_API_KEY=...   # أو SMTP_* بدلًا منه
-EMAIL_FROM=noreply@your-domain.com
-PAYMENT_PROVIDER=bypass   # أو مزود دفع حقيقي
-PAYMENT_WEBHOOK_SECRET=...
-SENTRY_DSN=
-SENTRY_ENVIRONMENT=production
-GOOGLE_CLIENT_ID=000000000000-example.apps.googleusercontent.com
-```
-
-### إذا لم تنشر Vercel بعد
-
-يمكن تشغيل Railway أولًا. استخدم مؤقتًا رابط HTTPS صحيحًا كقيمة للمتغيرين:
+من جذر المشروع:
 
 ```bash
-FRONTEND_URL=https://placeholder.vercel.app
-CORS_ORIGINS=https://placeholder.vercel.app
+cp .env.production.example .env.production
+chmod 600 .env.production
 ```
 
-بعد نشر Vercel واستلام الرابط الحقيقي، استبدل القيمتين به، ثم أعد نشر خدمة
-Railway. لا تستخدم `http://localhost` مع `NODE_ENV=production`.
+استبدل كل قيمة `replace-with-*` واضبط على الأقل:
 
-لتوليد الأسرار الثلاثة محليًا بدون حفظها في Git:
+- `POSTGRES_PASSWORD`
+- `JWT_ACCESS_SECRET`
+- `JWT_REFRESH_SECRET`
+- `PAYMENT_WEBHOOK_SECRET`
+- `PAYMENT_PROVIDER=manual`
+- `FRONTEND_URL`
+- `CORS_ORIGINS`
+- `NEXT_PUBLIC_API_BASE_URL`، ويجب أن ينتهي بـ `/api/v1`
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_MEDIA_BASE_URL`
+- `NEXT_PUBLIC_CHECKOUT_MODE=manual`
+- مزود بريد عبر `RESEND_API_KEY` أو إعدادات `SMTP_*`
+
+ولّد الأسرار بقيم عشوائية مختلفة، طول كل منها 32 بايت على الأقل. لا تحفظ ملف `.env.production` الحقيقي داخل Git.
+
+إذا كانت الملفات ستُحفظ محليًا، اترك جميع متغيرات `R2_*` فارغة وسيستخدم النظام Volume باسم `uploads`. أما عند استخدام R2/S3، فيجب إدخال إعداداته كاملة.
+
+متغيرات `NEXT_PUBLIC_*` تُدمج داخل الواجهة أثناء `docker compose build`. أي تغيير فيها يحتاج إعادة بناء حاوية `web`، وليس مجرد إعادة تشغيلها.
+
+## 2. فحص الإعدادات قبل النشر
+
+تحقق أولًا من ملف Compose:
 
 ```bash
-node -e "const crypto=require('node:crypto'); for(let i=0;i<3;i++) console.log(crypto.randomBytes(32).toString('hex'))"
+SANAD_ENV_FILE=.env.production docker compose --env-file .env.production -f docker-compose.production.yml config --quiet
 ```
 
-ضع كل سطر في متغير مختلف: `JWT_ACCESS_SECRET` و`JWT_REFRESH_SECRET`
-و`PAYMENT_WEBHOOK_SECRET`.
-
-### إعداد Demo مؤقت للعميل
-
-إذا كان الهدف تجربة العميل فقط قبل تجهيز R2 والبريد والنشر النهائي، استخدم
-`NODE_ENV=development` مؤقتًا. أضف هذه المتغيرات في Railway:
+ابنِ الصور:
 
 ```bash
-NODE_ENV=development
-DATABASE_URL=postgresql://...
-JWT_ACCESS_SECRET=...
-JWT_REFRESH_SECRET=...
-PAYMENT_WEBHOOK_SECRET=...
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_EXPIRES_IN=30d
-FRONTEND_URL=http://localhost:3000
-CORS_ORIGINS=http://localhost:3000
-PAYMENT_PROVIDER=mock
-SWAGGER_ENABLED=false
+docker compose --env-file .env.production -f docker-compose.production.yml build
 ```
 
-هذا الوضع لا يحتاج R2 أو Resend، لكن ملفات الرفع المحلية قد تختفي عند إعادة
-تشغيل خدمة Railway. كما أن `PAYMENT_PROVIDER=mock` للتجربة فقط ولا ينفذ دفعًا
-حقيقيًا. بعد نشر الواجهة وتجهيز الخدمات، غيّر `NODE_ENV` إلى `production` وأكمل
-متغيرات الإنتاج الموجودة أعلاه.
+حاوية الـAPI تشغّل فحص بيئة الإنتاج ثم `prisma migrate deploy` تلقائيًا قبل بدء التطبيق. إذا كانت قيمة ناقصة أو غير آمنة فسيتوقف النشر بدل تشغيل إعداد غير صالح.
 
-مهم:
-
-- لا تضبط `PORT` يدويًا على Railway، لأنه يمرره تلقائيًا.
-- `PAYMENT_PROVIDER=mock` مرفوض في الإنتاج.
-- لو لم يكن الدفع الحقيقي جاهزًا، استخدم `bypass` فقط مؤقتًا.
-
-### النشر
-
-1. اربط المستودع في Railway.
-2. اجعل Root Directory هو `backend`.
-3. انشر الخدمة.
-4. خذ رابط Railway النهائي واستخدمه في Vercel كقيمة `NEXT_PUBLIC_API_BASE_URL`.
-
-## 2) نشر الواجهة على Vercel
-
-### الإعداد الموصى به
-
-- أنشئ مشروع Vercel من مجلد `frontend`.
-- اترك الإطار كـ `Next.js`.
-
-إذا ظهر `404: NOT_FOUND` بعد النشر، راجع إعدادات المشروع في Vercel وتأكد أن
-`Root Directory` هو `frontend`، وأن `Framework Preset` هو `Next.js`. اترك
-`Output Directory` فارغًا، ولا تضف Build Command مخصصًا؛ Vercel سيستخدم
-`next build` تلقائيًا. الصفحة الرئيسية `/` موجودة داخل `frontend/app`.
-
-### متغيرات البيئة
+## 3. تشغيل المنظومة
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://your-railway-api.up.railway.app/api/v1
-NEXT_PUBLIC_SITE_URL=https://your-vercel-domain.vercel.app
-NEXT_PUBLIC_MEDIA_BASE_URL=https://media.your-domain.com
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=000000000000-example.apps.googleusercontent.com
-R2_PUBLIC_URL=https://media.your-domain.com
-NEXT_PUBLIC_SENTRY_DSN=
-NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
-NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE=0.1
-SENTRY_DSN=
-SENTRY_ENVIRONMENT=production
-SENTRY_AUTH_TOKEN=
-SENTRY_ORG=
-SENTRY_PROJECT=
+docker compose --env-file .env.production -f docker-compose.production.yml up -d
+docker compose --env-file .env.production -f docker-compose.production.yml ps
 ```
 
-### إعداد تسجيل الدخول عبر Google
-
-1. افتح Google Cloud Console وأنشئ OAuth 2.0 Client من نوع **Web application**.
-2. أضف `http://localhost:3000` ودومين Vercel النهائي إلى **Authorized JavaScript origins**.
-3. ضع Client ID نفسه في `GOOGLE_CLIENT_ID` على Railway و`NEXT_PUBLIC_GOOGLE_CLIENT_ID` على Vercel.
-4. أعد نشر الخدمتين بعد حفظ المتغيرات. لا يلزم Client Secret لأن الواجهة ترسل Google ID token ويتحقق الباك إند من توقيعه ومصدره والجمهور.
-
-للتجربة المؤقتة بدون مزود بريد، يمكن تحديد إيميل Demo واحد وكود ثابت. يعمل هذا
-المسار فقط عندما تكون `NODE_ENV=development`، ولا تستخدمه في الإنتاج:
+تحقق محليًا على الخادم:
 
 ```bash
-DEMO_OTP_EMAIL=demo@sanad.test
-DEMO_OTP_CODE=123456
+curl --fail http://127.0.0.1:3001/api/v1/health/live
+curl --fail http://127.0.0.1:3001/api/v1/health/ready
+curl --fail http://127.0.0.1:3000/
 ```
 
-عندها يدخل العميل بالإيميل المحدد، ويستخدم الكود `123456`، ثم يكمل بيانات
-الحساب. احذف المتغيرين قبل تحويل التطبيق إلى `production`.
+## 4. إعداد Nginx وHTTPS
 
-مهم:
-
-- أي تغيير في `NEXT_PUBLIC_*` يحتاج إعادة نشر للواجهة.
-- `NEXT_PUBLIC_API_BASE_URL` لازم يحتوي `/api/v1` في آخره.
-
-## 3) ترتيب الرفع
-
-1. ارفع Railway أولًا.
-2. انسخ رابط الـ API النهائي.
-3. اضبط متغيرات Vercel.
-4. ارفع Vercel.
-5. بعد ظهور دومين Vercel النهائي، ارجعه داخل Railway في `FRONTEND_URL` و`CORS_ORIGINS`.
-6. أعد نشر Railway.
-
-## 4) فحص سريع بعد النشر
+يوجد نموذج في `deploy/nginx/sanad.conf.example`. انسخه إلى إعدادات Nginx، واستبدل `example.com` بالدومين الحقيقي، ثم اختبر الإعداد قبل إعادة التحميل:
 
 ```bash
-GET https://your-railway-api.up.railway.app/api/v1/health/live
-GET https://your-railway-api.up.railway.app/api/v1/health/ready
+sudo nginx -t
+sudo systemctl reload nginx
 ```
 
-ثم افتح الواجهة على Vercel وتأكد أن الطلبات تصل للباك إند بدون CORS errors.
+بعدها فعّل شهادة TLS بالطريقة المناسبة للاستضافة. لا تفتح الموقع للمستخدمين قبل عمل HTTPS وإعادة توجيه HTTP إلى HTTPS.
+
+نموذج Nginx يعطّل buffering للواجهة لدعم Streaming في Next.js، ويحدد حجم الطلب بما يناسب حد رفع الملفات الحالي.
+
+## 5. البيانات الأولية وحساب الإدارة
+
+المهاجرات تعمل تلقائيًا، لكن يجب التأكد مرة واحدة من وجود الباقات المطلوبة وحساب `super_admin`. نفّذ أوامر الـseed فقط بعد مراجعة أنها لن تستبدل بيانات موجودة:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml exec api npm run db:seed-packages
+docker compose --env-file .env.production -f docker-compose.production.yml exec api npm run db:seed-admin
+```
+
+## 6. النسخ الاحتياطي
+
+لإنشاء نسخة داخل Volume الدائم:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml exec api npm run db:backup
+```
+
+النسخة وحدها على نفس الخادم لا تكفي. انسخ ملفات `.dump` و`.sha256` دوريًا إلى Object Storage أو خادم آخر، وفعّل Cron أو أداة النسخ الخاصة بمزوّد الاستضافة.
+
+اختبر الاستعادة دوريًا على قاعدة منفصلة فقط:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml exec \
+  -e RESTORE_CONFIRM=restore-test-database \
+  -e RESTORE_DATABASE_URL=postgresql://user:password@test-db:5432/sanad_restore \
+  api npm run db:restore:check -- /app/backups/backup-file.dump
+```
+
+السكريبت يرفض الاستعادة إذا كانت قاعدة الاختبار هي نفس قاعدة الإنتاج.
+
+## 7. تحديث نسخة منشورة
+
+```bash
+git pull --ff-only
+docker compose --env-file .env.production -f docker-compose.production.yml build
+docker compose --env-file .env.production -f docker-compose.production.yml up -d
+```
+
+راجع حالة الخدمات والـlogs بعد كل تحديث:
+
+```bash
+docker compose --env-file .env.production -f docker-compose.production.yml ps
+docker compose --env-file .env.production -f docker-compose.production.yml logs --tail=200 api web
+```
+
+## 8. بوابة القبول قبل فتح الموقع
+
+- كل اختبارات Backend وFrontend ناجحة.
+- `npm audit --omit=dev` لا يعرض ثغرات عالية أو حرجة.
+- `/health/live` و`/health/ready` يعملان من الدومين النهائي.
+- التسجيل وتسجيل الدخول والتحقق بالبريد تعمل برسائل حقيقية.
+- CORS يسمح للدومين النهائي فقط.
+- رفع ملف وتنزيله ينجحان، ويظل الملف موجودًا بعد إعادة تشغيل الحاويات.
+- حساب العميل لا يستطيع الوصول إلى لوحة الإدارة.
+- إنشاء طلب جديد ينتهي بحالة `pending_payment` ويعرض زر واتساب، ولا ينشئ دفعة صفرية أو يفتح صفحة البطاقة/Apple Pay.
+- صفحة `/checkout/pay` تعيد 404 في وضع `manual` مع بقاء كودها محفوظًا لإعادة تفعيل بوابة الدفع لاحقًا.
+- تأكيد الدفع من تفاصيل الطلب في لوحة الإدارة لا ينجح إلا بعد إدخال مبلغ يطابق إجمالي الطلب، ويظهر بعدها في الإيرادات والعملاء المشترين وسجل النشاط.
+- لا يمكن تحويل الطلب يدويًا إلى `paid` من قائمة الحالات، ولا إكماله أو فتح التقييم دون دفعة موجبة مؤكدة.
+- النسخ الاحتياطي يعمل وتم اختبار الاستعادة على قاعدة منفصلة.
+- `SWAGGER_ENABLED=false` و`TRUST_PROXY=1` خلف الـReverse Proxy.
+- لا توجد متغيرات Demo أو أسرار افتراضية.
+- Sentry أو نظام مراقبة بديل يستقبل الأخطاء، مع مراقبة دورية للـhealth endpoint.
+
+## ملاحظات التوسع
+
+الإعداد الحالي مناسب لخادم واحد. عند تشغيل أكثر من نسخة من Next.js أو الـAPI خلف Load Balancer، أضف Cache مشتركًا مثل Redis، واضبط `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` وDeployment ID موحدين، ونسّق عمليات background workers حتى لا تعمل المهمة نفسها في أكثر من نسخة.

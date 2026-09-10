@@ -25,6 +25,7 @@ export type {
   AdminPayment,
   CmsPage,
   DashboardData,
+  DashboardQuery,
   SiteMedia,
   SiteSetting,
 } from './modules/admin';

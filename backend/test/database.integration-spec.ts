@@ -27,6 +27,7 @@ describe('PostgreSQL schema integration', () => {
         '20260828032000_add_rate_limit_buckets',
         '20260828050000_add_email_verification_tokens',
         '20260905150000_add_package_reviews',
+        '20260909101500_add_manual_payment_methods',
       ]),
     );
   });
@@ -94,6 +95,19 @@ describe('PostgreSQL schema integration', () => {
         'payments',
       ]),
     );
+  });
+
+  it('allows every supported externally reconciled payment method', async () => {
+    const rows = await prisma.$queryRaw<Array<{ definition: string }>>`
+      SELECT pg_get_constraintdef(oid) AS definition
+      FROM pg_constraint
+      WHERE conname = 'payments_payment_method_check'
+    `;
+
+    expect(rows[0]?.definition).toContain('payment_link');
+    expect(rows[0]?.definition).toContain('qr_code');
+    expect(rows[0]?.definition).toContain('bank_transfer');
+    expect(rows[0]?.definition).toContain('cash');
   });
 
   it('can atomically address the shared rate-limit table', async () => {

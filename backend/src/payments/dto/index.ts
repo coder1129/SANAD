@@ -7,7 +7,9 @@ import {
   IsIn,
   Min,
   IsEnum,
+  IsDateString,
   MaxLength,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -67,6 +69,51 @@ export class PaymentWebhookDto {
   @IsString()
   @IsIn(['AED'])
   currency?: string;
+}
+
+export class ConfirmManualPaymentDto {
+  @ApiProperty({ description: 'Order ID whose external payment was received' })
+  @IsInt()
+  @Type(() => Number)
+  order_id!: number;
+
+  @ApiProperty({ example: 400 })
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(9_999_999.99)
+  @Type(() => Number)
+  amount!: number;
+
+  @ApiProperty({
+    enum: ['payment_link', 'qr_code', 'bank_transfer', 'cash', 'other'],
+    example: 'payment_link',
+  })
+  @IsString()
+  @IsIn(['payment_link', 'qr_code', 'bank_transfer', 'cash', 'other'])
+  payment_method!:
+    'payment_link' | 'qr_code' | 'bank_transfer' | 'cash' | 'other';
+
+  @ApiPropertyOptional({
+    description: 'Reference supplied by the external payment channel',
+    example: 'PAYLINK-48291',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  transaction_reference?: string;
+
+  @ApiPropertyOptional({
+    description: 'When the money was received; defaults to now',
+  })
+  @IsOptional()
+  @IsDateString()
+  payment_date?: string;
+
+  @ApiPropertyOptional({ description: 'Private reconciliation note' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  note?: string;
 }
 
 export class PaymentFilterDto extends PaginationDto {

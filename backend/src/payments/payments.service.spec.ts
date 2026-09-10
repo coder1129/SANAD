@@ -37,6 +37,7 @@ describe('PaymentsService', () => {
       order_status_history: { create: vi.fn() },
       notifications: { create: vi.fn() },
       email_queue: { create: vi.fn() },
+      admin_activity_log: { create: vi.fn() },
       $queryRaw: vi.fn(),
       $transaction: vi.fn(async (callback) => callback(prisma)),
     };
@@ -58,6 +59,19 @@ describe('PaymentsService', () => {
   });
 
   describe('createPayment', () => {
+    it('blocks customer gateway creation while manual checkout is active', async () => {
+      configService.get.mockImplementation((key: string) =>
+        key === 'PAYMENT_PROVIDER' ? 'manual' : 'http://localhost:3001',
+      );
+
+      await expect(
+        service.createPayment(10, { order_id: 7 }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'MANUAL_PAYMENT_ONLY' }),
+      });
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
     it('confirms a pending order with zero charged amount in bypass mode', async () => {
       configService.get.mockImplementation((key: string) =>
         key === 'PAYMENT_PROVIDER' ? 'bypass' : 'http://localhost:3001',
@@ -138,6 +152,135 @@ describe('PaymentsService', () => {
         reused: true,
       });
       expect(prisma.payments.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('confirmManualPayment', () => {
+    const order = {
+      id: 7,
+      order_number: 'SANAD-2026-000007',
+      user_id: 10,
+      status: 'pending_payment',
+      final_amount: 500,
+      customer_name: 'Test Customer',
+      customer_email: 'test@example.com',
+    };
+
+    it('records collected money, advances the order, and writes an audit trail', async () => {
+      prisma.orders.findUnique.mockResolvedValue(order);
+      prisma.payments.findFirst.mockResolvedValue(null);
+      prisma.payments.create.mockImplementation(async ({ data }: any) => ({
+        id: 70,
+        ...data,
+      }));
+
+      const result = await service.confirmManualPayment(42, {
+        order_id: 7,
+        amount: 500,
+        payment_method: 'payment_link',
+        transaction_reference: 'LINK-123',
+        note: 'Matched in provider dashboard',
+      });
+
+      expect(result).toMatchObject({
+        id: 70,
+        amount: 500,
+        status: 'paid',
+        payment_method: 'payment_link',
+      });
+      expect(prisma.orders.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 7,
+          status: { in: ['pending', 'pending_payment'] },
+        },
+        data: { status: 'paid' },
+      });
+      expect(prisma.order_status_history.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          order_id: 7,
+          from_status: 'pending_payment',
+          to_status: 'paid',
+          changed_by: 42,
+        }),
+      });
+      expect(prisma.admin_activity_log.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          admin_id: 42,
+          action: 'confirm_manual_payment',
+        }),
+      });
+      expect(prisma.notifications.create).toHaveBeenCalled();
+      expect(prisma.email_queue.create).toHaveBeenCalled();
+    });
+
+    it('rejects an amount that does not exactly match the order total', async () => {
+      prisma.orders.findUnique.mockResolvedValue(order);
+      prisma.payments.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.confirmManualPayment(42, {
+          order_id: 7,
+          amount: 499,
+          payment_method: 'qr_code',
+        }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({ code: 'PAYMENT_AMOUNT_MISMATCH' }),
+      });
+      expect(prisma.payments.create).not.toHaveBeenCalled();
+    });
+
+    it('prevents a second positive payment confirmation', async () => {
+      prisma.orders.findUnique.mockResolvedValue(order);
+      prisma.payments.findFirst.mockResolvedValue({ id: 69, amount: 500 });
+
+      await expect(
+        service.confirmManualPayment(42, {
+          order_id: 7,
+          amount: 500,
+          payment_method: 'bank_transfer',
+        }),
+      ).rejects.toMatchObject({
+        response: expect.objectContaining({
+          code: 'PAYMENT_ALREADY_CONFIRMED',
+        }),
+      });
+      expect(prisma.payments.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPayment', () => {
+    it('does not expose private reconciliation metadata to the customer', async () => {
+      prisma.payments.findUnique.mockResolvedValue({
+        id: 70,
+        order_id: 7,
+        status: 'paid',
+        amount: 500,
+        payment_response: {
+          confirmed_by: 42,
+          external_reference: 'BANK-PRIVATE-REFERENCE',
+          note: 'Internal finance note',
+        },
+        order: { id: 7, user_id: 10 },
+      });
+
+      const result = await service.getPayment(70, 10, false);
+
+      expect(result).not.toHaveProperty('payment_response');
+      expect(result).toMatchObject({ id: 70, order_id: 7, status: 'paid' });
+    });
+
+    it('keeps reconciliation metadata available to administrators', async () => {
+      prisma.payments.findUnique.mockResolvedValue({
+        id: 70,
+        payment_response: { external_reference: 'BANK-REFERENCE' },
+        order: { id: 7, user_id: 10 },
+      });
+
+      const result = (await service.getPayment(70, 42, true)) as any;
+
+      expect(result.payment_response).toEqual({
+        external_reference: 'BANK-REFERENCE',
+      });
     });
   });
 

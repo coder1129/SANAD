@@ -1,5 +1,6 @@
 export interface PublicEnvironment {
   apiBaseUrl?: string;
+  checkoutMode?: 'manual' | 'gateway';
   googleClientId?: string;
   mediaBaseUrl?: string;
   siteUrl?: string;
@@ -7,6 +8,7 @@ export interface PublicEnvironment {
 
 interface RawPublicEnvironment {
   NEXT_PUBLIC_API_BASE_URL?: string;
+  NEXT_PUBLIC_CHECKOUT_MODE?: string;
   NEXT_PUBLIC_GOOGLE_CLIENT_ID?: string;
   NEXT_PUBLIC_MEDIA_BASE_URL?: string;
   NEXT_PUBLIC_SITE_URL?: string;
@@ -16,6 +18,7 @@ const environmentKeys = [
   'NEXT_PUBLIC_API_BASE_URL',
   'NEXT_PUBLIC_SITE_URL',
   'NEXT_PUBLIC_MEDIA_BASE_URL',
+  'NEXT_PUBLIC_CHECKOUT_MODE',
 ] as const;
 
 function parseUrl(
@@ -57,6 +60,12 @@ export function validatePublicEnvironment(
   }
 
   const googleClientId = raw.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
+  const checkoutMode = raw.NEXT_PUBLIC_CHECKOUT_MODE?.trim();
+  if (checkoutMode && !['manual', 'gateway'].includes(checkoutMode)) {
+    throw new Error(
+      'NEXT_PUBLIC_CHECKOUT_MODE must be either manual or gateway.',
+    );
+  }
   if (
     googleClientId &&
     !/^\d+-[a-z0-9]+\.apps\.googleusercontent\.com$/i.test(googleClientId)
@@ -73,6 +82,7 @@ export function validatePublicEnvironment(
           raw.NEXT_PUBLIC_API_BASE_URL.trim(),
         )
       : undefined,
+    checkoutMode: checkoutMode as 'manual' | 'gateway' | undefined,
     ...(googleClientId ? { googleClientId } : {}),
     siteUrl: raw.NEXT_PUBLIC_SITE_URL?.trim()
       ? parseUrl('NEXT_PUBLIC_SITE_URL', raw.NEXT_PUBLIC_SITE_URL.trim())

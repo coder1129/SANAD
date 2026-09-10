@@ -7,6 +7,7 @@ import {
   IsObject,
   IsDateString,
   IsEnum,
+  IsIn,
   MaxLength,
   ValidateNested,
 } from 'class-validator';
@@ -91,7 +92,9 @@ export class CreateOrderDto {
   @Type(() => Number)
   offer_id?: number;
 
-  @ApiPropertyOptional({ description: 'Second package unlocked by a cross-service offer' })
+  @ApiPropertyOptional({
+    description: 'Second package unlocked by a cross-service offer',
+  })
   @IsOptional()
   @IsInt()
   @Type(() => Number)
@@ -194,6 +197,14 @@ export class UpdateOrderAdminDto {
 }
 
 export class OrderFilterDto extends PaginationDto {
+  @ApiPropertyOptional({
+    description: 'Filter by an operational dashboard queue',
+    enum: ['awaiting_payment', 'in_progress'],
+  })
+  @IsOptional()
+  @IsIn(['awaiting_payment', 'in_progress'])
+  queue?: 'awaiting_payment' | 'in_progress';
+
   @ApiPropertyOptional({ description: 'Filter by order status' })
   @IsOptional()
   @IsEnum(OrderStatus)

@@ -105,9 +105,10 @@ export class OrdersService {
     const customerName = dto.customer_name?.trim() || user.name;
     const customerEmail = dto.customer_email?.trim() || user.email;
     const customerPhone = dto.customer_phone?.trim() || user.phone || '';
-    const paymentBypassed =
-      this.configService.get<string>('PAYMENT_PROVIDER') ===
-      PAYMENT_BYPASS_PROVIDER;
+    const paymentProvider =
+      this.configService.get<string>('PAYMENT_PROVIDER') || 'mock';
+    const paymentBypassed = paymentProvider === PAYMENT_BYPASS_PROVIDER;
+    const paymentHandledManually = paymentProvider === 'manual';
 
     const order = await this.prisma.$transaction(
       async (tx) => {
@@ -131,7 +132,9 @@ export class OrdersService {
         const orderNumber = this.generateOrderNumber();
         const initialStatus = paymentBypassed
           ? OrderStatus.PAID
-          : OrderStatus.PENDING;
+          : paymentHandledManually
+            ? OrderStatus.PENDING_PAYMENT
+            : OrderStatus.PENDING;
 
         const newOrder = await tx.orders.create({
           data: {
@@ -211,7 +214,9 @@ export class OrdersService {
             changed_by: user.id,
             note: paymentBypassed
               ? 'Order created with temporary payment bypass'
-              : 'Order created by customer',
+              : paymentHandledManually
+                ? 'Order created; external payment arrangement pending'
+                : 'Order created by customer',
           },
         });
 
@@ -224,13 +229,17 @@ export class OrdersService {
               : 'تم استلام طلبك بنجاح',
             title_en: paymentBypassed
               ? 'Order Confirmed Successfully'
-              : 'Order Placed Successfully',
+              : paymentHandledManually
+                ? 'Order Request Received'
+                : 'Order Placed Successfully',
             message_ar: paymentBypassed
               ? `تم تأكيد طلبك رقم ${orderNumber} وسيبدأ فريق سند العمل عليه قريبًا.`
               : `تم استلام طلبك رقم ${orderNumber} بنجاح وهو بانتظار إتمام الدفع.`,
             message_en: paymentBypassed
               ? `Your order #${orderNumber} is confirmed and the SANAD team will begin work soon.`
-              : `Your order #${orderNumber} has been received and is awaiting payment.`,
+              : paymentHandledManually
+                ? `Your order #${orderNumber} has been received. Continue on WhatsApp to arrange payment and share your requirements.`
+                : `Your order #${orderNumber} has been received and is awaiting payment.`,
             notification_type: 'order_created',
           },
         });
@@ -305,6 +314,16 @@ export class OrdersService {
         offers: true,
         payments: {
           orderBy: { created_at: 'desc' },
+          select: {
+            id: true,
+            transaction_id: true,
+            payment_method: true,
+            amount: true,
+            currency: true,
+            status: true,
+            payment_date: true,
+            created_at: true,
+          },
         },
         order_status_history: {
           orderBy: { created_at: 'asc' },
@@ -343,7 +362,19 @@ export class OrdersService {
       include: {
         package: { include: { package_images: true } },
         offers: true,
-        payments: { orderBy: { created_at: 'desc' } },
+        payments: {
+          orderBy: { created_at: 'desc' },
+          select: {
+            id: true,
+            transaction_id: true,
+            payment_method: true,
+            amount: true,
+            currency: true,
+            status: true,
+            payment_date: true,
+            created_at: true,
+          },
+        },
         order_status_history: { orderBy: { created_at: 'asc' } },
         package_review: true,
       },
@@ -358,18 +389,6 @@ export class OrdersService {
       throw new ForbiddenException({
         message: 'Access denied to this order',
         code: 'ORDER_FORBIDDEN',
-      });
-    }
-    const paymentConfirmed = order.payments.some((payment) =>
-      ['paid', 'success'].includes(payment.status),
-    );
-    if (
-      !paymentConfirmed ||
-      ['pending', 'pending_payment', 'cancelled'].includes(order.status)
-    ) {
-      throw new BadRequestException({
-        message: 'This order has not been confirmed yet',
-        code: 'ORDER_NOT_CONFIRMED',
       });
     }
     return order;
@@ -450,7 +469,11 @@ export class OrdersService {
   async findAllAdmin(query: OrderFilterDto) {
     const where: Record<string, any> = {};
 
-    if (query.status) {
+    if (query.queue === 'awaiting_payment') {
+      where.status = { in: ['pending', 'pending_payment'] };
+    } else if (query.queue === 'in_progress') {
+      where.status = { in: ['received', 'in_progress', 'under_review'] };
+    } else if (query.status) {
       where.status = query.status;
     }
     if (query.package_id) {
@@ -577,6 +600,30 @@ export class OrdersService {
         message: `Cannot transition order from ${previousStatus} to ${newStatus}`,
         code: 'INVALID_ORDER_STATUS_TRANSITION',
       });
+    }
+
+    if (newStatus === OrderStatus.PAID) {
+      throw new BadRequestException({
+        message:
+          'Record the collected payment from the payment section instead of changing the order status directly',
+        code: 'PAYMENT_CONFIRMATION_REQUIRED',
+      });
+    }
+
+    if (newStatus === OrderStatus.COMPLETED) {
+      const collectedPaymentCount = await this.prisma.payments.count({
+        where: {
+          order_id: id,
+          status: { in: ['paid', 'success'] },
+          amount: { gt: 0 },
+        },
+      });
+      if (collectedPaymentCount === 0) {
+        throw new BadRequestException({
+          message: 'A collected payment is required before completing an order',
+          code: 'COLLECTED_PAYMENT_REQUIRED',
+        });
+      }
     }
 
     await this.prisma.$transaction(async (tx) => {

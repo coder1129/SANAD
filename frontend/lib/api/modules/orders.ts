@@ -102,11 +102,10 @@ function toCustomerOrder(
     createdAt: payload.created_at ?? null,
     updatedAt: payload.updated_at ?? null,
     paymentStatus:
-      payload.payments?.find((payment) =>
-        ['paid', 'success'].includes(payment.status),
-      )?.status ??
-      payload.payments?.[0]?.status ??
-      'pending',
+      payload.payments?.find(
+        (payment) =>
+          ['paid', 'success'].includes(payment.status) && payment.amount > 0,
+      )?.status ?? 'pending',
     currency: payload.payments?.[0]?.currency ?? 'AED',
     offerName: payload.offer?.name_en ?? payload.offers?.name_en ?? null,
     offerNameAr: payload.offer?.name_ar ?? payload.offers?.name_ar ?? null,
@@ -163,7 +162,9 @@ export const ordersApi = {
         package_id: input.packageId,
         ...(input.offerId === undefined ? {} : { offer_id: input.offerId }),
         ...(input.couponCode ? { coupon_code: input.couponCode } : {}),
-        ...(input.secondaryPackageId === undefined ? {} : { secondary_package_id: input.secondaryPackageId }),
+        ...(input.secondaryPackageId === undefined
+          ? {}
+          : { secondary_package_id: input.secondaryPackageId }),
         customer_phone: input.customerPhone,
         ...(input.notes ? { notes: input.notes } : {}),
         ...(requirements && Object.keys(requirements).length > 0

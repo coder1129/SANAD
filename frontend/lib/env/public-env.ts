@@ -10,7 +10,13 @@ import { validatePublicEnvironment } from './public-env-schema';
  * through a loop over `process.env`.
  */
 let cachedEnvironment:
-  { apiBaseUrl: string; mediaBaseUrl: string; siteUrl: string } | undefined;
+  | {
+      apiBaseUrl: string;
+      checkoutMode: 'manual' | 'gateway';
+      mediaBaseUrl: string;
+      siteUrl: string;
+    }
+  | undefined;
 
 function getPublicEnvironment() {
   if (cachedEnvironment) return cachedEnvironment;
@@ -18,6 +24,7 @@ function getPublicEnvironment() {
   const parsed = validatePublicEnvironment(
     {
       NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      NEXT_PUBLIC_CHECKOUT_MODE: process.env.NEXT_PUBLIC_CHECKOUT_MODE,
       NEXT_PUBLIC_MEDIA_BASE_URL: process.env.NEXT_PUBLIC_MEDIA_BASE_URL,
       NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
     },
@@ -26,6 +33,7 @@ function getPublicEnvironment() {
 
   cachedEnvironment = {
     apiBaseUrl: parsed.apiBaseUrl!,
+    checkoutMode: parsed.checkoutMode!,
     mediaBaseUrl: parsed.mediaBaseUrl!,
     siteUrl: parsed.siteUrl!,
   };
@@ -51,4 +59,8 @@ export function getSiteUrl(): string {
 
 export function getMediaBaseUrl(): string {
   return getPublicEnvironment().mediaBaseUrl;
+}
+
+export function getCheckoutMode(): 'manual' | 'gateway' {
+  return getPublicEnvironment().checkoutMode;
 }

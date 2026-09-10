@@ -18,7 +18,7 @@ const completedOrder = (overrides: Record<string, unknown> = {}) => ({
   user_id: 3,
   package_id: 5,
   status: 'completed',
-  payments: [{ status: 'paid' }],
+  payments: [{ status: 'paid', amount: 500 }],
   ...overrides,
 });
 
@@ -89,11 +89,24 @@ describe('ReviewsService', () => {
 
   it('blocks reviews for an order without a confirmed payment', async () => {
     prisma.orders.findUnique.mockResolvedValue(
-      completedOrder({ payments: [{ status: 'failed' }] }),
+      completedOrder({ payments: [{ status: 'failed', amount: 500 }] }),
     );
     await expect(
       service.create(3, { order_id: 10, rating: 5, comment: 'Excellent' }),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('does not treat a zero-value bypass record as a purchase', async () => {
+    prisma.orders.findUnique.mockResolvedValue(
+      completedOrder({ payments: [{ status: 'paid', amount: 0 }] }),
+    );
+
+    await expect(
+      service.create(3, { order_id: 10, rating: 5, comment: 'Excellent' }),
+    ).rejects.toMatchObject({
+      response: expect.objectContaining({ code: 'ORDER_NOT_PAID' }),
+    });
+    expect(prisma.package_reviews.create).not.toHaveBeenCalled();
   });
 
   it('creates one pending review for a completed paid order', async () => {

@@ -17,7 +17,12 @@ import {
   ApiHeader,
 } from '@nestjs/swagger';
 import { PaymentsService } from './payments.service';
-import { CreatePaymentDto, PaymentWebhookDto, PaymentFilterDto } from './dto';
+import {
+  ConfirmManualPaymentDto,
+  CreatePaymentDto,
+  PaymentWebhookDto,
+  PaymentFilterDto,
+} from './dto';
 import { CurrentUser, Roles, Public } from '../common/decorators';
 import { UserRole } from '../common/enums';
 import { Request } from 'express';
@@ -86,6 +91,17 @@ export class AdminPaymentsController {
   @ApiOperation({ summary: 'List all payments with filters (Admin)' })
   async findAll(@Query() query: PaymentFilterDto) {
     return this.paymentsService.findAllAdmin(query);
+  }
+
+  @Post('manual')
+  @ApiOperation({
+    summary: 'Confirm an externally collected payment for an order (Admin)',
+  })
+  async confirmManual(
+    @CurrentUser('id') adminId: number,
+    @Body() dto: ConfirmManualPaymentDto,
+  ) {
+    return this.paymentsService.confirmManualPayment(adminId, dto);
   }
 
   @Get(':id')

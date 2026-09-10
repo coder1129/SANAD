@@ -2,12 +2,18 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MockPaymentProvider } from './providers/mock-payment.provider';
-import { CreatePaymentDto, PaymentFilterDto, PaymentWebhookDto } from './dto';
+import {
+  ConfirmManualPaymentDto,
+  CreatePaymentDto,
+  PaymentFilterDto,
+  PaymentWebhookDto,
+} from './dto';
 import { createPaginatedResponse } from '../common/utils';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -16,6 +22,7 @@ import {
   PAYMENT_BYPASS_PROVIDER,
   PAYMENT_BYPASS_TRANSACTION_PREFIX,
 } from './payment-bypass';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PaymentsService {
@@ -29,6 +36,14 @@ export class PaymentsService {
 
   // Customer initiates payment for an order
   async createPayment(userId: number, dto: CreatePaymentDto) {
+    if (this.configService.get<string>('PAYMENT_PROVIDER') === 'manual') {
+      throw new BadRequestException({
+        message:
+          'Online checkout is disabled. Continue with the SANAD team on WhatsApp to arrange payment.',
+        code: 'MANUAL_PAYMENT_ONLY',
+      });
+    }
+
     const paymentBypassed =
       this.configService.get<string>('PAYMENT_PROVIDER') ===
       PAYMENT_BYPASS_PROVIDER;
@@ -255,6 +270,172 @@ export class PaymentsService {
     );
   }
 
+  // Admin confirms money collected outside the website (payment link, QR,
+  // bank transfer, cash, or another reconciled channel).
+  async confirmManualPayment(adminId: number, dto: ConfirmManualPaymentDto) {
+    const paymentDate = dto.payment_date
+      ? new Date(dto.payment_date)
+      : new Date();
+    if (paymentDate.getTime() > Date.now() + 5 * 60 * 1000) {
+      throw new BadRequestException({
+        message: 'Payment date cannot be in the future',
+        code: 'PAYMENT_DATE_IN_FUTURE',
+      });
+    }
+
+    const payment = await this.prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM orders WHERE id = ${dto.order_id} FOR UPDATE`;
+        const order = await tx.orders.findUnique({
+          where: { id: dto.order_id },
+        });
+
+        if (!order) {
+          throw new NotFoundException({
+            message: 'Order not found',
+            code: 'ORDER_NOT_FOUND',
+          });
+        }
+        if (!['pending', 'pending_payment'].includes(order.status)) {
+          throw new BadRequestException({
+            message: `Cannot confirm payment for an order in status: ${order.status}`,
+            code: 'ORDER_INVALID_STATUS',
+          });
+        }
+
+        const existingCollectedPayment = await tx.payments.findFirst({
+          where: {
+            order_id: order.id,
+            status: { in: ['paid', 'success'] },
+            amount: { gt: 0 },
+          },
+        });
+        if (existingCollectedPayment) {
+          throw new ConflictException({
+            message: 'A collected payment is already recorded for this order',
+            code: 'PAYMENT_ALREADY_CONFIRMED',
+          });
+        }
+
+        const receivedMinorUnits = Math.round(dto.amount * 100);
+        const expectedMinorUnits = Math.round(Number(order.final_amount) * 100);
+        if (receivedMinorUnits !== expectedMinorUnits) {
+          throw new BadRequestException({
+            message: `Payment amount must exactly match the order total (${Number(order.final_amount).toFixed(2)} AED)`,
+            code: 'PAYMENT_AMOUNT_MISMATCH',
+          });
+        }
+
+        // A manual confirmation supersedes any online session that might have
+        // been created before the checkout mode changed.
+        await tx.payments.updateMany({
+          where: { order_id: order.id, status: 'pending' },
+          data: { status: 'failed', payment_date: paymentDate },
+        });
+
+        const transactionId = `manual_${crypto.randomUUID()}`;
+        const created = await tx.payments.create({
+          data: {
+            order_id: order.id,
+            transaction_id: transactionId,
+            payment_method: dto.payment_method,
+            amount: dto.amount,
+            currency: 'AED',
+            status: 'paid',
+            payment_date: paymentDate,
+            payment_response: {
+              source: 'manual_admin_confirmation',
+              confirmed_by: adminId,
+              ...(dto.transaction_reference?.trim()
+                ? { external_reference: dto.transaction_reference.trim() }
+                : {}),
+              ...(dto.note?.trim() ? { note: dto.note.trim() } : {}),
+            },
+          },
+        });
+
+        const updatedOrder = await tx.orders.updateMany({
+          where: {
+            id: order.id,
+            status: { in: ['pending', 'pending_payment'] },
+          },
+          data: { status: 'paid' },
+        });
+        if (updatedOrder.count !== 1) {
+          throw new ConflictException({
+            message: 'Order status changed; reload before confirming payment',
+            code: 'ORDER_STATUS_CONFLICT',
+          });
+        }
+
+        await tx.order_status_history.create({
+          data: {
+            order_id: order.id,
+            from_status: order.status,
+            to_status: 'paid',
+            changed_by: adminId,
+            note: `External payment confirmed by admin (${transactionId})`,
+          },
+        });
+        await tx.admin_activity_log.create({
+          data: {
+            admin_id: adminId,
+            action: 'confirm_manual_payment',
+            table_name: 'payments',
+            record_id: created.id,
+            description: `Confirmed ${dto.amount.toFixed(2)} AED for order #${order.order_number}`,
+            changes: {
+              order_id: order.id,
+              payment_method: dto.payment_method,
+              amount: dto.amount,
+              transaction_reference: dto.transaction_reference?.trim() || null,
+              payment_date: paymentDate.toISOString(),
+            },
+          },
+        });
+
+        if (order.user_id) {
+          await tx.notifications.create({
+            data: {
+              user_id: order.user_id,
+              order_id: order.id,
+              title_ar: 'تم تأكيد استلام الدفع',
+              title_en: 'Payment received',
+              message_ar: `تم تأكيد استلام مبلغ ${dto.amount.toFixed(2)} AED للطلب رقم ${order.order_number}.`,
+              message_en: `We confirmed receipt of ${dto.amount.toFixed(2)} AED for order #${order.order_number}.`,
+              notification_type: 'payment_confirmed',
+            },
+          });
+          await tx.email_queue.create({
+            data: {
+              recipient_email: order.customer_email,
+              recipient_name: order.customer_name,
+              subject: `Payment received for order ${order.order_number}`,
+              body_html: `<p>We confirmed receipt of <strong>${dto.amount.toFixed(2)} AED</strong> for order <strong>${order.order_number}</strong>.</p>`,
+              body_text: `We confirmed receipt of ${dto.amount.toFixed(2)} AED for order ${order.order_number}.`,
+              template_name: 'manual_payment_confirmation',
+              template_data: {
+                order_number: order.order_number,
+                amount: dto.amount,
+                currency: 'AED',
+                payment_method: dto.payment_method,
+              },
+              status: 'pending',
+            },
+          });
+        }
+
+        return created;
+      },
+      { isolationLevel: 'Serializable', maxWait: 5_000, timeout: 15_000 },
+    );
+
+    this.logger.log(
+      `Manual payment ${payment.transaction_id} confirmed for order ${dto.order_id} by admin ${adminId}`,
+    );
+    return payment;
+  }
+
   // Customer or Admin gets payment status
   async getPayment(
     paymentId: number,
@@ -289,6 +470,12 @@ export class PaymentsService {
         message: 'Access denied to this payment record',
         code: 'PAYMENT_FORBIDDEN',
       });
+    }
+
+    if (!isAdmin) {
+      const { payment_response: _privateReconciliation, ...customerPayment } =
+        payment;
+      return customerPayment;
     }
 
     return payment;
